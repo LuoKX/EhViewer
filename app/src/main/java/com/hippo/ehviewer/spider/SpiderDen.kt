@@ -19,7 +19,6 @@ import android.graphics.ImageDecoder
 import android.os.ParcelFileDescriptor
 import android.os.ParcelFileDescriptor.MODE_READ_WRITE
 import com.hippo.ehviewer.EhDB
-import com.hippo.ehviewer.client.EhUtils.getSuitableTitle
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.ehRequest
 import com.hippo.ehviewer.client.executeNonCache
@@ -281,8 +280,7 @@ private fun findImageFile(dir: UniFile, index: Int): UniFile? {
 }
 
 suspend fun GalleryInfo.putToDownloadDir(): String {
-    val title = getSuitableTitle(this)
-    val dirname = FileUtils.sanitizeFilename("$gid-$title")
+    val dirname = FileUtils.sanitizeFilename("$gid-$token")
     EhDB.putDownloadDirname(gid, dirname)
     return dirname
 }

@@ -1,5 +1,8 @@
 name: Releases
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
