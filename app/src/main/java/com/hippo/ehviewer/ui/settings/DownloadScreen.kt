@@ -232,6 +232,39 @@ fun DownloadScreen() {
                     it.printStackTrace()
                 }
             }
+            WorkPreference(
+                title = stringResource(id = R.string.settings_download_clean_itemRemove),
+                summary = stringResource(id = R.string.settings_download_clean_itemRemove),
+            ) {
+                suspend fun clearItem(item: com.hippo.ehviewer.dao.DownloadInfo,dirGidList:List<Long>): Boolean {
+                    val gid = item.gid
+                    return if (!dirGidList.contains(gid)){
+                        DownloadManager.deleteDownload(gid,true)
+                        true
+                    } else{
+                        false
+                    }
+                }
+                runSuspendCatching {
+                    val dirGidList = downloadLocation.listFiles()?.map { file->
+                        file.name?.let {name->
+                            val index = name.indexOf('-')
+                            var newName=""
+                            if (index >= 0) {
+                                newName = name.substring(0, index)
+                            }
+                            newName.toLong()
+                        }?:-99
+                    } ?: emptyList()
+
+                    val cnt = EhDB.getAllDownloadInfo().sumOf { item->
+                        clearItem(item,dirGidList).compareTo(false)
+                    }
+                    launchSnackBar(FINAL_CLEAR_REDUNDANCY_MSG(cnt))
+                }.onFailure {
+                    it.printStackTrace()
+                }
+            }
             Spacer(modifier = Modifier.size(paddingValues.calculateBottomPadding()))
         }
     }
