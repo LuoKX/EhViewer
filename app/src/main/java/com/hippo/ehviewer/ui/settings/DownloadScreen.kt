@@ -248,13 +248,17 @@ fun DownloadScreen() {
                 runSuspendCatching {
                     val dirGidList = downloadLocation.listFiles()?.map { file ->
                         file.name?.let { name ->
-                            val index = name.indexOf('-')
-                            var newName = ""
-                            if (index >= 0) {
-                                newName = name.substring(0, index)
+                            if (name != ".nomedia") {
+                                val index = name.indexOf('-')
+                                var newName = ""
+                                if (index >= 0) {
+                                    newName = name.substring(0, index)
+                                }
+                                newName.toLong()
+                            } else {
+                                -1
                             }
-                            newName.toLong()
-                        } ?: -99
+                        } ?: -1
                     } ?: emptyList()
 
                     val cnt = EhDB.getAllDownloadInfo().sumOf { item ->
