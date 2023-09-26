@@ -46,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -57,7 +58,6 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.ItemTouchHelper.ACTION_STATE_DRAG
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -299,15 +299,13 @@ class DownloadsScene :
             }
             recyclerView.addItemDecoration(decoration)
             mItemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
-                override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
-                    super.onSelectedChanged(viewHolder, actionState)
-                    if (actionState == ACTION_STATE_DRAG) {
-                        tracker.clearSelection()
-                    }
-                }
                 override fun isLongPressDragEnabled() = false
                 override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
-                    return makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT)
+                    return if (tracker.isInCustomChoice) {
+                        0
+                    } else {
+                        makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT)
+                    }
                 }
                 override fun onMove(
                     recyclerView: RecyclerView,
@@ -364,14 +362,8 @@ class DownloadsScene :
     }
 
     override fun onSearchViewExpanded() {
+        hideActionFab(true)
         super.onSearchViewExpanded()
-        if (tracker.isInCustomChoice) tracker.clearSelection()
-        showSearchFab(true)
-    }
-
-    override fun onSearchViewHidden() {
-        super.onSearchViewHidden()
-        hideSearchFab(true)
     }
 
     override fun onDestroyView() {
@@ -818,6 +810,7 @@ class DownloadsScene :
                 Text(
                     text = categoryText,
                     modifier = Modifier.clip(ShapeDefaults.Small).background(categoryColor).padding(vertical = 2.dp, horizontal = 8.dp),
+                    color = if (Settings.harmonizeCategoryColor) Color.Unspecified else EhUtils.categoryTextColor,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge,
                 )
