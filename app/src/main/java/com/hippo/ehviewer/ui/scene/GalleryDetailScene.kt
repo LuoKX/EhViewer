@@ -532,7 +532,10 @@ class GalleryDetailScene : BaseScene() {
 
     private fun onGalleryInfoCardClick() {
         composeBindingGD?.let {
-            GalleryInfoBottomSheet(it).show(requireActivity().supportFragmentManager, "GalleryInfoBottomSheet")
+            GalleryInfoBottomSheet(it).show(
+                requireActivity().supportFragmentManager,
+                "GalleryInfoBottomSheet",
+            )
         }
     }
 
@@ -726,12 +729,15 @@ class GalleryDetailScene : BaseScene() {
             Spacer(modifier = Modifier.size(dimensionResource(id = R.dimen.keyline_margin)))
         }
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
             val favored by produceState(initialValue = false) {
                 value = galleryDetail.favoriteSlot != NOT_FAVORITED
-                FavouriteStatusRouter.stateFlow(galleryDetail.gid).collect { value = it != NOT_FAVORITED }
+                FavouriteStatusRouter.stateFlow(galleryDetail.gid)
+                    .collect { value = it != NOT_FAVORITED }
             }
             val favButtonText = if (favored) {
                 galleryDetail.favoriteName ?: stringResource(id = R.string.local_favorites)
@@ -1029,20 +1035,25 @@ class GalleryDetailScene : BaseScene() {
                 for (i in 0 until length) {
                     val comment = commentsList[i]
                     AndroidView(factory = { context ->
-                        ItemGalleryCommentBinding.inflate(LayoutInflater.from(context), null, false).apply {
-                            card.setOnClickListener { onNavigateToCommentScene() }
-                            user.text = comment.user
-                            user.setBackgroundColor(Color.TRANSPARENT)
-                            time.text = ReadableTime.getTimeAgo(comment.time)
-                            this.comment.maxLines = 5
-                            this.comment.text = comment.comment.orEmpty().parseAsHtml(imageGetter = CoilImageGetter(this.comment))
-                        }.root
+                        ItemGalleryCommentBinding.inflate(LayoutInflater.from(context), null, false)
+                            .apply {
+                                card.setOnClickListener { onNavigateToCommentScene() }
+                                user.text = comment.user
+                                user.setBackgroundColor(Color.TRANSPARENT)
+                                time.text = ReadableTime.getTimeAgo(comment.time)
+                                this.comment.maxLines = 5
+                                this.comment.text = comment.comment.orEmpty()
+                                    .parseAsHtml(imageGetter = CoilImageGetter(this.comment))
+                            }.root
                     })
                 }
             }
             Box(
-                modifier = Modifier.fillMaxWidth().padding(bottom = dimensionResource(id = R.dimen.strip_item_padding_v))
-                    .clip(RoundedCornerShape(16.dp)).clickable(onClick = ::onNavigateToCommentScene),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = dimensionResource(id = R.dimen.strip_item_padding_v))
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(onClick = ::onNavigateToCommentScene),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(commentText)

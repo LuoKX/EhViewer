@@ -21,7 +21,13 @@ import android.util.SparseLongArray
 import com.google.android.material.math.MathUtils
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.client.EhUrl
+import com.hippo.ehviewer.client.array
 import com.hippo.ehviewer.client.data.BaseGalleryInfo
+import com.hippo.ehviewer.client.ehRequest
+import com.hippo.ehviewer.client.execute
+import com.hippo.ehviewer.client.jsonBody
+import com.hippo.ehviewer.client.parser.GalleryApiParser
 import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.dao.DownloadLabel
 import com.hippo.ehviewer.image.Image
@@ -48,13 +54,17 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.addJsonArray
+import kotlinx.serialization.json.put
 import splitties.init.appCtx
 import splitties.preferences.edit
 import java.util.LinkedList
 
 object DownloadManager : OnSpiderListener {
     // All download info list
-    val allInfoList: LinkedList<DownloadInfo> = runAssertingNotMainThread { LinkedList(EhDB.getAllDownloadInfo()) }
+    val allInfoList: LinkedList<DownloadInfo> =
+        runAssertingNotMainThread { LinkedList(EhDB.getAllDownloadInfo()) }
 
     // All download info map
     private val mAllInfoMap = allInfoList.associateBy { it.gid } as MutableMap<Long, DownloadInfo>
@@ -63,7 +73,8 @@ object DownloadManager : OnSpiderListener {
     private val map: MutableMap<String?, LinkedList<DownloadInfo>>
 
     // All labels without default label
-    val labelList = runAssertingNotMainThread { EhDB.getAllDownloadLabelList() } as MutableList<DownloadLabel>
+    val labelList =
+        runAssertingNotMainThread { EhDB.getAllDownloadLabelList() } as MutableList<DownloadLabel>
 
     // Store download info with default label
     val defaultInfoList: LinkedList<DownloadInfo>
@@ -141,6 +152,7 @@ object DownloadManager : OnSpiderListener {
             val spider = SpiderQueen.obtainSpiderQueen(info, SpiderQueen.MODE_DOWNLOAD)
             mCurrentTask = info
             mCurrentSpider = spider
+
             spider.addOnSpiderListener(this)
             info.state = DownloadInfo.STATE_DOWNLOAD
             info.speed = -1
@@ -153,6 +165,7 @@ object DownloadManager : OnSpiderListener {
             EhDB.putDownloadInfo(info)
             // Start speed count
             mSpeedReminder.start()
+
             // Notify start downloading
             if (mDownloadListener != null) {
                 mDownloadListener!!.onStart(info)
@@ -171,6 +184,25 @@ object DownloadManager : OnSpiderListener {
         // Check in download list
         var info = mAllInfoMap[galleryInfo.gid]
         if (info != null) { // Get it in download list
+            ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
+                jsonBody {
+                    put("method", "gdata")
+                    array("gidlist") {
+                        arrayOf(
+                            addJsonArray {
+                                add(galleryInfo.gid)
+                                add(galleryInfo.token)
+                            },
+                        )
+                    }
+                    put("namespace", 1)
+                }
+            }.apply {
+                val body = this.execute {
+                    body.string()
+                }
+                GalleryApiParser.parse(body, info!!)
+            }
             if (info.state != DownloadInfo.STATE_WAIT) {
                 // Set state DownloadInfo.STATE_WAIT
                 info.state = DownloadInfo.STATE_WAIT
@@ -201,7 +233,6 @@ object DownloadManager : OnSpiderListener {
             // Add to all download list and map
             allInfoList.addFirst(info)
             mAllInfoMap[galleryInfo.gid] = info
-
             // Add to wait list
             mWaitList.add(info)
 
@@ -210,6 +241,7 @@ object DownloadManager : OnSpiderListener {
 
             // Notify
             mDownloadInfoListener?.onUpdate(info)
+
             // Make sure download is running
             ensureDownload()
 
@@ -450,7 +482,8 @@ object DownloadManager : OnSpiderListener {
     private fun moveDownload(fromPosition: Int, toPosition: Int): List<DownloadInfo> {
         val info = allInfoList.removeAt(fromPosition)
         allInfoList.add(toPosition, info)
-        val range = if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
+        val range =
+            if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
         val list = allInfoList.slice(range)
         val limit = allInfoList.size - 1
         list.zip(range).forEach { it.first.position = limit - it.second }
@@ -619,7 +652,8 @@ object DownloadManager : OnSpiderListener {
     suspend fun moveLabel(fromPosition: Int, toPosition: Int) {
         val item = labelList.removeAt(fromPosition)
         labelList.add(toPosition, item)
-        val range = if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
+        val range =
+            if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
         val list = labelList.slice(range)
         list.zip(range).forEach { it.first.position = it.second }
         EhDB.updateDownloadLabel(list)

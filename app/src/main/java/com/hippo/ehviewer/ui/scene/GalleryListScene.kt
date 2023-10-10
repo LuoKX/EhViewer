@@ -139,7 +139,11 @@ class VMStorage1 : ViewModel() {
                     }.onFailure {
                         return@withIOContext LoadResult.Error(it)
                     }.onSuccess {
-                        return@withIOContext LoadResult.Page(it.galleryInfoList, prev?.toString(), next?.toString())
+                        return@withIOContext LoadResult.Page(
+                            it.galleryInfoList,
+                            prev?.toString(),
+                            next?.toString(),
+                        )
                     }
                 }
                 when (params) {
@@ -213,7 +217,10 @@ class GalleryListScene : SearchBarScene() {
             ACTION_SUBSCRIPTION -> ListUrlBuilder(MODE_SUBSCRIPTION)
             ACTION_WHATS_HOT -> ListUrlBuilder(MODE_WHATS_HOT)
             ACTION_TOP_LIST -> ListUrlBuilder(MODE_TOPLIST, mKeyword = "11")
-            ACTION_LIST_URL_BUILDER -> args?.getParcelableCompat<ListUrlBuilder>(KEY_LIST_URL_BUILDER)?.copy() ?: ListUrlBuilder()
+            ACTION_LIST_URL_BUILDER -> args?.getParcelableCompat<ListUrlBuilder>(
+                KEY_LIST_URL_BUILDER,
+            )?.copy() ?: ListUrlBuilder()
+
             else -> throw IllegalStateException("Wrong KEY_ACTION:${args?.getString(KEY_ACTION)} when handle args!")
         }
     }
@@ -289,6 +296,7 @@ class GalleryListScene : SearchBarScene() {
             MODE_NORMAL, MODE_SUBSCRIPTION -> if (category != EhUtils.NONE || !keyword.isNullOrEmpty()) {
                 mainActivity?.clearNavCheckedItem()
             }
+
             MODE_TAG, MODE_UPLOADER, MODE_IMAGE_SEARCH -> mainActivity?.clearNavCheckedItem()
             else -> Unit
         }
@@ -332,7 +340,8 @@ class GalleryListScene : SearchBarScene() {
                 mSearchFab.parent as View,
             ),
         )
-        mViewTransition = BringOutTransition(binding.contentLayout.contentView, binding.searchLayout)
+        mViewTransition =
+            BringOutTransition(binding.contentLayout.contentView, binding.searchLayout)
         binding.searchLayout.consumeWindowInsets = false
         binding.searchLayout.setViewTreeViewModelStoreOwner(this)
         binding.fastScroller.setOnDragHandlerListener(object : OnDragHandlerListener {
@@ -360,7 +369,8 @@ class GalleryListScene : SearchBarScene() {
             },
         ).also { adapter ->
             viewLifecycleOwner.lifecycleScope.launch {
-                val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.big_sad_pandroid)!!
+                val drawable =
+                    ContextCompat.getDrawable(requireContext(), R.drawable.big_sad_pandroid)!!
                 drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
                 binding.tip.setCompoundDrawables(null, drawable, null, null)
                 binding.tip.setOnClickListener { mAdapter?.refresh() }
@@ -369,7 +379,8 @@ class GalleryListScene : SearchBarScene() {
                     mUrlBuilder.mJumpTo = null
                     mAdapter?.refresh()
                 }
-                val transition = ViewTransition(binding.refreshLayout, binding.progress, binding.tip)
+                val transition =
+                    ViewTransition(binding.refreshLayout, binding.progress, binding.tip)
                 val empty = getString(R.string.gallery_list_empty_hit)
                 launch {
                     adapter.loadStateFlow.collectLatest {
@@ -380,6 +391,7 @@ class GalleryListScene : SearchBarScene() {
                                     transition.showView(1)
                                 }
                             }
+
                             is LoadState.Error -> {
                                 binding.refreshLayout.isRefreshing = false
                                 binding.tip.text = ExceptionUtils.getReadableString(state.error)
@@ -392,9 +404,13 @@ class GalleryListScene : SearchBarScene() {
                                     ) {
                                         Text(text = stringResource(id = R.string.open_in_webview))
                                     }
-                                    navAnimated(R.id.webView, bundleOf(WebViewActivity.KEY_URL to EhUrl.host))
+                                    navAnimated(
+                                        R.id.webView,
+                                        bundleOf(WebViewActivity.KEY_URL to EhUrl.host),
+                                    )
                                 }
                             }
+
                             is LoadState.NotLoading -> {
                                 delay(500)
                                 binding.refreshLayout.isRefreshing = false
@@ -426,7 +442,15 @@ class GalleryListScene : SearchBarScene() {
             },
         )
         binding.fastScroller.attachToRecyclerView(binding.recyclerView)
-        binding.fastScroller.setHandlerDrawable(HandlerDrawable().apply { setColor(inflater.context.theme.resolveColor(androidx.appcompat.R.attr.colorPrimary)) })
+        binding.fastScroller.setHandlerDrawable(
+            HandlerDrawable().apply {
+                setColor(
+                    inflater.context.theme.resolveColor(
+                        androidx.appcompat.R.attr.colorPrimary,
+                    ),
+                )
+            },
+        )
         setOnApplySearch { query: String? ->
             onApplySearch(query)
         }
@@ -447,7 +471,12 @@ class GalleryListScene : SearchBarScene() {
                     view.toggle()
                 }
             }
-            override fun onClickSecondaryFab(view: FabLayout, fab: FloatingActionButton, position: Int) {
+
+            override fun onClickSecondaryFab(
+                view: FabLayout,
+                fab: FloatingActionButton,
+                position: Int,
+            ) {
                 when (position) {
                     0 -> showGoToDialog()
                     1 -> { // First
@@ -455,6 +484,7 @@ class GalleryListScene : SearchBarScene() {
                         mUrlBuilder.mJumpTo = null
                         mAdapter?.refresh()
                     }
+
                     2 -> { // Last
                         if (mIsTopList) {
                             mUrlBuilder.mJumpTo = "${TOPLIST_PAGES - 1}"
@@ -547,7 +577,9 @@ class GalleryListScene : SearchBarScene() {
         // TODO: It's ugly
         val checked = booleanArrayOf(Settings.qSSaveProgress)
         val hint = arrayOf(getString(R.string.save_progress))
-        builder.setMultiChoiceItems(hint, checked) { _, which, isChecked -> checked[which] = isChecked }
+        builder.setMultiChoiceItems(hint, checked) { _, which, isChecked ->
+            checked[which] = isChecked
+        }
         val dialog = builder.show()
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
             lifecycleScope.launchIO {
@@ -689,7 +721,8 @@ class GalleryListScene : SearchBarScene() {
                 .build()
             datePicker.show(requireActivity().supportFragmentManager, "date-picker")
             datePicker.addOnPositiveButtonClickListener { time ->
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US).withZone(ZoneOffset.UTC)
+                val formatter =
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US).withZone(ZoneOffset.UTC)
                 val jumpTo = formatter.format(Instant.ofEpochMilli(time))
                 mUrlBuilder.mJumpTo = jumpTo
                 mAdapter?.refresh()
@@ -767,22 +800,27 @@ class GalleryListScene : SearchBarScene() {
                     State.SIMPLE_SEARCH -> {
                         selectSearchFab(animation)
                     }
+
                     State.SEARCH -> {
                         mViewTransition!!.showView(1, animation)
                         selectSearchFab(animation)
                     }
+
                     State.SEARCH_SHOW_LIST -> {
                         mViewTransition!!.showView(1, animation)
                         selectSearchFab(animation)
                     }
+
                     else -> error("Unreachable!!!")
                 }
+
                 State.SIMPLE_SEARCH -> when (state) {
                     State.NORMAL -> selectActionFab(animation)
                     State.SEARCH -> mViewTransition!!.showView(1, animation)
                     State.SEARCH_SHOW_LIST -> mViewTransition!!.showView(1, animation)
                     else -> error("Unreachable!!!")
                 }
+
                 State.SEARCH, State.SEARCH_SHOW_LIST -> if (state == State.NORMAL) {
                     mViewTransition!!.showView(0, animation)
                     selectActionFab(animation)
@@ -852,7 +890,8 @@ class GalleryListScene : SearchBarScene() {
         }
     }
 
-    private class QsDrawerHolder(val binding: ItemDrawerListBinding) : RecyclerView.ViewHolder(binding.root)
+    private class QsDrawerHolder(val binding: ItemDrawerListBinding) :
+        RecyclerView.ViewHolder(binding.root)
 
     private inner class QsDrawerAdapter(private val mInflater: LayoutInflater) :
         RecyclerView.Adapter<QsDrawerHolder>() {
@@ -863,7 +902,10 @@ class GalleryListScene : SearchBarScene() {
             holder.itemView.setOnClickListener {
                 if (mUrlBuilder.mode == MODE_WHATS_HOT) {
                     val q = mQuickSearchList[holder.bindingAdapterPosition]
-                    navAnimated(R.id.galleryListScene, ListUrlBuilder().apply { set(q) }.toStartArgs())
+                    navAnimated(
+                        R.id.galleryListScene,
+                        ListUrlBuilder().apply { set(q) }.toStartArgs(),
+                    )
                 } else {
                     if (mIsTopList) {
                         mUrlBuilder.keyword = keywords[holder.bindingAdapterPosition].toString()
@@ -921,6 +963,7 @@ class GalleryListScene : SearchBarScene() {
                 setState(State.SEARCH)
             }
         }
+
         abstract val destination: Int
         abstract val args: Bundle
     }
@@ -975,7 +1018,8 @@ class GalleryListScene : SearchBarScene() {
             mQuickSearchList.add(toPosition, item)
             mAdapter.notifyItemMoved(fromPosition, toPosition)
             lifecycleScope.launchIO {
-                val range = if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
+                val range =
+                    if (fromPosition < toPosition) fromPosition..toPosition else toPosition..fromPosition
                 val list = mQuickSearchList.slice(range)
                 list.zip(range).forEach { it.first.position = it.second }
                 EhDB.updateQuickSearch(list)
@@ -1049,9 +1093,11 @@ private fun Context.getSuitableTitleForUrlBuilder(
             }
 
             MODE_TAG -> {
-                val canTranslate = Settings.showTagTranslations && EhTagDatabase.isTranslatable(this) && EhTagDatabase.initialized
+                val canTranslate =
+                    Settings.showTagTranslations && EhTagDatabase.isTranslatable(this) && EhTagDatabase.initialized
                 wrapTagKeyword(keyword, canTranslate)
             }
+
             else -> keyword
         }
     } else if (category == EhUtils.NONE && urlBuilder.advanceSearch == -1) {

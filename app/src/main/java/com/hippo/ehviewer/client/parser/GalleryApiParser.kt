@@ -20,6 +20,7 @@ import com.hippo.ehviewer.client.EhUtils.handleThumbUrlResolution
 import com.hippo.ehviewer.client.data.GalleryInfo
 import com.hippo.ehviewer.client.getThumbKey
 import com.hippo.ehviewer.client.parseAs
+import com.hippo.ehviewer.dao.DownloadInfo
 import com.hippo.ehviewer.util.unescapeXml
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -39,6 +40,15 @@ object GalleryApiParser {
                 simpleTags = item.tags
                 pages = item.pages
                 generateSLang()
+            }
+        }
+    }
+
+    fun parse(body: String, galleryInfo: DownloadInfo) {
+        body.parseAs<Result>().items.forEach { item ->
+            galleryInfo.apply {
+                rating = item.rating
+                simpleTags = item.tags
             }
         }
     }

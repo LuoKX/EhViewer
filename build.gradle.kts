@@ -18,3 +18,6 @@ buildscript {
         classpath("com.android.tools:r8:8.3.6-dev")
     }
 }
+allprojects {
+    apply(from = "$rootDir/ktlint.gradle.kts")
+}

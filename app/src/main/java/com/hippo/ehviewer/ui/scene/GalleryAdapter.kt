@@ -39,8 +39,11 @@ import com.hippo.ehviewer.util.dp2px
 import splitties.init.appCtx
 
 private val diffCallback = object : DiffUtil.ItemCallback<BaseGalleryInfo>() {
-    override fun areItemsTheSame(oldItem: BaseGalleryInfo, newItem: BaseGalleryInfo) = oldItem.gid == newItem.gid
-    override fun areContentsTheSame(oldItem: BaseGalleryInfo, newItem: BaseGalleryInfo) = oldItem.gid == newItem.gid
+    override fun areItemsTheSame(oldItem: BaseGalleryInfo, newItem: BaseGalleryInfo) =
+        oldItem.gid == newItem.gid
+
+    override fun areContentsTheSame(oldItem: BaseGalleryInfo, newItem: BaseGalleryInfo) =
+        oldItem.gid == newItem.gid
 }
 
 class GalleryAdapter(
@@ -50,7 +53,8 @@ class GalleryAdapter(
     private val onItemLongClick: (BaseGalleryInfo) -> Unit,
 ) : PagingDataAdapter<BaseGalleryInfo, GalleryHolder>(diffCallback) {
     private val resources = recyclerView.context.resources
-    private val layoutManager: AutoStaggeredGridLayoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
+    private val layoutManager: AutoStaggeredGridLayoutManager =
+        AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
     private var mListDecoration: ItemDecoration? = null
     private var mGirdDecoration: MarginItemDecoration? = null
     private var mType = TYPE_INVALID
@@ -74,8 +78,10 @@ class GalleryAdapter(
                     layoutManager.setStrategy(STRATEGY_MIN_SIZE)
                     if (null != mGirdDecoration) {
                         recyclerView.removeItemDecoration(mGirdDecoration!!)
-                        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_h)
-                        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_v)
+                        val paddingH =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_h)
+                        val paddingV =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_v)
                         recyclerView.setPadding(
                             recyclerView.paddingLeft - paddingH,
                             recyclerView.paddingTop - paddingV,
@@ -85,11 +91,19 @@ class GalleryAdapter(
                         mGirdDecoration = null
                     }
                     if (null == mListDecoration) {
-                        val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
-                        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
-                        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
+                        val interval =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
+                        val paddingH =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
+                        val paddingV =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
                         mListDecoration = object : ItemDecoration() {
-                            override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+                            override fun getItemOffsets(
+                                outRect: Rect,
+                                view: View,
+                                parent: RecyclerView,
+                                state: RecyclerView.State,
+                            ) {
                                 outRect.set(0, interval / 2, 0, interval / 2)
                             }
                         }
@@ -109,8 +123,10 @@ class GalleryAdapter(
                     layoutManager.setStrategy(STRATEGY_SUITABLE_SIZE)
                     if (null != mListDecoration) {
                         recyclerView.removeItemDecoration(mListDecoration!!)
-                        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
-                        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
+                        val paddingH =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_h)
+                        val paddingV =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_list_margin_v)
                         recyclerView.setPadding(
                             recyclerView.paddingLeft - paddingH,
                             recyclerView.paddingTop - paddingV,
@@ -120,9 +136,12 @@ class GalleryAdapter(
                         mListDecoration = null
                     }
                     if (null == mGirdDecoration) {
-                        val interval = resources.getDimensionPixelOffset(R.dimen.gallery_grid_interval)
-                        val paddingH = resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_h)
-                        val paddingV = resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_v)
+                        val interval =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_grid_interval)
+                        val paddingH =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_h)
+                        val paddingV =
+                            resources.getDimensionPixelOffset(R.dimen.gallery_grid_margin_v)
                         mGirdDecoration = MarginItemDecoration(interval, 0, 0, 0, 0)
                         recyclerView.setPadding(
                             recyclerView.paddingLeft + paddingH,

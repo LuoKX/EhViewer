@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.collection.LongSparseArray
 import androidx.collection.set
+import com.google.gson.Gson
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.EhEngine
@@ -40,6 +41,7 @@ import com.hippo.ehviewer.client.parser.GalleryPageUrlParser
 import com.hippo.ehviewer.image.Image
 import com.hippo.ehviewer.util.ExceptionUtils
 import com.hippo.unifile.UniFile
+import com.hippo.unifile.openOutputStream
 import eu.kanade.tachiyomi.util.lang.launchIO
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -429,6 +431,14 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
     private fun writeSpiderInfoToLocal() {
         if (!isReady) return
         mSpiderDen.downloadDir?.run { createFile(SPIDER_INFO_FILENAME)?.also { mSpiderInfo.write(it) } }
+        val jsonString = Gson().toJson(CurGalleryInfo)
+        mSpiderDen.downloadDir?.run {
+            createFile("comicInfo.txt")?.also { file ->
+                file.openOutputStream().use {
+                    it.write(jsonString.toByteArray())
+                }
+            }
+        }
         mSpiderInfo.saveToCache()
     }
 
@@ -489,8 +499,9 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
         const val STATE_FAILED = 3
         const val SPIDER_INFO_FILENAME = ".ehviewer"
         private val sQueenMap = LongSparseArray<SpiderQueen>()
-
+        var CurGalleryInfo: GalleryInfo? = null
         fun obtainSpiderQueen(galleryInfo: GalleryInfo, @Mode mode: Int): SpiderQueen {
+            CurGalleryInfo = galleryInfo
             val gid = galleryInfo.gid
             return (sQueenMap[gid] ?: SpiderQueen(galleryInfo).also { sQueenMap[gid] = it }).apply {
                 setMode(mode)

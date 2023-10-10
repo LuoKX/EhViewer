@@ -222,7 +222,8 @@ class DownloadsScene :
     }
 
     private fun updateTitle() {
-        val title = getString(R.string.scene_download_title, mLabel ?: getString(R.string.download_all))
+        val title =
+            getString(R.string.scene_download_title, mLabel ?: getString(R.string.download_all))
         setSearchBarHint(title)
         setEditTextHint(getString(R.string.search_bar_hint, title))
     }
@@ -276,7 +277,8 @@ class DownloadsScene :
                 }
                 restoreSelection(savedInstanceState)
             }
-            val layoutManager = AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
+            val layoutManager =
+                AutoStaggeredGridLayoutManager(0, StaggeredGridLayoutManager.VERTICAL)
             layoutManager.setColumnSize(
                 resources.getDimensionPixelOffset(
                     when (detailSize) {
@@ -293,20 +295,32 @@ class DownloadsScene :
             recyclerView.clipChildren = false
             val interval = resources.getDimensionPixelOffset(R.dimen.gallery_list_interval)
             val decoration = object : RecyclerView.ItemDecoration() {
-                override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State,
+                ) {
                     outRect.set(0, interval / 2, 0, interval / 2)
                 }
             }
             recyclerView.addItemDecoration(decoration)
             mItemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
                 override fun isLongPressDragEnabled() = false
-                override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+                override fun getMovementFlags(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                ): Int {
                     return if (tracker.isInCustomChoice) {
                         0
                     } else {
-                        makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT)
+                        makeMovementFlags(
+                            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+                            ItemTouchHelper.LEFT,
+                        )
                     }
                 }
+
                 override fun onMove(
                     recyclerView: RecyclerView,
                     viewHolder: RecyclerView.ViewHolder,
@@ -326,6 +340,7 @@ class DownloadsScene :
                     }
                     return true
                 }
+
                 override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                     val position = viewHolder.bindingAdapterPosition
                     val info = mList!![position]
@@ -739,7 +754,11 @@ class DownloadsScene :
             binding.start.setOnClickListener(this)
             binding.stop.setOnClickListener(this)
             binding.thumb.setMD3Content {
-                Spacer(modifier = Modifier.height(height).fillMaxWidth())
+                Spacer(
+                    modifier = Modifier
+                        .height(height)
+                        .fillMaxWidth(),
+                )
             }
             binding.handle.setOnTouchListener { _, event ->
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -797,7 +816,9 @@ class DownloadsScene :
                     CompanionAsyncThumb(
                         info = info,
                         path = info.downloadDir?.subFile(".thumb"),
-                        modifier = Modifier.height(height).aspectRatio(DEFAULT_ASPECT),
+                        modifier = Modifier
+                            .height(height)
+                            .aspectRatio(DEFAULT_ASPECT),
                     )
                 }
             }
@@ -809,7 +830,10 @@ class DownloadsScene :
                 val categoryText = EhUtils.getCategory(info.category).uppercase()
                 Text(
                     text = categoryText,
-                    modifier = Modifier.clip(ShapeDefaults.Small).background(categoryColor).padding(vertical = 2.dp, horizontal = 8.dp),
+                    modifier = Modifier
+                        .clip(ShapeDefaults.Small)
+                        .background(categoryColor)
+                        .padding(vertical = 2.dp, horizontal = 8.dp),
                     color = if (Settings.harmonizeCategoryColor) Color.Unspecified else EhUtils.categoryTextColor,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge,
@@ -901,8 +925,12 @@ class DownloadsScene :
     }
 
     private val diffCallback = object : DiffUtil.ItemCallback<DownloadInfo>() {
-        override fun areItemsTheSame(oldItem: DownloadInfo, newItem: DownloadInfo) = oldItem.gid == newItem.gid
-        override fun areContentsTheSame(oldItem: DownloadInfo, newItem: DownloadInfo) = oldItem == newItem
+        override fun areItemsTheSame(oldItem: DownloadInfo, newItem: DownloadInfo) =
+            oldItem.gid == newItem.gid
+
+        override fun areContentsTheSame(oldItem: DownloadInfo, newItem: DownloadInfo) =
+            oldItem == newItem
+
         override fun getChangePayload(oldItem: DownloadInfo, newItem: DownloadInfo): Any? {
             return if (oldItem.downloadInfo != newItem.downloadInfo) {
                 PAYLOAD_DOWNLOAD_INFO
@@ -1122,11 +1150,12 @@ private fun CompanionAsyncThumb(
                             if (!path.exists() && path.ensureFile()) {
                                 val key = info.thumbKey!!
                                 imageCache.read(key) {
-                                    UniFile.fromFile(data.toFile())!!.openFileDescriptor("r").use { src ->
-                                        path.openFileDescriptor("w").use { dst ->
-                                            src sendTo dst
+                                    UniFile.fromFile(data.toFile())!!.openFileDescriptor("r")
+                                        .use { src ->
+                                            path.openFileDescriptor("w").use { dst ->
+                                                src sendTo dst
+                                            }
                                         }
-                                    }
                                 }
                             }
                         }.onFailure {

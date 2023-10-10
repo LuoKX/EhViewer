@@ -29,7 +29,7 @@ android {
             isEnable = true
             reset()
             if (isRelease) {
-                include("arm64-v8a", "x86_64", "armeabi-v7a", "x86")
+                include("arm64-v8a")
                 isUniversalApk = true
             } else {
                 include("arm64-v8a")
@@ -45,7 +45,6 @@ android {
         enableV3Signing = true
         enableV4Signing = true
     }
-
     val commitSha = providers.exec {
         commandLine = "git rev-parse --short=7 HEAD".split(' ')
     }.standardOutput.asText.get().trim()
@@ -57,7 +56,8 @@ android {
 
     val repoName = providers.exec {
         commandLine = "git remote get-url origin".split(' ')
-    }.standardOutput.asText.get().trim().removePrefix("https://github.com/").removePrefix("git@github.com:")
+    }.standardOutput.asText.get().trim().removePrefix("https://github.com/")
+        .removePrefix("git@github.com:")
         .removeSuffix(".git")
 
     defaultConfig {
@@ -168,16 +168,18 @@ android {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
+
     // https://developer.android.com/jetpack/androidx/releases/activity
-    implementation("androidx.activity:activity-compose:1.8.0-rc01")
+    implementation("androidx.activity:activity-compose:1.8.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.biometric:biometric-ktx:1.2.0-alpha05")
     implementation("androidx.browser:browser:1.6.0")
-    implementation("androidx.collection:collection-ktx:1.3.0-rc01")
+    implementation("androidx.collection:collection-ktx:1.3.0")
 
     // https://developer.android.com/jetpack/androidx/releases/compose-material3
     // api(platform("androidx.compose:compose-bom:2023.05.00"))
-    api(platform("dev.chrisbanes.compose:compose-bom:2023.07.00-alpha02"))
+    api(platform("dev.chrisbanes.compose:compose-bom:2023.11.00-alpha01"))
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material3:material3-window-size-class")
@@ -185,14 +187,14 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.12.0")
 
-    implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0-alpha12")
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0-alpha13")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
-    implementation("androidx.fragment:fragment-ktx:1.7.0-alpha05")
+    implementation("androidx.fragment:fragment-ktx:1.7.0-alpha06")
     // https://developer.android.com/jetpack/androidx/releases/lifecycle
     implementation("androidx.lifecycle:lifecycle-process:2.6.2")
 
     // https://developer.android.com/jetpack/androidx/releases/navigation
-    val navigation = "2.7.3"
+    val navigation = "2.7.4"
     implementation("androidx.navigation:navigation-fragment-ktx:$navigation")
     implementation("androidx.navigation:navigation-ui-ktx:$navigation")
     implementation("androidx.navigation:navigation-compose:$navigation")
@@ -231,7 +233,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp-android")
     implementation("com.squareup.okhttp3:okhttp-coroutines")
 
-    implementation("com.squareup.okio:okio-jvm:3.5.0")
+    implementation("com.squareup.okio:okio-jvm:3.6.0")
 
     implementation("com.mikepenz:aboutlibraries-core:10.9.1")
 
@@ -248,7 +250,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose")
     implementation("io.coil-kt:coil-gif")
 
-    val ktor = "2.3.4"
+    val ktor = "2.3.5"
     implementation("io.ktor:ktor-io-jvm:$ktor")
     implementation("io.ktor:ktor-utils-jvm:$ktor")
 
@@ -290,7 +292,7 @@ aboutLibraries {
 cargo {
     module = "src/main/rust"
     libname = "ehviewer_rust"
-    targets = if (isRelease) listOf("arm", "x86", "arm64", "x86_64") else listOf("arm64")
+    targets = if (isRelease) listOf("arm64") else listOf("arm64")
     if (isRelease) profile = "release"
 }
 

@@ -72,7 +72,11 @@ import rikka.core.util.ContextUtils.requireActivity
 import splitties.init.appCtx
 
 object CommonOperations {
-    fun startDownload(activity: MainActivity?, galleryInfo: BaseGalleryInfo, forceDefault: Boolean) {
+    fun startDownload(
+        activity: MainActivity?,
+        galleryInfo: BaseGalleryInfo,
+        forceDefault: Boolean,
+    ) {
         startDownload(activity!!, listOf(galleryInfo), forceDefault)
     }
 
@@ -213,12 +217,14 @@ suspend fun DialogState.modifyFavorites(galleryInfo: BaseGalleryInfo): Boolean {
         val isFavorited = galleryInfo.favoriteSlot != NOT_FAVORITED
         val defaultFavSlot = Settings.defaultFavSlot
         if (defaultFavSlot == -2) {
-            val localFav = getFavoriteIcon(localFavorited) to appCtx.getString(R.string.local_favorites)
+            val localFav =
+                getFavoriteIcon(localFavorited) to appCtx.getString(R.string.local_favorites)
             val cloudFav = Settings.favCat.mapIndexed { index, name ->
                 getFavoriteIcon(galleryInfo.favoriteSlot == index) to name
             }.toTypedArray()
             val items = if (isFavorited) {
-                val remove = Icons.Default.HeartBroken to appCtx.getString(R.string.remove_from_favourites)
+                val remove =
+                    Icons.Default.HeartBroken to appCtx.getString(R.string.remove_from_favourites)
                 arrayOf(remove, localFav, *cloudFav)
             } else {
                 arrayOf(localFav, *cloudFav)
@@ -229,9 +235,18 @@ suspend fun DialogState.modifyFavorites(galleryInfo: BaseGalleryInfo): Boolean {
                 hint = R.string.favorite_note,
                 maxChar = MAX_FAVNOTE_CHAR,
             )
-            return doModifyFavorites(galleryInfo, if (isFavorited) slot - 2 else slot - 1, localFavorited, note)
+            return doModifyFavorites(
+                galleryInfo,
+                if (isFavorited) slot - 2 else slot - 1,
+                localFavorited,
+                note,
+            )
         } else {
-            return doModifyFavorites(galleryInfo, if (isFavorited) NOT_FAVORITED else defaultFavSlot, localFavorited)
+            return doModifyFavorites(
+                galleryInfo,
+                if (isFavorited) NOT_FAVORITED else defaultFavSlot,
+                localFavorited,
+            )
         }
     } else {
         return doModifyFavorites(galleryInfo, LOCAL_FAVORITED, localFavorited)
@@ -277,7 +292,8 @@ private suspend fun doModifyFavorites(
             FavouriteStatusRouter.modifyFavourites(galleryInfo.gid, slot)
         }
     } else if (slot != LOCAL_FAVORITED || galleryInfo.favoriteSlot == LOCAL_FAVORITED) {
-        val newSlot = if (galleryInfo.favoriteSlot > LOCAL_FAVORITED && localFavorited) LOCAL_FAVORITED else NOT_FAVORITED
+        val newSlot =
+            if (galleryInfo.favoriteSlot > LOCAL_FAVORITED && localFavorited) LOCAL_FAVORITED else NOT_FAVORITED
         galleryInfo.favoriteSlot = newSlot
         galleryInfo.favoriteName = null
         FavouriteStatusRouter.modifyFavourites(galleryInfo.gid, newSlot)
@@ -358,7 +374,12 @@ suspend fun DialogState.confirmRemoveDownload(info: GalleryInfo, onDismiss: () -
         onDismiss = onDismiss,
         text = {
             Column {
-                Text(text = stringResource(id = R.string.download_remove_dialog_message, info.title.orEmpty()))
+                Text(
+                    text = stringResource(
+                        id = R.string.download_remove_dialog_message,
+                        info.title.orEmpty(),
+                    ),
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = checked, onCheckedChange = { checked = it })
                     Text(text = stringResource(id = R.string.download_remove_dialog_check_text))
@@ -375,7 +396,8 @@ suspend fun DialogState.confirmRemoveDownload(info: GalleryInfo, onDismiss: () -
 suspend fun DialogState.showMoveDownloadLabel(info: GalleryInfo) {
     val defaultLabel = appCtx.getString(R.string.default_download_label_name)
     val labels = DownloadManager.labelList.map { it.label }.toTypedArray()
-    val selected = showSelectItem(defaultLabel, *labels, title = R.string.download_move_dialog_title)
+    val selected =
+        showSelectItem(defaultLabel, *labels, title = R.string.download_move_dialog_title)
     val downloadInfo = DownloadManager.getDownloadInfo(info.gid) ?: return
     val label = if (selected == 0) null else labels[selected - 1]
     withUIContext { DownloadManager.changeLabel(listOf(downloadInfo), label) }
