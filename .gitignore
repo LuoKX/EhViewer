@@ -8,3 +8,10 @@ build
 .idea
 .vscode
 /captures
+.agents/
+.claude/
+.codex/
+.codegraph/
+.trellis/
+AGENTS.md
+.gitattributes
