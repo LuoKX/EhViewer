@@ -170,7 +170,8 @@ import moe.tarsin.coroutines.runSuspendCatching
 import splitties.systemservices.clipboardManager
 import splitties.systemservices.connectivityManager
 
-private val navItems = arrayOf<Triple<Direction, Int, ImageVector>>(
+private val navItems =
+  arrayOf<Triple<Direction, Int, ImageVector>>(
     Triple(HomePageScreenDestination, R.string.homepage, Icons.Default.Home),
     Triple(SubscriptionScreenDestination, R.string.subscription, EhIcons.Default.Subscriptions),
     Triple(WhatshotScreenDestination, R.string.whats_hot, Icons.Default.Whatshot),
@@ -179,397 +180,431 @@ private val navItems = arrayOf<Triple<Direction, Int, ImageVector>>(
     Triple(HistoryScreenDestination, R.string.history, Icons.Default.History),
     Triple(DownloadsScreenDestination, R.string.downloads, Icons.Default.Download),
     Triple(SettingsScreenDestination, R.string.settings, Icons.Default.Settings),
-)
+  )
 
 class MainActivity : AppCompatActivity() {
 
-    private var shareUrl: String? = null
+  private var shareUrl: String? = null
 
-    @Composable
-    fun ProvideAssistContent(url: String) {
-        val urlState by rememberUpdatedState(url)
-        DisposableEffect(urlState) {
-            shareUrl = urlState
-            onDispose {
-                shareUrl = null
-            }
-        }
+  @Composable
+  fun ProvideAssistContent(url: String) {
+    val urlState by rememberUpdatedState(url)
+    DisposableEffect(urlState) {
+      shareUrl = urlState
+      onDispose {
+        shareUrl = null
+      }
     }
+  }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        intentChannel.trySend(intent)
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    intentChannel.trySend(intent)
+  }
+
+  private val tipFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+  private val intentChannel =
+    Channel<Intent>(capacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+  private val intentFlow = intentChannel.receiveAsFlow()
+
+  @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+  override fun onCreate(savedInstanceState: Bundle?) {
+    installSplashScreen().setKeepOnScreenCondition { !initialized }
+    super.onCreate(savedInstanceState)
+    enableEdgeToEdge()
+    // https://issuetracker.google.com/204791558
+    // Fix system bars insets still exist in fullscreen mode on API < 30
+    @Suppress("DEPRECATION")
+    if (!isAtLeastR) {
+      with(window.decorView) {
+        systemUiVisibility = systemUiVisibility and View.SYSTEM_UI_FLAG_LAYOUT_STABLE.inv()
+      }
     }
+    setMD3Content {
+      if (!initialized) return@setMD3Content
+      val configuration = LocalConfiguration.current
+      val navDrawerState = rememberDrawerState(DrawerValue.Closed)
+      val sideSheetState = rememberDrawerState2(DrawerValue.Closed)
+      val snackbarState = remember { SnackbarHostState() }
+      val scope = rememberCoroutineScope()
+      val navController = rememberNavController()
+      val navigator = navController.rememberDestinationsNavigator()
+      fun closeDrawer(callback: () -> Unit = {}) = scope.launch {
+        navDrawerState.close()
+        callback()
+      }
 
-    private val tipFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    private val intentChannel = Channel<Intent>(capacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    private val intentFlow = intentChannel.receiveAsFlow()
-
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen().setKeepOnScreenCondition { !initialized }
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        // https://issuetracker.google.com/204791558
-        // Fix system bars insets still exist in fullscreen mode on API < 30
-        @Suppress("DEPRECATION")
-        if (!isAtLeastR) {
-            with(window.decorView) {
-                systemUiVisibility = systemUiVisibility and View.SYSTEM_UI_FLAG_LAYOUT_STABLE.inv()
-            }
+      suspend fun DialogState.checkDownloadLocation() {
+        val valid = withIOContext { downloadLocation.isDirectory }
+        if (!valid) {
+          awaitConfirmationOrCancel(
+            confirmText = R.string.open_settings,
+            title = R.string.waring,
+            showCancelButton = false,
+          ) {
+            Text(
+              text = stringResource(id = R.string.invalid_download_location),
+              style = MaterialTheme.typography.titleMedium,
+            )
+          }
+          navigator.navigate(DownloadScreenDestination)
         }
-        setMD3Content {
-            val configuration = LocalConfiguration.current
-            val navDrawerState = rememberDrawerState(DrawerValue.Closed)
-            val sideSheetState = rememberDrawerState2(DrawerValue.Closed)
-            val snackbarState = remember { SnackbarHostState() }
-            val scope = rememberCoroutineScope()
-            val navController = rememberNavController()
-            val navigator = navController.rememberDestinationsNavigator()
-            fun closeDrawer(callback: () -> Unit = {}) = scope.launch {
-                navDrawerState.close()
-                callback()
-            }
+      }
 
-            suspend fun DialogState.checkDownloadLocation() {
-                val valid = withIOContext { downloadLocation.isDirectory }
-                if (!valid) {
-                    awaitConfirmationOrCancel(
-                        confirmText = R.string.open_settings,
-                        title = R.string.waring,
-                        showCancelButton = false,
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.invalid_download_location),
-                            style = MaterialTheme.typography.titleMedium,
+      val hasNetwork = remember { connectivityManager.activeNetwork != null }
+      if (!AppConfig.isBenchmark) {
+        val noNetwork = stringResource(R.string.no_network)
+        LaunchedEffect(Unit) {
+          runCatching { checkDownloadLocation() }
+          runCatching { checkAppLinkVerify() }
+          if (hasNetwork) {
+            runSuspendCatching {
+              withIOContext {
+                AppUpdater.checkForUpdate()?.let { showNewVersion(it) }
+              }
+            }
+              .onFailure {
+                snackbarState.showSnackbar(getString(R.string.update_failed, it.displayString()))
+              }
+          } else {
+            snackbarState.showSnackbar(noNetwork)
+          }
+        }
+      }
+
+      LaunchedEffect(Unit) {
+        Settings.enabledSecurity.valueFlow().collect {
+          window.setSecureScreen(it)
+        }
+      }
+      if (isAuthenticationSupported()) {
+        SecurityScreen(onError = { moveTaskToBack(true) }, modifier = Modifier.zIndex(1f))
+      }
+
+      val cannotParse = stringResource(R.string.error_cannot_parse_the_url)
+      LaunchedEffect(Unit) {
+        intentFlow.collect { intent ->
+          when (intent.action) {
+            Intent.ACTION_VIEW ->
+              with(navigator) {
+                val uri = intent.data ?: return@collect
+                when (uri.scheme) {
+                  SCHEME_FILE -> navToReader(uri.path!!)
+                  SCHEME_CONTENT -> navToReader(uri.toString())
+                  else -> {
+                    val url = uri.toString()
+                    if (!navWithUrl(url)) {
+                      val new = awaitInputText(initial = url, title = cannotParse)
+                      addTextToClipboard(new)
+                    }
+                  }
+                }
+              }
+            Intent.ACTION_SEND ->
+              with(navigator) {
+                val type = intent.type
+                if ("text/plain" == type) {
+                  val keyword = intent.getStringExtra(Intent.EXTRA_TEXT)
+                  if (keyword != null && !navWithUrl(keyword)) {
+                    navigate(ListUrlBuilder(keyword = keyword).asDst())
+                  }
+                } else if (type != null && type.startsWith("image/")) {
+                  val uri = intent.getParcelableExtraCompat<Uri>(Intent.EXTRA_STREAM)
+                  if (null != uri) {
+                    val hash = withIOContext { uri.toOkioPath().sha1() }
+                    navigate(
+                      ListUrlBuilder(
+                          mode = ListUrlBuilder.MODE_IMAGE_SEARCH,
+                          hash = hash,
                         )
-                    }
-                    navigator.navigate(DownloadScreenDestination)
+                        .asDst()
+                    )
+                  }
                 }
+              }
+            DownloadService.ACTION_START_DOWNLOADSCENE -> {
+              val args = intent.getBundleExtra(DownloadService.ACTION_START_DOWNLOADSCENE_ARGS)!!
+              if (
+                args.getString(DownloadService.KEY_ACTION) ==
+                  DownloadService.ACTION_CLEAR_DOWNLOAD_SERVICE
+              ) {
+                DownloadService.clear()
+              }
+              navigator.navigate(DownloadsScreenDestination)
             }
+          }
+        }
+      }
 
-            val hasNetwork = remember { connectivityManager.activeNetwork != null }
-            if (!AppConfig.isBenchmark) {
-                val noNetwork = stringResource(R.string.no_network)
-                LaunchedEffect(Unit) {
-                    runCatching { checkDownloadLocation() }
-                    runCatching { checkAppLinkVerify() }
-                    if (hasNetwork) {
-                        runSuspendCatching {
-                            withIOContext {
-                                AppUpdater.checkForUpdate()?.let { showNewVersion(it) }
-                            }
-                        }.onFailure {
-                            snackbarState.showSnackbar(getString(R.string.update_failed, it.displayString()))
-                        }
-                    } else {
-                        snackbarState.showSnackbar(noNetwork)
-                    }
+      LaunchedEffect(Unit) {
+        tipFlow.collectLatest {
+          snackbarState.showSnackbar(it)
+        }
+      }
+      val warning = stringResource(R.string.metered_network_warning)
+      val settings = stringResource(R.string.settings)
+      val checkMeteredNetwork by Settings.meteredNetworkWarning.collectAsState()
+      if (checkMeteredNetwork) {
+        LaunchedEffect(Unit) {
+          if (connectivityManager.isActiveNetworkMetered) {
+            if (isAtLeastQ) {
+              val ret = snackbarState.showSnackbar(warning, settings, true)
+              if (ret == SnackbarResult.ActionPerformed) {
+                val panelIntent =
+                  Intent(android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+                startActivity(panelIntent)
+              }
+            } else {
+              snackbarState.showSnackbar(warning)
+            }
+          }
+        }
+      }
+      val snackMessage = stringResource(R.string.clipboard_gallery_url_snack_message)
+      val snackAction = stringResource(R.string.clipboard_gallery_url_snack_action)
+      LifecycleResumeEffect(scope) {
+        val job = scope.launch {
+          delay(300)
+          val text = clipboardManager.getUrlFromClipboard(applicationContext)
+          val hashCode = text?.hashCode() ?: 0
+          if (text != null && hashCode != 0 && Settings.clipboardTextHashCode != hashCode) {
+            val result1 = GalleryDetailUrlParser.parse(text, false)
+            var launch: (() -> Unit)? = null
+            if (result1 != null) {
+              launch = { navigator.navigate(result1.gid asDstWith result1.token) }
+            }
+            val result2 = GalleryPageUrlParser.parse(text, false)
+            if (result2 != null) {
+              launch = {
+                navigator.navigate(
+                  ProgressScreenDestination(result2.gid, result2.pToken, result2.page)
+                )
+              }
+            }
+            launch?.let {
+              val ret = snackbarState.showSnackbar(snackMessage, snackAction, true)
+              if (ret == SnackbarResult.ActionPerformed) it()
+            }
+          }
+          Settings.clipboardTextHashCode = hashCode
+        }
+        onPauseOrDispose { job.cancel() }
+      }
+      val currentDestination by navController.currentDestinationAsState()
+      val drawerHandle = remember { mutableStateListOf<Long>() }
+      var snackbarFabPadding by remember { mutableStateOf(0.dp) }
+      val drawerEnabled = drawerHandle.isNotEmpty()
+      val density = LocalDensity.current
+      val adaptiveInfo = currentWindowAdaptiveInfoV2()
+      val needSignIn by Settings.needSignIn.collectAsState()
+      val launchPage by Settings.launchPage.collectAsState()
+      CompositionLocalProvider(
+        LocalNavDrawerState provides navDrawerState,
+        LocalSideSheetState provides sideSheetState,
+        LocalDrawerHandle provides drawerHandle,
+        LocalSnackBarHostState provides snackbarState,
+        LocalSnackBarFabPadding provides
+          animateDpAsState(snackbarFabPadding, label = "SnackbarFabPadding"),
+        LocalWindowSizeClass provides adaptiveInfo.windowSizeClass,
+      ) {
+        Scaffold(
+          snackbarHost = {
+            SnackbarHost(
+              hostState = snackbarState,
+              modifier =
+                Modifier.onGloballyPositioned {
+                  with(density) {
+                    snackbarFabPadding = it.size.height.toDp()
+                  }
+                },
+            )
+          }
+        ) {
+          var minOffset by remember {
+            mutableFloatStateOf(-with(density) { DrawerDefaults.MaximumDrawerWidth.toPx() })
+          }
+          ModalNavigationDrawer(
+            drawerContent = {
+              ModalDrawerSheet(
+                drawerState = navDrawerState,
+                modifier =
+                  Modifier.widthIn(max = (configuration.screenWidthDp - 56).dp).onSizeChanged {
+                    minOffset = -it.width.toFloat()
+                  },
+                windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Start),
+              ) {
+                val scrollState = rememberScrollState()
+                Column(
+                  modifier =
+                    Modifier.verticalScroll(scrollState)
+                      .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                ) {
+                  Image(
+                    painter = painterResource(id = com.hippo.ehviewer.R.drawable.sadpanda_low_poly),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    contentScale = ContentScale.FillWidth,
+                  )
+                  navItems.forEach { (direction, stringId, icon) ->
+                    NavigationDrawerItem(
+                      label = {
+                        Text(text = stringResource(id = stringId))
+                      },
+                      selected = currentDestination === direction,
+                      onClick = {
+                        navigator.navigate(direction)
+                        closeDrawer()
+                      },
+                      modifier = Modifier.padding(horizontal = 12.dp),
+                      icon = {
+                        Icon(imageVector = icon, contentDescription = null)
+                      },
+                    )
+                  }
                 }
+              }
+            },
+            drawerState = navDrawerState,
+            gesturesEnabled = drawerEnabled && sideSheetState.isClosed || navDrawerState.isOpen,
+          ) {
+            val radius by remember {
+              snapshotFlow {
+                val step = calculateFraction(minOffset, 0f, navDrawerState.currentOffset)
+                with(density) { lerp(0, 10, step).dp.toPx() }
+              }
             }
-
-            LaunchedEffect(Unit) {
-                Settings.enabledSecurity.valueFlow().collect {
-                    window.setSecureScreen(it)
-                }
-            }
-            if (isAuthenticationSupported()) {
-                SecurityScreen(onError = { moveTaskToBack(true) }, modifier = Modifier.zIndex(1f))
-            }
-
-            val cannotParse = stringResource(R.string.error_cannot_parse_the_url)
-            LaunchedEffect(Unit) {
-                intentFlow.collect { intent ->
-                    when (intent.action) {
-                        Intent.ACTION_VIEW -> with(navigator) {
-                            val uri = intent.data ?: return@collect
-                            when (uri.scheme) {
-                                SCHEME_FILE -> navToReader(uri.path!!)
-                                SCHEME_CONTENT -> navToReader(uri.toString())
-                                else -> {
-                                    val url = uri.toString()
-                                    if (!navWithUrl(url)) {
-                                        val new = awaitInputText(initial = url, title = cannotParse)
-                                        addTextToClipboard(new)
-                                    }
-                                }
-                            }
-                        }
-                        Intent.ACTION_SEND -> with(navigator) {
-                            val type = intent.type
-                            if ("text/plain" == type) {
-                                val keyword = intent.getStringExtra(Intent.EXTRA_TEXT)
-                                if (keyword != null && !navWithUrl(keyword)) {
-                                    navigate(ListUrlBuilder(keyword = keyword).asDst())
-                                }
-                            } else if (type != null && type.startsWith("image/")) {
-                                val uri = intent.getParcelableExtraCompat<Uri>(Intent.EXTRA_STREAM)
-                                if (null != uri) {
-                                    val hash = withIOContext { uri.toOkioPath().sha1() }
-                                    navigate(
-                                        ListUrlBuilder(
-                                            mode = ListUrlBuilder.MODE_IMAGE_SEARCH,
-                                            hash = hash,
-                                        ).asDst(),
-                                    )
-                                }
-                            }
-                        }
-                        DownloadService.ACTION_START_DOWNLOADSCENE -> {
-                            val args = intent.getBundleExtra(DownloadService.ACTION_START_DOWNLOADSCENE_ARGS)!!
-                            if (args.getString(DownloadService.KEY_ACTION) == DownloadService.ACTION_CLEAR_DOWNLOAD_SERVICE) {
-                                DownloadService.clear()
-                            }
-                            navigator.navigate(DownloadsScreenDestination)
-                        }
-                    }
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                tipFlow.collectLatest {
-                    snackbarState.showSnackbar(it)
-                }
-            }
-            val warning = stringResource(R.string.metered_network_warning)
-            val settings = stringResource(R.string.settings)
-            val checkMeteredNetwork by Settings.meteredNetworkWarning.collectAsState()
-            if (checkMeteredNetwork) {
-                LaunchedEffect(Unit) {
-                    if (connectivityManager.isActiveNetworkMetered) {
-                        if (isAtLeastQ) {
-                            val ret = snackbarState.showSnackbar(warning, settings, true)
-                            if (ret == SnackbarResult.ActionPerformed) {
-                                val panelIntent = Intent(android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
-                                startActivity(panelIntent)
-                            }
-                        } else {
-                            snackbarState.showSnackbar(warning)
-                        }
-                    }
-                }
-            }
-            val snackMessage = stringResource(R.string.clipboard_gallery_url_snack_message)
-            val snackAction = stringResource(R.string.clipboard_gallery_url_snack_action)
-            LifecycleResumeEffect(scope) {
-                val job = scope.launch {
-                    delay(300)
-                    val text = clipboardManager.getUrlFromClipboard(applicationContext)
-                    val hashCode = text?.hashCode() ?: 0
-                    if (text != null && hashCode != 0 && Settings.clipboardTextHashCode != hashCode) {
-                        val result1 = GalleryDetailUrlParser.parse(text, false)
-                        var launch: (() -> Unit)? = null
-                        if (result1 != null) {
-                            launch = { navigator.navigate(result1.gid asDstWith result1.token) }
-                        }
-                        val result2 = GalleryPageUrlParser.parse(text, false)
-                        if (result2 != null) {
-                            launch = { navigator.navigate(ProgressScreenDestination(result2.gid, result2.pToken, result2.page)) }
-                        }
-                        launch?.let {
-                            val ret = snackbarState.showSnackbar(snackMessage, snackAction, true)
-                            if (ret == SnackbarResult.ActionPerformed) it()
-                        }
-                    }
-                    Settings.clipboardTextHashCode = hashCode
-                }
-                onPauseOrDispose { job.cancel() }
-            }
-            val currentDestination by navController.currentDestinationAsState()
-            val drawerHandle = remember { mutableStateListOf<Long>() }
-            var snackbarFabPadding by remember { mutableStateOf(0.dp) }
-            val drawerEnabled = drawerHandle.isNotEmpty()
-            val density = LocalDensity.current
-            val adaptiveInfo = currentWindowAdaptiveInfoV2()
-            val needSignIn by Settings.needSignIn.collectAsState()
-            val launchPage by Settings.launchPage.collectAsState()
-            CompositionLocalProvider(
-                LocalNavDrawerState provides navDrawerState,
-                LocalSideSheetState provides sideSheetState,
-                LocalDrawerHandle provides drawerHandle,
-                LocalSnackBarHostState provides snackbarState,
-                LocalSnackBarFabPadding provides animateDpAsState(snackbarFabPadding, label = "SnackbarFabPadding"),
-                LocalWindowSizeClass provides adaptiveInfo.windowSizeClass,
+              .collectAsState(0f)
+            MutableSideSheet(
+              drawerState = sideSheetState,
+              modifier =
+                Modifier.graphicsLayer {
+                  if (radius != 0f) {
+                    renderEffect = BlurEffect(radius, radius, TileMode.Clamp)
+                    shape = RectangleShape
+                    clip = true
+                  }
+                },
+              enabled = drawerEnabled,
             ) {
-                Scaffold(
-                    snackbarHost = {
-                        SnackbarHost(
-                            hostState = snackbarState,
-                            modifier = Modifier.onGloballyPositioned {
-                                with(density) {
-                                    snackbarFabPadding = it.size.height.toDp()
-                                }
-                            },
-                        )
-                    },
-                ) {
-                    var minOffset by remember {
-                        mutableFloatStateOf(-with(density) { DrawerDefaults.MaximumDrawerWidth.toPx() })
+              SharedTransitionLayout {
+                CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                  val start =
+                    when {
+                      needSignIn -> SignInScreenDestination
+                      hasNetwork -> navItems[launchPage].first
+                      else -> DownloadsScreenDestination
                     }
-                    ModalNavigationDrawer(
-                        drawerContent = {
-                            ModalDrawerSheet(
-                                drawerState = navDrawerState,
-                                modifier = Modifier.widthIn(max = (configuration.screenWidthDp - 56).dp)
-                                    .onSizeChanged { minOffset = -it.width.toFloat() },
-                                windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Start),
-                            ) {
-                                val scrollState = rememberScrollState()
-                                Column(
-                                    modifier = Modifier.verticalScroll(scrollState)
-                                        .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = com.hippo.ehviewer.R.drawable.sadpanda_low_poly),
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                                        contentScale = ContentScale.FillWidth,
-                                    )
-                                    navItems.forEach { (direction, stringId, icon) ->
-                                        NavigationDrawerItem(
-                                            label = {
-                                                Text(text = stringResource(id = stringId))
-                                            },
-                                            selected = currentDestination === direction,
-                                            onClick = {
-                                                navigator.navigate(direction)
-                                                closeDrawer()
-                                            },
-                                            modifier = Modifier.padding(horizontal = 12.dp),
-                                            icon = {
-                                                Icon(imageVector = icon, contentDescription = null)
-                                            },
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        drawerState = navDrawerState,
-                        gesturesEnabled = drawerEnabled && sideSheetState.isClosed || navDrawerState.isOpen,
-                    ) {
-                        val radius by remember {
-                            snapshotFlow {
-                                val step = calculateFraction(minOffset, 0f, navDrawerState.currentOffset)
-                                with(density) { lerp(0, 10, step).dp.toPx() }
-                            }
-                        }.collectAsState(0f)
-                        MutableSideSheet(
-                            drawerState = sideSheetState,
-                            modifier = Modifier.graphicsLayer {
-                                if (radius != 0f) {
-                                    renderEffect = BlurEffect(radius, radius, TileMode.Clamp)
-                                    shape = RectangleShape
-                                    clip = true
-                                }
-                            },
-                            enabled = drawerEnabled,
-                        ) {
-                            SharedTransitionLayout {
-                                CompositionLocalProvider(LocalSharedTransitionScope provides this) {
-                                    val start = when {
-                                        needSignIn -> SignInScreenDestination
-                                        hasNetwork -> navItems[launchPage].first
-                                        else -> DownloadsScreenDestination
-                                    }
-                                    DestinationsNavHost(
-                                        navGraph = NavGraphs.root,
-                                        start = start,
-                                        defaultTransitions = rememberEhNavAnim(),
-                                        navController = navController,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                  DestinationsNavHost(
+                    navGraph = NavGraphs.root,
+                    start = start,
+                    defaultTransitions = rememberEhNavAnim(),
+                    navController = navController,
+                  )
                 }
+              }
             }
+          }
         }
-
-        if (savedInstanceState == null) {
-            if (intent.action != Intent.ACTION_MAIN) {
-                onNewIntent(intent)
-            }
-        }
+      }
     }
 
-    private suspend fun DialogState.checkAppLinkVerify() {
-        if (isAtLeastS && !Settings.appLinkVerifyTip) {
-            val manager = getSystemService(DomainVerificationManager::class.java)
-            val packageName = packageName
-            val userState = manager.getDomainVerificationUserState(packageName) ?: return
-            val hasUnverified = userState.hostToStateMap.values.any { it == DOMAIN_STATE_NONE }
-            if (hasUnverified) {
-                var checked by mutableStateOf(false)
-                awaitConfirmationOrCancel(
-                    confirmText = R.string.open_settings,
-                    title = R.string.app_link_not_verified_title,
-                    onCancelButtonClick = {
-                        if (checked) Settings.appLinkVerifyTip = true
-                    },
-                ) {
-                    Column {
-                        Text(
-                            text = stringResource(id = R.string.app_link_not_verified_message),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        LabeledCheckbox(
-                            modifier = Modifier.fillMaxWidth(),
-                            checked = checked,
-                            onCheckedChange = { checked = it },
-                            label = stringResource(id = R.string.dont_show_again),
-                            indication = null,
-                        )
-                    }
-                }
-                if (checked) {
-                    Settings.appLinkVerifyTip = true
-                }
-                try {
-                    val intent = Intent(
-                        android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
-                        "package:$packageName".toUri(),
-                    )
-                    startActivity(intent)
-                } catch (_: Throwable) {
-                    val intent = Intent(
-                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        "package:$packageName".toUri(),
-                    )
-                    startActivity(intent)
-                }
-            }
-        }
+    if (savedInstanceState == null) {
+      if (intent.action != Intent.ACTION_MAIN) {
+        onNewIntent(intent)
+      }
     }
+  }
 
-    fun showTip(message: String, useToast: Boolean = false) {
-        if (useToast || !tipFlow.tryEmit(message)) {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+  private suspend fun DialogState.checkAppLinkVerify() {
+    if (isAtLeastS && !Settings.appLinkVerifyTip) {
+      val manager = getSystemService(DomainVerificationManager::class.java)
+      val packageName = packageName
+      val userState = manager.getDomainVerificationUserState(packageName) ?: return
+      val hasUnverified = userState.hostToStateMap.values.any { it == DOMAIN_STATE_NONE }
+      if (hasUnverified) {
+        var checked by mutableStateOf(false)
+        awaitConfirmationOrCancel(
+          confirmText = R.string.open_settings,
+          title = R.string.app_link_not_verified_title,
+          onCancelButtonClick = {
+            if (checked) Settings.appLinkVerifyTip = true
+          },
+        ) {
+          Column {
+            Text(
+              text = stringResource(id = R.string.app_link_not_verified_message),
+              style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            LabeledCheckbox(
+              modifier = Modifier.fillMaxWidth(),
+              checked = checked,
+              onCheckedChange = { checked = it },
+              label = stringResource(id = R.string.dont_show_again),
+              indication = null,
+            )
+          }
         }
+        if (checked) {
+          Settings.appLinkVerifyTip = true
+        }
+        try {
+          val intent =
+            Intent(
+              android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
+              "package:$packageName".toUri(),
+            )
+          startActivity(intent)
+        } catch (_: Throwable) {
+          val intent =
+            Intent(
+              android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+              "package:$packageName".toUri(),
+            )
+          startActivity(intent)
+        }
+      }
     }
+  }
 
-    override fun onProvideAssistContent(outContent: AssistContent?) {
-        super.onProvideAssistContent(outContent)
-        shareUrl?.let { outContent?.webUri = it.toUri() }
+  fun showTip(message: String, useToast: Boolean = false) {
+    if (useToast || !tipFlow.tryEmit(message)) {
+      Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+  }
+
+  override fun onProvideAssistContent(outContent: AssistContent?) {
+    super.onProvideAssistContent(outContent)
+    shareUrl?.let { outContent?.webUri = it.toUri() }
+  }
 }
 
-val LocalNavDrawerState = compositionLocalOf<DrawerState> { error("CompositionLocal LocalNavDrawerState not present!") }
+val LocalNavDrawerState =
+  compositionLocalOf<DrawerState> { error("CompositionLocal LocalNavDrawerState not present!") }
 
-val LocalDrawerHandle = compositionLocalOf<SnapshotStateList<Long>> { error("CompositionLocal LocalDrawerHandle not present!") }
-val LocalSnackBarHostState = compositionLocalOf<SnackbarHostState> { error("CompositionLocal LocalSnackBarHostState not present!") }
-val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope> { error("CompositionLocal LocalSharedTransitionScope not present!") }
+val LocalDrawerHandle =
+  compositionLocalOf<SnapshotStateList<Long>> {
+    error("CompositionLocal LocalDrawerHandle not present!")
+  }
+val LocalSnackBarHostState =
+  compositionLocalOf<SnackbarHostState> {
+    error("CompositionLocal LocalSnackBarHostState not present!")
+  }
+val LocalSharedTransitionScope =
+  compositionLocalOf<SharedTransitionScope> {
+    error("CompositionLocal LocalSharedTransitionScope not present!")
+  }
 
 @Composable
 fun DrawerHandle(enabled: Boolean) {
-    if (enabled) {
-        val current = currentCompositeKeyHashCode
-        val handle = LocalDrawerHandle.current
-        DisposableEffect(current) {
-            handle.add(current)
-            onDispose {
-                handle.remove(current)
-            }
-        }
+  if (enabled) {
+    val current = currentCompositeKeyHashCode
+    val handle = LocalDrawerHandle.current
+    DisposableEffect(current) {
+      handle.add(current)
+      onDispose {
+        handle.remove(current)
+      }
     }
+  }
 }

@@ -35,6 +35,11 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.CoreBackend
+import com.hippo.ehviewer.bridge.CoreBackendSelector
+import com.hippo.ehviewer.bridge.archive.validateDownloadedCbzV1
+import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzDescriptorV1
+import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzWithSelectedWriter
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUtils.getSuitableTitle
 import com.hippo.ehviewer.client.ehRequest
@@ -53,306 +58,356 @@ import com.hippo.ehviewer.util.sha1
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.request
+import java.util.Locale
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import moe.tarsin.coroutines.runSuspendCatching
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import splitties.init.appCtx
 
 class SpiderDen(val info: GalleryInfo) {
-    private val gid = info.gid
-    var downloadDir: Path? = null
-        private set
+  private val gid = info.gid
+  var downloadDir: Path? = null
+    private set
 
-    private var tempDownloadDir: Path? = null
-    private val saveAsCbz = Settings.saveAsCbz.value
-    private val archiveName = "$gid.cbz"
+  private var tempDownloadDir: Path? = null
+  private val saveAsCbz = Settings.saveAsCbz.value
+  private val archiveName = "$gid.cbz"
 
-    private val lock = ReentrantReadWriteLock()
+  private val lock = ReentrantReadWriteLock()
 
-    // Search in both directories to maintain compatibility
-    private val fileCache by lazy {
-        listOfNotNull(tempDownloadDir, downloadDir).map(Path::list).flatten().associateBy { it.name } as MutableMap
+  // Search in both directories to maintain compatibility
+  private val fileCache by lazy {
+    listOfNotNull(tempDownloadDir, downloadDir).map(Path::list).flatten().associateBy { it.name }
+      as MutableMap
+  }
+
+  private val imageDir
+    get() = tempDownloadDir.takeIf { saveAsCbz } ?: downloadDir
+
+  constructor(info: GalleryInfo, dirname: String) : this(info) {
+    downloadDir = downloadLocation / dirname
+  }
+
+  @Volatile
+  @SpiderQueen.Mode
+  var mode = SpiderQueen.MODE_READ
+    private set
+
+  suspend fun setMode(value: Int) {
+    mode = value
+    if (mode == SpiderQueen.MODE_DOWNLOAD) {
+      if (downloadDir == null) {
+        downloadDir = getGalleryDownloadDir(info).apply { mkdirs() }
+      }
+      if (saveAsCbz && tempDownloadDir == null) {
+        tempDownloadDir = info.tempDownloadDir!!.apply { mkdirs() }
+      }
+    }
+  }
+
+  private fun containInCache(index: Int): Boolean {
+    val key = getImageKey(gid, index)
+    return sCache.read(key) {} != null
+  }
+
+  private fun findImageFile(index: Int, temp: Boolean = false) = lock.read {
+    val head = perFilename(index)
+    fileCache.entries
+      .firstOrNull { (name) -> name.startsWith(head) && temp == name.endsWith(TEMP_SUFFIX) }
+      ?.value
+  }
+
+  private fun containInDownloadDir(index: Int): Boolean = findImageFile(index) != null
+
+  private fun copyFromCacheToDownloadDir(index: Int): Boolean {
+    val dir = imageDir ?: return false
+    val key = getImageKey(gid, index)
+    return runCatching {
+        sCache.read(key) {
+          val extension = metadata.toFile().readText()
+          val file = dir.findDownloadFileForIndex(index, extension)
+          data sendTo file
+        } != null
+      }
+      .onFailure {
+        logcat(it)
+      }
+      .getOrDefault(false)
+  }
+
+  operator fun contains(index: Int): Boolean =
+    when (mode) {
+      SpiderQueen.MODE_READ -> {
+        containInCache(index) || containInDownloadDir(index)
+      }
+      SpiderQueen.MODE_DOWNLOAD -> {
+        containInDownloadDir(index) || copyFromCacheToDownloadDir(index)
+      }
+      else -> {
+        false
+      }
     }
 
-    private val imageDir
-        get() = tempDownloadDir.takeIf { saveAsCbz } ?: downloadDir
+  private fun removeFromCache(index: Int): Boolean {
+    val key = getImageKey(gid, index)
+    return sCache.remove(key)
+  }
 
-    constructor(info: GalleryInfo, dirname: String) : this(info) {
-        downloadDir = downloadLocation / dirname
+  private fun removeTempFile(index: Int) =
+    findImageFile(index, temp = true)?.let { file ->
+      file.delete()
+      lock.write { fileCache.remove(file.name) }
     }
 
-    @Volatile
-    @SpiderQueen.Mode
-    var mode = SpiderQueen.MODE_READ
-        private set
+  fun removeIntermediateFiles(index: Int) {
+    removeFromCache(index)
+    removeTempFile(index)
+  }
 
-    suspend fun setMode(value: Int) {
-        mode = value
-        if (mode == SpiderQueen.MODE_DOWNLOAD) {
-            if (downloadDir == null) {
-                downloadDir = getGalleryDownloadDir(info).apply { mkdirs() }
-            }
-            if (saveAsCbz && tempDownloadDir == null) {
-                tempDownloadDir = info.tempDownloadDir!!.apply { mkdirs() }
-            }
-        }
+  fun clearCache() {
+    repeat(info.pages, ::removeFromCache)
+  }
+
+  private fun Path.findDownloadFileForIndex(index: Int, extension: String) =
+    with(lock) {
+      val name = perFilename(index, extension)
+      read { fileCache[name] } ?: resolve(name).also { write { fileCache[name] = it } }
     }
 
-    private fun containInCache(index: Int): Boolean {
-        val key = getImageKey(gid, index)
-        return sCache.read(key) {} != null
-    }
-
-    private fun findImageFile(index: Int, temp: Boolean = false) = lock.read {
-        val head = perFilename(index)
-        fileCache.entries.firstOrNull { (name) -> name.startsWith(head) && temp == name.endsWith(TEMP_SUFFIX) }?.value
-    }
-
-    private fun containInDownloadDir(index: Int): Boolean = findImageFile(index) != null
-
-    private fun copyFromCacheToDownloadDir(index: Int): Boolean {
-        val dir = imageDir ?: return false
-        val key = getImageKey(gid, index)
-        return runCatching {
-            sCache.read(key) {
-                val extension = metadata.toFile().readText()
-                val file = dir.findDownloadFileForIndex(index, extension)
-                data sendTo file
-            } != null
-        }.onFailure {
-            logcat(it)
-        }.getOrDefault(false)
-    }
-
-    operator fun contains(index: Int): Boolean = when (mode) {
-        SpiderQueen.MODE_READ -> {
-            containInCache(index) || containInDownloadDir(index)
-        }
-        SpiderQueen.MODE_DOWNLOAD -> {
-            containInDownloadDir(index) || copyFromCacheToDownloadDir(index)
-        }
-        else -> {
-            false
-        }
-    }
-
-    private fun removeFromCache(index: Int): Boolean {
-        val key = getImageKey(gid, index)
-        return sCache.remove(key)
-    }
-
-    private fun removeTempFile(index: Int) = findImageFile(index, temp = true)?.let { file ->
-        file.delete()
-        lock.write { fileCache.remove(file.name) }
-    }
-
-    fun removeIntermediateFiles(index: Int) {
-        removeFromCache(index)
-        removeTempFile(index)
-    }
-
-    fun clearCache() {
-        repeat(info.pages, ::removeFromCache)
-    }
-
-    private fun Path.findDownloadFileForIndex(index: Int, extension: String) = with(lock) {
-        val name = perFilename(index, extension)
-        read { fileCache[name] } ?: resolve(name).also { write { fileCache[name] = it } }
-    }
-
-    suspend fun makeHttpCallAndSaveImage(
-        index: Int,
-        url: String,
-        referer: String?,
-        notifyProgress: (Long, Long, Int) -> Unit,
-    ) = timeoutBySpeed(
-        url,
-        { ehRequest(url, referer, builder = it) },
-        notifyProgress,
-        { resp -> check(saveFromHttpResponse(index, resp)) },
+  suspend fun makeHttpCallAndSaveImage(
+    index: Int,
+    url: String,
+    referer: String?,
+    notifyProgress: (Long, Long, Int) -> Unit,
+  ) =
+    timeoutBySpeed(
+      url,
+      { ehRequest(url, referer, builder = it) },
+      notifyProgress,
+      { resp -> check(saveFromHttpResponse(index, resp)) },
     )
 
-    private suspend inline fun saveResponseMeta(
-        index: Int,
-        ext: String,
-        crossinline fops: suspend (Path) -> Unit,
-    ): Boolean {
-        imageDir?.run {
-            val tempFile = findDownloadFileForIndex(index, "$ext$TEMP_SUFFIX")
-            fops(tempFile)
-            val file = resolve(tempFile.name.removeSuffix(TEMP_SUFFIX))
-            file.delete()
-            lock.write { fileCache.remove(file.name) }
-            tempFile moveTo file
-            lock.write {
-                fileCache.remove(tempFile.name)
-                fileCache[file.name] = file
-            }
-            return true
-        }
+  private suspend inline fun saveResponseMeta(
+    index: Int,
+    ext: String,
+    crossinline fops: suspend (Path) -> Unit,
+  ): Boolean {
+    imageDir?.run {
+      val tempFile = findDownloadFileForIndex(index, "$ext$TEMP_SUFFIX")
+      fops(tempFile)
+      val file = resolve(tempFile.name.removeSuffix(TEMP_SUFFIX))
+      file.delete()
+      lock.write { fileCache.remove(file.name) }
+      tempFile moveTo file
+      lock.write {
+        fileCache.remove(tempFile.name)
+        fileCache[file.name] = file
+      }
+      return true
+    }
 
-        // Read Mode, allow save to cache
-        if (mode == SpiderQueen.MODE_READ) {
-            val key = getImageKey(gid, index)
-            return sCache.suspendEdit(key) {
-                metadata.toFile().writeText(ext)
-                fops(data)
-            }
+    // Read Mode, allow save to cache
+    if (mode == SpiderQueen.MODE_READ) {
+      val key = getImageKey(gid, index)
+      return sCache.suspendEdit(key) {
+        metadata.toFile().writeText(ext)
+        fops(data)
+      }
+    }
+    return false
+  }
+
+  private suspend fun saveFromHttpResponse(index: Int, response: HttpResponse): Boolean {
+    val url = response.request.url.toString()
+    val extension = MimeTypeMap.getFileExtensionFromUrl(url).ifEmpty { "jpg" }
+    return saveResponseMeta(index, extension) { outFile ->
+      response.bodyAsChannel().copyTo(outFile)
+      FileHashRegex.find(url)?.let {
+        val expected = it.groupValues[1]
+        val actual = outFile.sha1()
+        check(expected == actual) {
+          "File hash mismatch: expected $expected, but got $actual\nURL: $url"
         }
+      }
+    }
+  }
+
+  fun saveToPath(index: Int, file: Path): Boolean {
+    val key = getImageKey(gid, index)
+
+    // Read from diskCache first
+    sCache.read(key) {
+      runCatching {
+        data sendTo file
+        return true
+      }
+        .onFailure {
+          logcat(it)
+          return false
+        }
+    }
+
+    // Read from download dir
+    runCatching {
+      requireNotNull(findImageFile(index)) sendTo file
+    }
+      .onFailure {
+        logcat(it)
         return false
-    }
+      }
+      .onSuccess {
+        return true
+      }
+    return false
+  }
 
-    private suspend fun saveFromHttpResponse(index: Int, response: HttpResponse): Boolean {
-        val url = response.request.url.toString()
-        val extension = MimeTypeMap.getFileExtensionFromUrl(url).ifEmpty { "jpg" }
-        return saveResponseMeta(index, extension) { outFile ->
-            response.bodyAsChannel().copyTo(outFile)
-            FileHashRegex.find(url)?.let {
-                val expected = it.groupValues[1]
-                val actual = outFile.sha1()
-                check(expected == actual) { "File hash mismatch: expected $expected, but got $actual\nURL: $url" }
-            }
+  fun getExtension(index: Int): String? {
+    val key = getImageKey(gid, index)
+    return sCache.read(key) { metadata.toFile().readText() }
+      ?: findImageFile(index)?.name.let { FileUtils.getExtensionFromFilename(it) }
+  }
+
+  fun getImageSource(index: Int): PathSource {
+    if (mode == SpiderQueen.MODE_READ) {
+      val key = getImageKey(gid, index)
+      val snapshot = sCache.openSnapshot(key)
+      if (snapshot != null) {
+        return object : PathSource, AutoCloseable by snapshot {
+          override val source = snapshot.data
+          override val type by lazy {
+            snapshot.metadata.toFile().readText()
+          }
         }
+      }
     }
+    val source = requireNotNull(findImageFile(index)) { "Source $index not found!" }
+    return object : PathSource {
+      override val source = source
+      override val type by lazy {
+        FileUtils.getExtensionFromFilename(source.name)!!
+      }
 
-    fun saveToPath(index: Int, file: Path): Boolean {
-        val key = getImageKey(gid, index)
-
-        // Read from diskCache first
-        sCache.read(key) {
-            runCatching {
-                data sendTo file
-                return true
-            }.onFailure {
-                logcat(it)
-                return false
-            }
-        }
-
-        // Read from download dir
-        runCatching {
-            requireNotNull(findImageFile(index)) sendTo file
-        }.onFailure {
-            logcat(it)
-            return false
-        }.onSuccess {
-            return true
-        }
-        return false
+      override fun close() = Unit
     }
+  }
 
-    fun getExtension(index: Int): String? {
-        val key = getImageKey(gid, index)
-        return sCache.read(key) { metadata.toFile().readText() }
-            ?: findImageFile(index)?.name.let { FileUtils.getExtensionFromFilename(it) }
-    }
-
-    fun getImageSource(index: Int): PathSource {
-        if (mode == SpiderQueen.MODE_READ) {
-            val key = getImageKey(gid, index)
-            val snapshot = sCache.openSnapshot(key)
-            if (snapshot != null) {
-                return object : PathSource, AutoCloseable by snapshot {
-                    override val source = snapshot.data
-                    override val type by lazy {
-                        snapshot.metadata.toFile().readText()
-                    }
-                }
-            }
-        }
-        val source = requireNotNull(findImageFile(index)) { "Source $index not found!" }
-        return object : PathSource {
-            override val source = source
-            override val type by lazy {
-                FileUtils.getExtensionFromFilename(source.name)!!
-            }
-
-            override fun close() = Unit
-        }
-    }
-
-    suspend fun archive() = saveAsCbz && downloadDir?.run {
+  suspend fun archive() =
+    saveAsCbz &&
+      downloadDir?.run {
         resolve(archiveName).let { file ->
-            runCatching {
-                archiveTo(file)
-            }.onFailure {
-                file.delete()
-                logcat(it)
-            }.isFailure
-        }
-    } == true
-
-    // Postpone this to `SpiderQueen.stop` because files may still be in use by reader
-    suspend fun postArchive(): Boolean {
-        val dir = downloadDir
-        val archived = saveAsCbz && dir?.find(archiveName) != null
-        if (archived) {
-            dir.list().parMap(concurrency = 10) {
-                if (it.name.matches(FileNameRegex)) {
-                    it.delete()
-                }
+          val backend = CoreBackendSelector.snapshot()
+          var completed = false
+          try {
+            runSuspendCatching {
+              archiveTo(file, backend)
+              if (backend == CoreBackend.RUST) {
+                validateDownloadedCbzV1(file, info.pages)
+              }
             }
-            (dir / SpiderQueen.SPIDER_INFO_FILENAME).delete()
-            tempDownloadDir?.delete()
-        }
-        return archived
-    }
-
-    suspend fun exportAsCbz(file: Path) = downloadDir!!.find(archiveName)?.sendTo(file) ?: archiveTo(file)
-
-    private suspend fun archiveTo(file: Path) = resourceScope {
-        val comicInfo = closeable {
-            val f = downloadDir!! / COMIC_INFO_FILE
-            if (!f.exists()) {
-                writeComicInfo()
-            } else if (info.pages == 0) {
-                info.pages = readComicInfo(f)!!.pageCount
+              .onSuccess { completed = true }
+              .onFailure { logcat(it) }
+              .isFailure
+          } finally {
+            if (!completed) {
+              runCatching { file.delete() }.onFailure { logcat(it) }
             }
-            f.openFileDescriptor("r")
+          }
         }
-        val pages = info.pages
-        val (fdBatch, names) = (0 until pages).parMap { idx ->
-            val f = autoCloseable { getImageSource(idx) }
-            closeable { f.source.openFileDescriptor("r") }.fd to perFilename(idx, f.type)
-        }.run { plus(comicInfo.fd to COMIC_INFO_FILE) }.unzip()
-        val arcFd = closeable { file.openFileDescriptor("rw") }
-        archiveFdBatch(fdBatch.toIntArray(), names.toTypedArray(), arcFd.fd, pages + 1)
-    }
+      } == true
 
-    suspend fun initDownloadDirIfExist() {
-        downloadDir = getGalleryDownloadDir(info).takeIf { it.isDirectory }
-        tempDownloadDir = info.tempDownloadDir?.takeIf { it.isDirectory }
-    }
-
-    suspend fun initDownloadDir() {
-        downloadDir = getGalleryDownloadDir(info).apply { mkdirs() }
-    }
-
-    suspend fun writeComicInfo(fetchMetadata: Boolean = true) {
-        downloadDir?.run {
-            resolve(COMIC_INFO_FILE).also {
-                if (info !is GalleryDetail && fetchMetadata) {
-                    EhEngine.fillGalleryListByApi(listOf(info))
-                }
-                info.getComicInfo().apply {
-                    writeComicInfo(this, it)
-                    DownloadManager.getDownloadInfo(gid)?.let { downloadInfo ->
-                        downloadInfo.artistInfoList = DownloadArtist.from(gid, penciller.orEmpty())
-                        EhDB.putDownloadArtist(gid, downloadInfo.artistInfoList)
-                    }
-                }
-            }
+  // Postpone this to `SpiderQueen.stop` because files may still be in use by reader
+  suspend fun postArchive(): Boolean {
+    val dir = downloadDir
+    val archived = saveAsCbz && dir?.find(archiveName) != null
+    if (archived) {
+      dir.list().parMap(concurrency = 10) {
+        if (it.name.matches(FileNameRegex)) {
+          it.delete()
         }
+      }
+      (dir / SpiderQueen.SPIDER_INFO_FILENAME).delete()
+      tempDownloadDir?.delete()
     }
+    return archived
+  }
+
+  suspend fun exportAsCbz(file: Path) =
+    downloadDir!!.find(archiveName)?.sendTo(file) ?: archiveTo(file, CoreBackendSelector.snapshot())
+
+  private suspend fun archiveTo(file: Path, backend: CoreBackend) = resourceScope {
+    val comicInfo = closeable {
+      val f = downloadDir!! / COMIC_INFO_FILE
+      if (!f.exists()) {
+        writeComicInfo()
+      } else if (info.pages == 0) {
+        info.pages = readComicInfo(f)!!.pageCount
+      }
+      f.openFileDescriptor("r")
+    }
+    val pages = info.pages
+    val (fdBatch, names) =
+      (0 until pages)
+        .parMap { idx ->
+          val f = autoCloseable { getImageSource(idx) }
+          closeable { f.source.openFileDescriptor("r") }.fd to
+            perFilename(idx, f.type.lowercase(Locale.ROOT))
+        }
+        .run { plus(comicInfo.fd to COMIC_INFO_FILE) }
+        .unzip()
+    val arcFd = closeable { file.openFileDescriptor("rwt") }
+    val sourceDescriptors = fdBatch.toIntArray()
+    val entryNames = names.toTypedArray()
+    writeGeneratedCbzWithSelectedWriter(
+      useRustWriter = backend == CoreBackend.RUST,
+      rustWrite = {
+        writeGeneratedCbzDescriptorV1(sourceDescriptors, entryNames, arcFd.fd, pages)
+      },
+      legacyWrite = { archiveFdBatch(sourceDescriptors, entryNames, arcFd.fd, pages + 1) },
+    )
+  }
+
+  suspend fun initDownloadDirIfExist() {
+    downloadDir = getGalleryDownloadDir(info).takeIf { it.isDirectory }
+    tempDownloadDir = info.tempDownloadDir?.takeIf { it.isDirectory }
+  }
+
+  suspend fun initDownloadDir() {
+    downloadDir = getGalleryDownloadDir(info).apply { mkdirs() }
+  }
+
+  suspend fun writeComicInfo(fetchMetadata: Boolean = true) {
+    downloadDir?.run {
+      resolve(COMIC_INFO_FILE).also {
+        if (info !is GalleryDetail && fetchMetadata) {
+          EhEngine.fillGalleryListByApi(listOf(info))
+        }
+        info.getComicInfo().apply {
+          writeComicInfo(this, it)
+          DownloadManager.getDownloadInfo(gid)?.let { downloadInfo ->
+            downloadInfo.artistInfoList = DownloadArtist.from(gid, penciller.orEmpty())
+            EhDB.putDownloadArtist(gid, downloadInfo.artistInfoList)
+          }
+        }
+      }
+    }
+  }
 }
 
 private val sCache by lazy {
-    diskCache {
-        directory(appCtx.cacheDir.toOkioPath() / "image_cache")
-        maxSizeBytes(Settings.readCacheSize.value.coerceIn(320, 5120).toLong() * 1024 * 1024)
-    }
+  diskCache {
+    directory(appCtx.cacheDir.toOkioPath() / "image_cache")
+    maxSizeBytes(
+      com.hippo.ehviewer.bridge
+        .resolveReadCacheSize(
+          com.hippo.ehviewer.bridge.ReadCacheSizeRequest.create(Settings.readCacheSize.value),
+          com.hippo.ehviewer.bridge.CoreBackendSelector.snapshot(),
+        )
+        .toLong() * 1024 * 1024
+    )
+  }
 }
 private const val TEMP_SUFFIX = ".tmp"
 private val FileNameRegex = Regex("^\\d{8}\\.\\w{3,4}")
@@ -361,16 +416,16 @@ private val FileHashRegex = Regex("/h/([0-9a-f]{40})")
 fun perFilename(index: Int, extension: String = ""): String = "%08d.%s".format(index + 1, extension)
 
 suspend fun GalleryInfo.downloadDirname(): String {
-    var dirname = EhDB.getDownloadDirname(gid)
-    if (dirname == null) {
-        val title = getSuitableTitle(this)
-        dirname = FileUtils.sanitizeFilename("$gid-$title")
-        EhDB.putDownloadDirname(gid, dirname)
-    }
-    return dirname
+  var dirname = EhDB.getDownloadDirname(gid)
+  if (dirname == null) {
+    val title = getSuitableTitle(this)
+    dirname = FileUtils.sanitizeFilename("$gid-$title")
+    EhDB.putDownloadDirname(gid, dirname)
+  }
+  return dirname
 }
 
 suspend fun getGalleryDownloadDir(info: GalleryInfo): Path {
-    val dirname = info.downloadDirname()
-    return downloadLocation / dirname
+  val dirname = info.downloadDirname()
+  return downloadLocation / dirname
 }

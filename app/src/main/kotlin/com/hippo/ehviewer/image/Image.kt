@@ -61,110 +61,134 @@ import okio.Path
 import splitties.init.appCtx
 
 class Image private constructor(image: CoilImage, private val src: ImageSource) {
-    val refcnt = AtomicInt(1)
+  val refcnt = AtomicInt(1)
 
-    fun pin() = refcnt.updateAndFetch { if (it != 0) it + 1 else 0 } != 0
+  fun pin() = refcnt.updateAndFetch { if (it != 0) it + 1 else 0 } != 0
 
-    fun unpin() = (refcnt.decrementAndFetch() == 0).also { if (it) recycle() }
+  fun unpin() = (refcnt.decrementAndFetch() == 0).also { if (it) recycle() }
 
-    val intrinsicSize = with(image) { IntSize(width, height) }
-    val allocationSize = image.size
-    val hasQrCode = when (image) {
-        is BitmapImageWithExtraInfo -> image.hasQrCode
-        else -> false
+  val intrinsicSize = with(image) { IntSize(width, height) }
+  val allocationSize = image.size
+  val hasQrCode =
+    when (image) {
+      is BitmapImageWithExtraInfo -> image.hasQrCode
+      else -> false
     }
 
-    var innerImage: CoilImage? = when (image) {
-        is BitmapImageWithExtraInfo -> image.image
-        else -> image
+  var innerImage: CoilImage? =
+    when (image) {
+      is BitmapImageWithExtraInfo -> image.image
+      else -> image
     }
 
-    private fun recycle() {
-        when (val image = innerImage!!) {
-            is DrawableImage -> {
-                (image.drawable as? AnimatedWebPDrawable)?.dispose()
-                src.close()
-            }
-            is BitmapImage -> image.bitmap.recycle()
+  private fun recycle() {
+    when (val image = innerImage!!) {
+      is DrawableImage -> {
+        (image.drawable as? AnimatedWebPDrawable)?.dispose()
+        src.close()
+      }
+      is BitmapImage -> image.bitmap.recycle()
+    }
+    innerImage = null
+  }
+
+  companion object {
+    private val sizeResolver =
+      with(appCtx.resources.displayMetrics) {
+        val targetSize = minOf(widthPixels, heightPixels) * 4 / 3
+        SizeResolver(Size(targetSize, targetSize))
+      }
+
+    private suspend fun Either<ByteBufferSource, PathSource>.decodeCoil(
+      checkExtraneousAds: Boolean
+    ): CoilImage {
+      val request =
+        with(appCtx) {
+          imageRequest {
+            onLeft { data(it.source) }
+            onRight { data(it.source.toUri()) }
+            size(sizeResolver)
+            scale(Scale.FILL)
+            precision(Precision.INEXACT)
+            maxBitmapSize(Size.ORIGINAL)
+            allowHardware(false)
+            hardwareThreshold(Settings.hardwareBitmapThreshold.value)
+            maybeCropBorder(Settings.cropBorder.value)
+            detectQrCode(checkExtraneousAds)
+            memoryCachePolicy(CachePolicy.DISABLED)
+          }
         }
-        innerImage = null
+      return when (val result = request.execute()) {
+        is SuccessResult -> result.image
+        is ErrorResult -> throw result.throwable
+      }
     }
 
-    companion object {
-        private val sizeResolver = with(appCtx.resources.displayMetrics) {
-            val targetSize = minOf(widthPixels, heightPixels) * 4 / 3
-            SizeResolver(Size(targetSize, targetSize))
-        }
-
-        private suspend fun Either<ByteBufferSource, PathSource>.decodeCoil(checkExtraneousAds: Boolean): CoilImage {
-            val request = with(appCtx) {
-                imageRequest {
-                    onLeft { data(it.source) }
-                    onRight { data(it.source.toUri()) }
-                    size(sizeResolver)
-                    scale(Scale.FILL)
-                    precision(Precision.INEXACT)
-                    maxBitmapSize(Size.ORIGINAL)
-                    allowHardware(false)
-                    hardwareThreshold(Settings.hardwareBitmapThreshold.value)
-                    maybeCropBorder(Settings.cropBorder.value)
-                    detectQrCode(checkExtraneousAds)
-                    memoryCachePolicy(CachePolicy.DISABLED)
+    suspend fun decode(src: ImageSource, checkExtraneousAds: Boolean = false): Image {
+      val image =
+        when (src) {
+          is PathSource -> {
+            if (isAtLeastP && !isAtLeastU) {
+              src.source.openFileDescriptor("rw").use {
+                val fd = it.fd
+                if (isGif(fd)) {
+                  return bracketCase(
+                    { mmap(fd)!! },
+                    { buffer ->
+                      decode(
+                        byteBufferSource(buffer) { munmap(buffer).also { src.close() } },
+                        checkExtraneousAds,
+                      )
+                    },
+                    { buffer, case -> if (case !is ExitCase.Completed) munmap(buffer) },
+                  )
                 }
+              }
             }
-            return when (val result = request.execute()) {
-                is SuccessResult -> result.image
-                is ErrorResult -> throw result.throwable
+            src.right().decodeCoil(checkExtraneousAds)
+          }
+          is ByteBufferSource -> {
+            if (isAtLeastP && !isAtLeastU) {
+              rewriteGifSource(src.source)
             }
+            src.left().decodeCoil(checkExtraneousAds)
+          }
         }
-
-        suspend fun decode(src: ImageSource, checkExtraneousAds: Boolean = false): Image {
-            val image = when (src) {
-                is PathSource -> {
-                    if (isAtLeastP && !isAtLeastU) {
-                        src.source.openFileDescriptor("rw").use {
-                            val fd = it.fd
-                            if (isGif(fd)) {
-                                return bracketCase(
-                                    { mmap(fd)!! },
-                                    { buffer -> decode(byteBufferSource(buffer) { munmap(buffer).also { src.close() } }, checkExtraneousAds) },
-                                    { buffer, case -> if (case !is ExitCase.Completed) munmap(buffer) },
-                                )
-                            }
-                        }
-                    }
-                    src.right().decodeCoil(checkExtraneousAds)
-                }
-                is ByteBufferSource -> {
-                    if (isAtLeastP && !isAtLeastU) {
-                        rewriteGifSource(src.source)
-                    }
-                    src.left().decodeCoil(checkExtraneousAds)
-                }
-            }
-            return Image(image, src).apply {
-                if (innerImage is BitmapImage) src.close()
-            }
-        }
+      return Image(image, src).apply {
+        if (innerImage is BitmapImage) src.close()
+      }
     }
+  }
 }
 
 sealed interface ImageSource : AutoCloseable
 
 interface PathSource : ImageSource {
-    val source: Path
-    val type: String
+  val source: Path
+  val type: String
 }
 
 interface ByteBufferSource : ImageSource {
-    val source: ByteBuffer
+  val source: ByteBuffer
 }
 
-inline fun byteBufferSource(buffer: ByteBuffer, crossinline release: () -> Unit) = object : ByteBufferSource {
+inline fun byteBufferSource(buffer: ByteBuffer, crossinline release: () -> Unit) =
+  object : ByteBufferSource {
     override val source = buffer
-    override fun close() = release()
-}
 
+    override fun close() = release()
+  }
+
+/** Returns the content bounds detected by the host-tested Rust border algorithm. */
 external fun detectBorder(bitmap: Bitmap): IntArray
+
+/** Returns whether the host-tested Rust finder-pattern algorithm detects a QR code. */
 external fun hasQrCode(bitmap: Bitmap): Boolean
+
+/**
+ * Copies the [dst] sized region of [src] at ([x], [y]) into the hardware-buffer origin.
+ *
+ * Source and destination packed-pixel formats must match. Invalid coordinates, layouts, formats, or
+ * native locks throw a contained runtime exception so callers can use their software fallback.
+ */
 external fun copyBitmapToAHB(src: Bitmap, dst: HardwareBuffer, x: Int, y: Int)

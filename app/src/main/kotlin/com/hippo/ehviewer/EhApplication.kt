@@ -22,6 +22,9 @@ import android.os.StrictMode
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.runtime.Composer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.coroutineScope
@@ -49,6 +52,7 @@ import com.ehviewer.core.util.launchIO
 import com.ehviewer.core.util.logcat
 import com.ehviewer.core.util.withUIContext
 import com.hippo.ehviewer.client.EhTagDatabase
+import com.hippo.ehviewer.client.session.sessionController
 import com.hippo.ehviewer.coil.AnimatedWebPDecoder
 import com.hippo.ehviewer.coil.CropBorderInterceptor
 import com.hippo.ehviewer.coil.DetectBorderInterceptor
@@ -76,6 +80,7 @@ import com.hippo.ehviewer.util.FileUtils
 import com.hippo.ehviewer.util.OSUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import logcat.AndroidLogcatLogger
@@ -89,162 +94,175 @@ private val lifecycle = ProcessLifecycleOwner.get().lifecycle
 private val lifecycleScope = lifecycle.coroutineScope
 
 class EhApplication : Application(), SingletonImageLoader.Factory {
-    override fun onCreate() = with(lifecycleScope) {
-        initSETConnection()
-        // Initialize Settings on first access
-        launchIO {
-            val mode = Settings.theme.value
-            if (!isAtLeastS) {
-                withUIContext {
-                    AppCompatDelegate.setDefaultNightMode(mode)
-                }
-            }
-            LogcatLogger.loggers += AndroidLogcatLogger(LogPriority.VERBOSE)
-            Settings.saveCrashLog.valueFlow().collect {
-                if (it) {
-                    LogcatLogger.install()
-                } else {
-                    LogcatLogger.uninstall()
-                }
-            }
+  override fun onCreate() =
+    with(lifecycleScope) {
+      initSETConnection()
+      // Initialize Settings on first access
+      launchIO {
+        val mode = Settings.theme.value
+        if (!isAtLeastS) {
+          withUIContext {
+            AppCompatDelegate.setDefaultNightMode(mode)
+          }
         }
-        CrashHandler.install()
-        super.onCreate()
-        System.loadLibrary("ehviewer")
+        LogcatLogger.loggers += AndroidLogcatLogger(LogPriority.VERBOSE)
+        Settings.saveCrashLog.valueFlow().collect {
+          if (it) {
+            LogcatLogger.install()
+          } else {
+            LogcatLogger.uninstall()
+          }
+        }
+      }
+      CrashHandler.install()
+      super.onCreate()
+      System.loadLibrary("ehviewer")
+      launch {
+        FavouriteStatusRouter.collect { info ->
+          detailCache[info.gid]?.apply {
+            favoriteSlot = info.favoriteSlot
+            favoriteName = info.favoriteName
+            favoriteNote = info.favoriteNote
+          }
+        }
+      }
+      launchIO {
+        try {
+          sessionController.restore()
+        } catch (error: CancellationException) {
+          throw error
+        } catch (error: Exception) {
+          logcat("EhApplication") { "Session restore failed: ${error::class.simpleName}" }
+        }
+        EhTagDatabase.launchUpdate()
+        @Suppress("UNUSED_EXPRESSION") launch { EhDB }
+        launch { dataStateFlow.value }
+        launch { OSUtils.totalMemory }
         launch {
-            FavouriteStatusRouter.collect { info ->
-                detailCache[info.gid]?.apply {
-                    favoriteSlot = info.favoriteSlot
-                    favoriteName = info.favoriteName
-                    favoriteNote = info.favoriteNote
-                }
-            }
+          if (
+            DownloadManager.labelList.isNotEmpty() &&
+              Settings.downloadFilterMode !in Settings.snapshot()
+          ) {
+            Settings.downloadFilterMode.value = DownloadsFilterMode.CUSTOM.flag
+          }
+          withUIContext { initialized = true }
+          DownloadManager.readMetadataFromLocal()
         }
-        launchIO {
-            EhTagDatabase.launchUpdate()
-            @Suppress("UNUSED_EXPRESSION")
-            launch { EhDB }
-            launch { dataStateFlow.value }
-            launch { OSUtils.totalMemory }
-            launch {
-                if (DownloadManager.labelList.isNotEmpty() && Settings.downloadFilterMode !in Settings.snapshot()) {
-                    Settings.downloadFilterMode.value = DownloadsFilterMode.CUSTOM.flag
-                }
-                initialized = true
-                DownloadManager.readMetadataFromLocal()
-            }
-            launch {
-                FileUtils.cleanupDirectory(AppConfig.externalCrashDir)
-                FileUtils.cleanupDirectory(AppConfig.externalParseErrorDir)
-            }
-            launch { cleanupDownload() }
-            if (Settings.requestNews.value) {
-                launch { checkDawn() }
-            }
+        launch {
+          FileUtils.cleanupDirectory(AppConfig.externalCrashDir)
+          FileUtils.cleanupDirectory(AppConfig.externalParseErrorDir)
         }
-        if (BuildConfig.DEBUG) {
-            StrictMode.enableDefaults()
-            Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.SourceInformation)
-        } else {
-            Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+        launch { cleanupDownload() }
+        if (Settings.requestNews.value) {
+          launch { checkDawn() }
         }
+      }
+      if (BuildConfig.DEBUG) {
+        StrictMode.enableDefaults()
+        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.SourceInformation)
+      } else {
+        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+      }
     }
 
-    private suspend fun cleanupDownload() {
-        runCatching {
-            keepNoMediaFileStatus()
-        }.onFailure {
-            logcat(it)
+  private suspend fun cleanupDownload() {
+    runCatching {
+      keepNoMediaFileStatus()
+    }
+      .onFailure {
+        logcat(it)
+      }
+    runCatching {
+      clearTempDir()
+    }
+      .onFailure {
+        logcat(it)
+      }
+  }
+
+  private fun clearTempDir() {
+    AppConfig.tempDir.deleteContent()
+    AppConfig.externalTempDir?.deleteContent()
+  }
+
+  override fun newImageLoader(context: Context) = context.imageLoader {
+    interceptorCoroutineContext(Dispatchers.Default)
+    components {
+      serviceLoaderEnabled(false)
+      add(
+        KtorNetworkFetcherFactory(
+          httpClient = { ktorClient },
+          connectivityChecker = { ConnectivityChecker.ONLINE },
+        )
+      )
+      add(MergeInterceptor)
+      add(DownloadThumbInterceptor)
+      if (isAtLeastO) {
+        add(HardwareBitmapInterceptor)
+      } else {
+        allowRgb565(true)
+      }
+      add(CropBorderInterceptor)
+      add(DetectBorderInterceptor)
+      add(QrCodeInterceptor)
+      add(MapExtraInfoInterceptor)
+      add(AnimatedWebPDecoder.Factory)
+      if (isAtLeastP) {
+        add(AnimatedImageDecoder.Factory(false))
+      } else {
+        add(GifDecoder.Factory())
+      }
+    }
+    diskCache { thumbCache }
+    crossfade(300)
+    val drawable = AppCompatResources.getDrawable(appCtx, R.drawable.image_failed)
+    if (drawable != null) error(drawable.asImage(true))
+    if (BuildConfig.DEBUG) {
+      logger(DebugLogger())
+    } else {
+      eventListener(
+        object : EventListener() {
+          override fun onError(request: ImageRequest, result: ErrorResult) {
+            logcat("ImageLoader", LogPriority.ERROR) {
+              "Failed ${request.data.javaClass.simpleName} request\n${result.throwable.asLog()}"
+            }
+          }
         }
-        runCatching {
-            clearTempDir()
-        }.onFailure {
-            logcat(it)
+      )
+    }
+  }
+
+  companion object {
+    var initialized by mutableStateOf(false)
+      private set
+
+    val ktorClient by lazy {
+      if (isCronetAvailable && Settings.enableCronet.value) {
+        HttpClient(Cronet) {
+          engine { configureClient(Settings.enableQuic.value) }
+          configureCommon()
         }
+      } else {
+        HttpClient(OkHttp) {
+          engine { configureClient() }
+          configureCommon()
+        }
+      }
     }
 
-    private fun clearTempDir() {
-        AppConfig.tempDir.deleteContent()
-        AppConfig.externalTempDir?.deleteContent()
+    val noRedirectKtorClient by lazy {
+      HttpClient(ktorClient.engine) {
+        configureCommon(redirect = false)
+      }
     }
 
-    override fun newImageLoader(context: Context) = context.imageLoader {
-        interceptorCoroutineContext(Dispatchers.Default)
-        components {
-            serviceLoaderEnabled(false)
-            add(
-                KtorNetworkFetcherFactory(
-                    httpClient = { ktorClient },
-                    connectivityChecker = { ConnectivityChecker.ONLINE },
-                ),
-            )
-            add(MergeInterceptor)
-            add(DownloadThumbInterceptor)
-            if (isAtLeastO) {
-                add(HardwareBitmapInterceptor)
-            } else {
-                allowRgb565(true)
-            }
-            add(CropBorderInterceptor)
-            add(DetectBorderInterceptor)
-            add(QrCodeInterceptor)
-            add(MapExtraInfoInterceptor)
-            add(AnimatedWebPDecoder.Factory)
-            if (isAtLeastP) {
-                add(AnimatedImageDecoder.Factory(false))
-            } else {
-                add(GifDecoder.Factory())
-            }
-        }
-        diskCache { thumbCache }
-        crossfade(300)
-        val drawable = AppCompatResources.getDrawable(appCtx, R.drawable.image_failed)
-        if (drawable != null) error(drawable.asImage(true))
-        if (BuildConfig.DEBUG) {
-            logger(DebugLogger())
-        } else {
-            eventListener(object : EventListener() {
-                override fun onError(request: ImageRequest, result: ErrorResult) {
-                    logcat("ImageLoader", LogPriority.ERROR) {
-                        "🚨 Failed - ${request.data}\n${result.throwable.asLog()}"
-                    }
-                }
-            })
-        }
+    val thumbCache by lazy {
+      diskCache {
+        directory(appCtx.cacheDir.toOkioPath() / "thumb")
+        maxSizeBytes(80L * 1024 * 1024)
+      }
     }
 
-    companion object {
-        @Volatile
-        var initialized = false
-            private set
-
-        val ktorClient by lazy {
-            if (isCronetAvailable && Settings.enableCronet.value) {
-                HttpClient(Cronet) {
-                    engine { configureClient(Settings.enableQuic.value) }
-                    configureCommon()
-                }
-            } else {
-                HttpClient(OkHttp) {
-                    engine { configureClient() }
-                    configureCommon()
-                }
-            }
-        }
-
-        val noRedirectKtorClient by lazy {
-            HttpClient(ktorClient.engine) {
-                configureCommon(redirect = false)
-            }
-        }
-
-        val thumbCache by lazy {
-            diskCache {
-                directory(appCtx.cacheDir.toOkioPath() / "thumb")
-                maxSizeBytes(80L * 1024 * 1024)
-            }
-        }
-
-        val searchDatabase by lazy { roomDb<SearchDatabase>("search_database.db") }
-    }
+    val searchDatabase by lazy { roomDb<SearchDatabase>("search_database.db") }
+  }
 }

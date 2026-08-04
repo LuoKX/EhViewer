@@ -137,6 +137,10 @@
             android:name=".download.DownloadService"
             android:foregroundServiceType="dataSync"
             android:label="@string/download_service_label" />
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

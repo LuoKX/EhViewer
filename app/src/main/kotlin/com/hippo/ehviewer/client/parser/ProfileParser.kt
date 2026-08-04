@@ -15,28 +15,55 @@
  */
 package com.hippo.ehviewer.client.parser
 
-import arrow.core.Either.Companion.catch
-import arrow.core.getOrElse
+import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.AccountProfile
+import com.hippo.ehviewer.bridge.ApiEnvelope
+import com.hippo.ehviewer.bridge.RustFailureException
+import com.hippo.ehviewer.bridge.auth.requireAuthPayload
 import com.hippo.ehviewer.client.exception.ParseException
 import java.nio.ByteBuffer
 import kotlinx.serialization.Serializable
+import moe.tarsin.coroutines.runSuspendCatching
 
 object ProfileParser {
-    fun parse(body: ByteBuffer) = catch {
+  fun parse(body: ByteBuffer) =
+    parseOrThrow("Failed to parse profile") {
+      if (Settings.useRustCore.value) {
+        val profile =
+          unmarshalParsingAs<ApiEnvelope<AccountProfile>>(body, ::parseProfileV1)
+            .requireAuthPayload()
+        Result(profile.displayName, profile.avatar)
+      } else {
         unmarshalParsingAs<Result>(body, ::parseProfile)
-    }.getOrElse {
-        throw ParseException("Failed to parse profile", it)
+      }
     }
 
-    fun parseProfileUrl(body: ByteBuffer) = catch {
+  fun parseProfileUrl(body: ByteBuffer) =
+    parseOrThrow("Failed to parse profile URL") {
+      if (Settings.useRustCore.value) {
+        unmarshalParsingAs<ApiEnvelope<String>>(body, ::parseProfileUrlV1).requireAuthPayload()
+      } else {
         unmarshalParsingAs<String>(body, ::parseProfileUrl)
-    }.getOrElse {
-        throw ParseException("Failed to parse profile url", it)
+      }
     }
 
-    @Serializable
-    data class Result(val displayName: String, val avatar: String?)
+  @Serializable data class Result(val displayName: String, val avatar: String?)
 
-    private external fun parseProfile(body: ByteBuffer, size: Int = body.limit()): Int
-    private external fun parseProfileUrl(body: ByteBuffer, size: Int = body.limit()): Int
+  /** Invokes the frozen legacy `ehviewer_rust::parser::profile` parser. */
+  private external fun parseProfile(body: ByteBuffer, size: Int = body.limit()): Int
+
+  /** Invokes the frozen legacy profile-URL parser. */
+  private external fun parseProfileUrl(body: ByteBuffer, size: Int = body.limit()): Int
+
+  /** Invokes the V1 `eh_net::auth::profile` account parser. */
+  private external fun parseProfileV1(body: ByteBuffer, size: Int = body.limit()): Int
+
+  /** Invokes the V1 `eh_net::auth::profile` URL parser. */
+  private external fun parseProfileUrlV1(body: ByteBuffer, size: Int = body.limit()): Int
+
+  private inline fun <T> parseOrThrow(message: String, block: () -> T): T =
+    runSuspendCatching(block).getOrElse {
+      if (it is RustFailureException) throw it
+      throw ParseException(message, it)
+    }
 }

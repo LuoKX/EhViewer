@@ -23,6 +23,13 @@ import com.ehviewer.core.util.logcat
 import com.ehviewer.core.util.withIOContext
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.CoreBackendSelector
+import com.hippo.ehviewer.bridge.DAILY_CHECK_API_VERSION
+import com.hippo.ehviewer.bridge.DailyCheckPlan
+import com.hippo.ehviewer.bridge.DailyCheckRequest
+import com.hippo.ehviewer.bridge.planDailyCheck
+import com.hippo.ehviewer.bridge.planLegacyDailyCheck
+import com.hippo.ehviewer.bridge.selectDailyCheckPlan
 import com.hippo.ehviewer.client.EhEngine
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -37,86 +44,107 @@ import splitties.init.appCtx
 
 private const val CHANNEL_ID = "DailyCheckNotification"
 
-class DailyCheckWork(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
-    override suspend fun doWork(): Result = withIOContext {
-        checkDawn().onFailure {
-            return@withIOContext Result.retry()
-        }
-        Result.success()
+class DailyCheckWork(context: Context, workerParams: WorkerParameters) :
+  CoroutineWorker(context, workerParams) {
+  override suspend fun doWork(): Result = withIOContext {
+    checkDawn().onFailure {
+      return@withIOContext Result.retry()
     }
+    Result.success()
+  }
 }
 
 private fun getDailyCheckWorkRequest(): PeriodicWorkRequest {
-    val now = Clock.System.now()
-    val timeZone = TimeZone.currentSystemDefault()
-    val whenToWork = LocalDateTime(
+  val now = Clock.System.now()
+  val timeZone = TimeZone.currentSystemDefault()
+  val whenToWork =
+    LocalDateTime(
         now.toLocalDateTime(timeZone).date,
         LocalTime.fromSecondOfDay(Settings.requestNewsTime),
-    ).toInstant(timeZone)
-    val initialDelay = (whenToWork - now).run { if (isNegative()) plus(1.days) else this }
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-    return PeriodicWorkRequestBuilder<DailyCheckWork>(Duration.ofDays(1))
-        .setConstraints(constraints)
-        .setInitialDelay(initialDelay.inWholeSeconds, TimeUnit.SECONDS)
-        .build()
+      )
+      .toInstant(timeZone)
+  val initialDelay = (whenToWork - now).run { if (isNegative()) plus(1.days) else this }
+  val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+  return PeriodicWorkRequestBuilder<DailyCheckWork>(Duration.ofDays(1))
+    .setConstraints(constraints)
+    .setInitialDelay(initialDelay.inWholeSeconds, TimeUnit.SECONDS)
+    .build()
 }
 
 private const val WORK_NAME = "DailyCheckWork"
 
 fun updateDailyCheckWork(context: Context) {
-    if (Settings.requestNews.value) {
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            WORK_NAME,
-            ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-            getDailyCheckWorkRequest(),
-        )
-    } else {
-        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
-    }
+  if (Settings.requestNews.value) {
+    WorkManager.getInstance(context)
+      .enqueueUniquePeriodicWork(
+        WORK_NAME,
+        ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
+        getDailyCheckWorkRequest(),
+      )
+  } else {
+    WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+  }
 }
 
 val today
-    get() = (Clock.System.now().epochSeconds / 86400).toInt()
+  get() = planCurrentDailyCheck(signedIn = false, lastDawnDays = 0).today
 
 suspend fun checkDawn() = runCatching {
-    if (Settings.hasSignedIn.value && Settings.lastDawnDays != today) {
-        EhEngine.getNews(true)?.let {
-            Settings.lastDawnDays = today
-            showEventNotification(it)
-        }
+  val plan = planCurrentDailyCheck(Settings.hasSignedIn.value, Settings.lastDawnDays)
+  if (plan.shouldCheck) {
+    EhEngine.getNews(true)?.let {
+      Settings.lastDawnDays = plan.today
+      showEventNotification(it)
     }
-}.onFailure {
+  }
+}
+  .onFailure {
     logcat(WORK_NAME, it)
+  }
+
+private fun planCurrentDailyCheck(signedIn: Boolean, lastDawnDays: Int): DailyCheckPlan {
+  val request =
+    DailyCheckRequest(
+      version = DAILY_CHECK_API_VERSION,
+      signedIn = signedIn,
+      lastDawnDays = lastDawnDays,
+      nowEpochSeconds = Clock.System.now().epochSeconds,
+    )
+  return selectDailyCheckPlan(
+    backend = CoreBackendSelector.snapshot(),
+    legacyPlanner = { planLegacyDailyCheck(request) },
+    rustPlanner = { planDailyCheck(request) },
+  )
 }
 
 @SuppressLint("MissingPermission")
 fun showEventNotification(html: String) {
-    if (Settings.hideHvEvents.value && html.contains("You have encountered a monster!")) {
-        return
-    }
-    val notificationManager = NotificationManagerCompat.from(appCtx)
-    val chan = NotificationChannelCompat
-        .Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
-        .setName(CHANNEL_ID)
-        .build()
-    notificationManager.createNotificationChannel(chan)
-    val text = html.parseAsHtml()
-    val msg = NotificationCompat.Builder(appCtx, CHANNEL_ID)
-        .setAutoCancel(true)
-        .setSmallIcon(R.drawable.ic_launcher_monochrome)
-        .setContentText(text)
-        .setStyle(NotificationCompat.BigTextStyle())
-    val urls = text.getSpans<URLSpan>(0, text.length)
-    if (urls.isNotEmpty()) {
-        val intent = Intent(Intent.ACTION_VIEW, urls.first().url.toUri())
-        val pi = PendingIntentCompat.getActivity(appCtx, 0, intent, 0, false)
-        msg.setContentIntent(pi)
-    }
-    runCatching {
-        notificationManager.notify(1, msg.build())
-    }.onFailure {
-        logcat(WORK_NAME, it)
+  if (Settings.hideHvEvents.value && html.contains("You have encountered a monster!")) {
+    return
+  }
+  val notificationManager = NotificationManagerCompat.from(appCtx)
+  val chan =
+    NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
+      .setName(CHANNEL_ID)
+      .build()
+  notificationManager.createNotificationChannel(chan)
+  val text = html.parseAsHtml()
+  val msg =
+    NotificationCompat.Builder(appCtx, CHANNEL_ID)
+      .setAutoCancel(true)
+      .setSmallIcon(R.drawable.ic_launcher_monochrome)
+      .setContentText(text)
+      .setStyle(NotificationCompat.BigTextStyle())
+  val urls = text.getSpans<URLSpan>(0, text.length)
+  if (urls.isNotEmpty()) {
+    val intent = Intent(Intent.ACTION_VIEW, urls.first().url.toUri())
+    val pi = PendingIntentCompat.getActivity(appCtx, 0, intent, 0, false)
+    msg.setContentIntent(pi)
+  }
+  runCatching {
+    notificationManager.notify(1, msg.build())
+  }
+    .onFailure {
+      logcat(WORK_NAME, it)
     }
 }

@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -20,8 +22,8 @@ jobs:
           distribution: temurin
           java-version-file: .java-version
 
-      - name: Install Rust Toolchain
-        run: rustup target add thumbv7neon-linux-androideabi
+      - name: Install Clippy Android Target
+        run: rustup target add aarch64-linux-android
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -29,13 +31,605 @@ jobs:
           workspaces: "./app/src/main/rust"
           shared-key: ${{ runner.os }}
 
+      - name: Rewrite Naming Check
+        run: |
+          python3 -m unittest scripts.tests.test_check_rewrite_names
+          python3 scripts/check_rewrite_names.py
+
       - name: Rustfmt Check
         working-directory: ./app/src/main/rust
         run: cargo fmt --all -- --check
 
-      - name: Clippy Check
+      - name: Android Clippy Check
         working-directory: ./app/src/main/rust
-        run: cargo clippy --target aarch64-linux-android --all-features -- -D warnings
+        run: cargo clippy --package ehviewer_rust --target aarch64-linux-android --all-features -- -D warnings
+
+      - name: Rust Core Clippy Check
+        working-directory: ./app/src/main/rust
+        run: cargo clippy --package eh_archive --package eh_domain --package eh_ffi --package eh_image --package eh_net --all-targets --all-features -- -D warnings
+
+      - name: Rustdoc Check
+        working-directory: ./app/src/main/rust
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: |
+          cargo doc --workspace --no-deps
+          cargo doc --package eh_ffi --features jvm --no-deps
+          cargo doc --package ehviewer_rust --features jvm --no-deps
+
+      # Legacy parser tests still contain live-network smoke cases. They are
+      # migrated to offline fixtures slice by slice and must not weaken the
+      # deterministic unit-test gate for the new architecture.
+      - name: Rust Core Unit Test
+        working-directory: ./app/src/main/rust
+        run: cargo test --package eh_archive --package eh_domain --package eh_ffi --package eh_image --package eh_net
+
+      - name: Gallery List Compatibility Test
+        working-directory: ./app/src/main/rust
+        run: 'cargo test --package ehviewer_rust parser::list::tests::'
+
+      - name: Gallery Archive Compatibility Test
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo test --package ehviewer_rust \
+            parser::test_parser::tests::test_parse_archive_url
+          cargo test --package ehviewer_rust \
+            parser::test_parser::tests::test_parse_archives_with_funds
+
+      - name: FFI WebP Boundary Test
+        working-directory: ./app/src/main/rust
+        run: 'cargo test --package eh_ffi --all-features webp::tests::'
+
+      - name: FFI Codec Boundary Test
+        working-directory: ./app/src/main/rust
+        run: 'cargo test --package eh_ffi --all-features codec::tests::'
+
+      - name: JVM V1 Symbol Check
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo build --package ehviewer_rust --features jvm
+          nm -g --defined-only target/debug/libehviewer_rust.a \
+            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_/ { print $3 }' \
+            | sort -u \
+            | grep 'V1$' \
+            > target/jvm-v1-symbols.txt
+          diff -u crates/ffi/jvm-v1-symbols.txt target/jvm-v1-symbols.txt
+          nm -g --defined-only target/debug/libehviewer_rust.a \
+            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_/ { print $3 }' \
+            | sort -u \
+            > target/jvm-webp-symbols.txt
+          diff -u crates/ffi/jvm-webp-symbols.txt target/jvm-webp-symbols.txt
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.8.6
+
+      - name: Install LLVM Tools
+        run: rustup component add llvm-tools-preview
+
+      - name: FFI Codec Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_ffi \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/jvm/|/jvm\.rs$|/health\.rs$|/webp\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-ffi-codec.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95
+
+      - name: Rust Core Health Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_ffi \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/jvm/|/jvm\.rs$|/codec\.rs$|/webp\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-ffi-health.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- health::tests::
+
+      - name: Domain Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --all-features \
+            --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/reader/fetch/tests\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95
+
+      - name: Download Queue Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/download/progress\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-download-queue.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- download::tests::
+
+      - name: Download Progress Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/download\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-download-progress.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- download::progress::tests::
+
+      - name: Reader Scheduling Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/fetch\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-reader-schedule.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- reader::tests::
+
+      - name: Reader Fetch Policy Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-reader-fetch.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- reader::fetch::tests::
+
+      - name: Session Failure Policy Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session/lifecycle\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-session-policy.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- session::tests::
+
+      - name: Session Lifecycle Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-session-lifecycle.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- session::lifecycle::tests::
+
+      - name: Archive Validation Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_archive \
+            --all-features \
+            --lcov \
+            --output-path target/llvm-cov/eh-archive.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95
+
+      - name: Archive Reader Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_archive \
+            --lib \
+            --ignore-filename-regex '(/lib\.rs$|/writer\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-archive-reader.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- reader::tests::
+
+      - name: Archive Writer Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_archive \
+            --lib \
+            --ignore-filename-regex '(/lib\.rs$|/reader\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-archive-writer.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- writer::tests::
+
+      - name: Image Core Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_image \
+            --all-features \
+            --lcov \
+            --output-path target/llvm-cov/eh-image.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95
+
+      - name: Image Region Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_image \
+            --lib \
+            --ignore-filename-regex '(/border\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-image-region.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- region::tests::
+
+      - name: Auth Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/gallery/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-auth.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- auth::
+
+      - name: Gallery List Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-list.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::list::tests::
+
+      - name: Gallery List URL Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-list-url.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::list_url::tests::
+
+      - name: Gallery List URL Parser Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-list-url-parser.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::list_url_parser::tests::
+
+      - name: Gallery Navigation Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-navigation.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::navigation::tests::
+
+      - name: Favorites URL Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-favorites-url.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::favorites_url::tests::
+
+      - name: Gallery Favorites Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-favorites.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::favorites::tests::
+
+      - name: Gallery Favorite Mutation Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::favorite_mutation::tests::
+
+      - name: Gallery Archive Request Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-archive-request.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::archive_request::tests::
+
+      - name: Gallery Archive Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-archive.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::archive::tests::
+
+      - name: Gallery Comments Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-comments.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::comments::
+
+      - name: Gallery Comment Vote Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-comment-vote.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::comment_vote::tests::
+
+      - name: Gallery Detail Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-detail.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::detail::
+
+      - name: Gallery Preview Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-preview.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::preview::
+
+      - name: Gallery Token Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-token.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::token::tests::
+
+      - name: Gallery Tag Vote Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-tag-vote.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::tag
+
+      - name: Gallery Rate Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-rate.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::rate::tests::
+
+      - name: Gallery Metadata Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-metadata.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::metadata::tests::
+
+      - name: Reader Page Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-reader-page.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- reader::page::
+
+      - name: Reader MPV Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/page\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-reader-mpv.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- reader::mpv::tests::
+
+      - name: Image Limits Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-image-limits.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- home::tests::
+
+      - name: News Event Pane Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-news.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- news::tests::
+
+      - name: User Config Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-user-config.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- user_config::tests::
+
+      - name: Torrent List Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-torrent.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- torrent::tests::
+
+      - name: FFI WebP Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_ffi \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/jvm/|/jvm\.rs$|/codec\.rs$|/health\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-ffi-webp.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- webp::tests::
+
+      - name: Rust Net Aggregate Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov --package eh_net \
+            --all-features \
+            --lcov \
+            --output-path target/llvm-cov/eh-net.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95
+
+      - name: Upload Rust Core Coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-core-coverage-${{ github.sha }}
+          path: app/src/main/rust/target/llvm-cov/*.lcov
+          if-no-files-found: warn
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -45,11 +639,100 @@ jobs:
       - name: Check build-logic
         run: ./gradlew :build-logic:convention:check
 
+      - name: Rust Bridge Unit Test
+        run: ./gradlew :app:testDefaultDebugUnitTest
+
+      - name: Compile Android Instrumentation Sources
+        run: ./gradlew :app:compileDefaultDebugAndroidTestKotlin
+
       - name: Spotless Check
         run: ./gradlew spotlessCheck
 
       - name: Lint Check
         run: ./gradlew lintMarshmallowRelease
+
+  image-device:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version-file: .java-version
+
+      - name: Install Android Build SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platforms;android-37" \
+            "build-tools;37.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+
+      - name: Install Android Rust Targets
+        run: rustup target add aarch64-linux-android x86_64-linux-android
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./app/src/main/rust"
+          shared-key: ${{ runner.os }}-image-device
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: CMake Cache
+        uses: actions/cache@v5
+        with:
+          path: app/.cxx
+          key: cmake-image-device-${{ hashFiles('rust-toolchain.toml', 'settings.gradle.kts', 'app/src/main/cpp/CMakeLists.txt', 'app/src/main/rust/Cargo.lock') }}
+          restore-keys: cmake-image-device-
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Rust MVP Device and Native Boundary Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          ndk: 29.0.14206865
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          script: ./gradlew :app:connectedDefaultDebugAndroidTest --no-daemon -Pandroid.injected.build.abi=x86_64
+
+      - name: Android V1 Symbol Check
+        run: |
+          native_library=app/build/intermediates/stripped_native_libs/defaultDebug/stripDefaultDebugDebugSymbols/out/lib/x86_64/libehviewer.so
+          nm -D --defined-only "$native_library" \
+            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_/ { print $3 }' \
+            | sort -u \
+            | grep 'V1$' \
+            > app/build/android-v1-symbols.txt
+          diff -u \
+            app/src/main/rust/crates/ffi/jvm-v1-symbols.txt \
+            app/build/android-v1-symbols.txt
+          nm -D --defined-only "$native_library" \
+            | awk '$2 == "T" && ($3 ~ /^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_/ || $3 ~ /^Java_com_hippo_ehviewer_image_ImageKt_/) { print $3 }' \
+            | sort -u \
+            > app/build/android-image-symbols.txt
+          diff -u \
+            app/src/main/rust/crates/ffi/android-image-symbols.txt \
+            app/build/android-image-symbols.txt
 
   default:
     runs-on: ubuntu-latest
@@ -64,7 +747,7 @@ jobs:
           java-version-file: .java-version
 
       - name: Install Rust Toolchain
-        run: rustup target add thumbv7neon-linux-androideabi
+        run: rustup target add armv7-linux-androideabi
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -132,7 +815,7 @@ jobs:
           java-version-file: .java-version
 
       - name: Install Rust Toolchain
-        run: rustup target add thumbv7neon-linux-androideabi
+        run: rustup target add armv7-linux-androideabi
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2

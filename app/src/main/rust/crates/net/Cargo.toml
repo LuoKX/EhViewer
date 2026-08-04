@@ -1,0 +1,24 @@
+[package]
+name = "eh_net"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Network request and response parsing for the EhViewer Rust-first core"
+publish = false
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+eh_domain = { path = "../domain" }
+quick-xml = { default-features = false, version = "0.40" }
+regex-lite = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tl = { git = "https://github.com/FooIbar/tl.git", features = ["simd"] }
+url = "2.5"
+
+[dev-dependencies]
+serde_cbor = "0.11"
+
+[lints]
+workspace = true

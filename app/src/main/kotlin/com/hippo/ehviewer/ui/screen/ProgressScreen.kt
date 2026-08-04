@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ehviewer.core.i18n.R
@@ -36,50 +37,61 @@ import moe.tarsin.navigate
 
 @Destination<RootGraph>
 @Composable
-fun AnimatedVisibilityScope.ProgressScreen(gid: Long, token: String, page: Int, navigator: DestinationsNavigator) = Screen(navigator) {
+fun AnimatedVisibilityScope.ProgressScreen(
+  gid: Long,
+  token: String,
+  page: Int,
+  navigator: DestinationsNavigator,
+) =
+  Screen(navigator) {
     val wrong = stringResource(id = R.string.error_something_wrong_happened)
     var error by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(error) {
-        if (error.isEmpty()) {
-            if (gid == -1L || token == "invalid" || page == -1) {
-                error = wrong
-            } else {
-                runSuspendCatching {
-                    EhEngine.getGalleryToken(gid, token, page)
-                }.onSuccess {
-                    withUIContext {
-                        navigator.popBackStack()
-                        navigate(gid asDstPageTo page with it)
-                    }
-                }.onFailure {
-                    error = it.displayString()
-                }
+      if (error.isEmpty()) {
+        if (gid == -1L || token == "invalid" || page == -1) {
+          error = wrong
+        } else {
+          runSuspendCatching {
+            EhEngine.getGalleryToken(gid, token, page)
+          }
+            .onSuccess {
+              withUIContext {
+                navigator.popBackStack()
+                navigate(gid asDstPageTo page with it)
+              }
+            }
+            .onFailure {
+              error = it.displayString()
             }
         }
+      }
     }
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+      modifier = Modifier.fillMaxSize().testTag(PROGRESS_SCREEN_TEST_TAG),
+      contentAlignment = Alignment.Center,
     ) {
-        if (error.isNotBlank()) {
-            Column(
-                modifier = Modifier.clickable { error = "" },
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    imageVector = EhIcons.Big.Default.SadAndroid,
-                    contentDescription = null,
-                    modifier = Modifier.padding(16.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-            }
-        } else {
-            CircularWavyProgressIndicator()
+      if (error.isNotBlank()) {
+        Column(
+          modifier = Modifier.clickable { error = "" },
+          verticalArrangement = Arrangement.Center,
+          horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+          Icon(
+            imageVector = EhIcons.Big.Default.SadAndroid,
+            contentDescription = null,
+            modifier = Modifier.padding(16.dp),
+            tint = MaterialTheme.colorScheme.primary,
+          )
+          Text(
+            text = error,
+            style = MaterialTheme.typography.headlineMedium,
+          )
         }
+      } else {
+        CircularWavyProgressIndicator()
+      }
     }
-}
+  }
+
+/** Stable semantics tag for Activity-level Gallery Navigation instrumentation. */
+internal const val PROGRESS_SCREEN_TEST_TAG = "progressScreen"

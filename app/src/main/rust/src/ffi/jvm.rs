@@ -1,7 +1,6 @@
 #![cfg(feature = "jvm")]
 
 use crate::EhError;
-use crate::img::webp::{create_decoder, get_image_info, pack_image_info};
 use crate::parser::api::parse_vote_tag;
 use crate::parser::archive::{parse_archive_url, parse_archives, parse_archives_with_funds};
 use crate::parser::config::parse_fav_cat;
@@ -14,17 +13,15 @@ use crate::parser::profile::{parse_profile, parse_profile_url};
 use crate::parser::torrent::parse_torrent_list;
 use android_logger::Config;
 use anyhow::{Context, Result, ensure};
+pub(super) use eh_ffi::jvm::{deref_mut_direct_bytebuffer, jni_throwing};
+use eh_ffi::jvm::{input_body, serialize_to_buffer};
 use jni::objects::{JByteBuffer, JClass};
-use jni::sys::{JNI_TRUE, JNI_VERSION_1_6, jboolean, jint, jlong, jobject};
+use jni::sys::{JNI_TRUE, JNI_VERSION_1_6, jboolean, jint};
 use jni::{JNIEnv, JavaVM};
 use jni_fn::jni_fn;
-use libwebp_sys::{WebPAnimDecoder, WebPAnimDecoderDelete};
 use log::LevelFilter;
 use serde::Serialize;
 use std::ffi::c_void;
-use std::io::Cursor;
-use std::ptr::slice_from_raw_parts_mut;
-use std::str::from_utf8_unchecked;
 use tl::{ParserOptions, VDom};
 
 #[jni_fn("com.hippo.ehviewer.client.parser.FavoritesParserKt")]
@@ -139,90 +136,6 @@ pub fn parseProfile(mut env: JNIEnv, _class: JClass, buffer: JByteBuffer, limit:
     })
 }
 
-#[jni_fn("com.hippo.ehviewer.coil.AnimatedWebPDrawableKt")]
-pub fn nativeCreateDecoder(mut env: JNIEnv, _: JClass, buffer: JByteBuffer) -> jlong {
-    jni_throwing(&mut env, |env| {
-        let buffer = deref_mut_direct_bytebuffer(env, buffer)?;
-        Ok(create_decoder(buffer) as i64)
-    })
-}
-
-#[jni_fn("com.hippo.ehviewer.coil.AnimatedWebPDrawableKt")]
-pub fn nativeGetImageInfo(mut env: JNIEnv, _: JClass, decoder: jlong) -> jlong {
-    jni_throwing(&mut env, |_| {
-        let dec = decoder as *const WebPAnimDecoder;
-        let info = unsafe { get_image_info(dec) };
-        Ok(pack_image_info(info) as i64)
-    })
-}
-
-#[jni_fn("com.hippo.ehviewer.coil.AnimatedWebPDrawableKt")]
-pub fn nativeDestroyDecoder(mut env: JNIEnv, _: JClass, decoder: jlong) {
-    jni_throwing(&mut env, |_| {
-        let dec = decoder as *mut WebPAnimDecoder;
-        unsafe { WebPAnimDecoderDelete(dec) };
-        Ok(())
-    })
-}
-
-fn deref_mut_direct_bytebuffer<'local>(
-    env: &JNIEnv,
-    buffer: JByteBuffer<'local>,
-) -> Result<&'local mut [u8]> {
-    let ptr = env.get_direct_buffer_address(&buffer)?;
-    let cap = env.get_direct_buffer_capacity(&buffer)?;
-
-    // SAFETY: jni contract, buffer must alive through native call.
-    Ok(unsafe { &mut *slice_from_raw_parts_mut(ptr, cap) })
-}
-
-pub trait ThrowingHasDefault {
-    fn default() -> Self;
-}
-
-impl ThrowingHasDefault for jboolean {
-    fn default() -> Self {
-        0 as jboolean
-    }
-}
-
-impl ThrowingHasDefault for jobject {
-    fn default() -> Self {
-        0 as jobject
-    }
-}
-
-impl ThrowingHasDefault for i32 {
-    fn default() -> Self {
-        0
-    }
-}
-
-impl ThrowingHasDefault for i64 {
-    fn default() -> Self {
-        0
-    }
-}
-
-impl ThrowingHasDefault for () {
-    fn default() -> Self {}
-}
-
-pub fn jni_throwing<F, R>(env: &mut JNIEnv, f: F) -> R
-where
-    F: FnOnce(&mut JNIEnv) -> Result<R>,
-    R: ThrowingHasDefault,
-{
-    match f(env) {
-        Ok(value) => value,
-        Err(err) => {
-            let msg = format!("{err}");
-            env.throw_new("java/lang/RuntimeException", msg).ok();
-            R::default()
-        }
-    }
-}
-
 #[inline]
 pub fn parse_marshal_inplace<F, R>(env: &mut JNIEnv, str: JByteBuffer, limit: jint, f: F) -> i32
 where
@@ -256,12 +169,12 @@ where
     R: Serialize,
 {
     jni_throwing(env, |env| {
-        ensure!(limit > 0, "Empty response");
-        let buffer = deref_mut_direct_bytebuffer(env, str)?;
-
-        // SAFETY: ktor client ensure html content is valid utf-8.
-        let body = unsafe { from_utf8_unchecked(&buffer[..limit as usize]) };
-        match f(body) {
+        let buffer = deref_mut_direct_bytebuffer(env, &str)?;
+        let parsed = {
+            let body = input_body(buffer, limit)?;
+            f(body)
+        };
+        match parsed {
             Ok(value) => serialize_to_buffer(buffer, &value),
             Err(err) => {
                 if let Some(value) = err.downcast_ref::<EhError>() {
@@ -274,13 +187,8 @@ where
     })
 }
 
-fn serialize_to_buffer<T: Serialize>(buffer: &mut [u8], value: &T) -> Result<i32> {
-    let mut cursor = Cursor::new(buffer);
-    serde_cbor::to_writer(&mut cursor, value)?;
-    Ok(cursor.position() as i32)
-}
-
 #[unsafe(no_mangle)]
+// The JVM discovery ABI requires this exact exported identifier.
 #[allow(non_snake_case)]
 pub extern "system" fn JNI_OnLoad(_: JavaVM, _: *mut c_void) -> jint {
     android_logger::init_once(Config::default().with_max_level(LevelFilter::Debug));

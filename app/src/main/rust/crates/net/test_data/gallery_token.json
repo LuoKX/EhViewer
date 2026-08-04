@@ -1,0 +1,14 @@
+{
+  "tokenlist": [
+    {
+      "gid": 618395,
+      "token": "0439fa3666",
+      "ignored": true
+    },
+    {
+      "gid": 618396,
+      "token": "later-token"
+    }
+  ],
+  "ignored": "fixture metadata"
+}

@@ -1,13 +1,10 @@
-#![feature(f16)]
-#![feature(never_type)]
-
+pub mod contracts;
 mod ffi;
-pub mod img;
 pub mod parser;
 
 use serde::{Serialize, Serializer, ser::SerializeTuple};
 use std::fmt::{Debug, Display, Formatter};
-use tl::{Bytes, HTMLTag, Node, NodeHandle, Parser, VDom};
+use tl::{HTMLTag, Node, NodeHandle, Parser, VDom};
 
 #[macro_export]
 macro_rules! regex {
@@ -16,9 +13,6 @@ macro_rules! regex {
         RE.get_or_init(|| regex_lite::Regex::new($re).unwrap())
     }};
 }
-
-const EHGT_PREFIX: &str = "https://ehgt.org/";
-const EX_PREFIX: &str = "https://s.exhentai.org/";
 
 fn get_vdom_first_element_by_class_name<'a>(dom: &'a VDom, name: &str) -> Option<&'a Node<'a>> {
     let handle = dom.get_elements_by_class_name(name).next()?;
@@ -54,18 +48,6 @@ fn get_first_child<'a>(tag: &'a HTMLTag, parser: &'a Parser) -> Option<&'a HTMLT
         .top()
         .iter()
         .find_map(|n| n.get(parser)?.as_tag())
-}
-
-fn get_element_by_id<'b, S>(node: &'b Node, parser: &'b Parser, id: S) -> Option<&'b Node<'b>>
-where
-    S: Into<Bytes<'b>>,
-{
-    let bytes: Bytes = id.into();
-    let handle = node.find_node(parser, &mut |n| match n.as_tag() {
-        None => false,
-        Some(tag) => tag.attributes().id().is_some_and(|x| x.eq(&bytes)),
-    })?;
-    handle.get(parser)
 }
 
 #[derive(Debug)]
@@ -119,6 +101,8 @@ impl Display for EhError {
     }
 }
 
+impl std::error::Error for EhError {}
+
 fn get_node_handle_attr<'a>(
     node: &NodeHandle,
     parser: &'a Parser,
@@ -133,15 +117,4 @@ fn get_node_attr<'a>(node: &'a Node<'_>, attr: &'a str) -> Option<&'a str> {
 
 fn get_tag_attr<'a>(tag: &'a HTMLTag<'_>, attr: &'a str) -> Option<&'a str> {
     tag.attributes().get(attr)??.try_as_utf8_str()
-}
-
-// Should not use it at too upper node, since it will do DFS?
-fn query_childs_first_match_attr<'a>(
-    node: &'a Node<'_>,
-    parser: &'a Parser,
-    attr: &'a str,
-) -> Option<&'a str> {
-    let selector = format!("[{attr}]");
-    let mut iter = node.as_tag()?.query_selector(parser, &selector)?;
-    get_node_handle_attr(&iter.next()?, parser, attr)
 }

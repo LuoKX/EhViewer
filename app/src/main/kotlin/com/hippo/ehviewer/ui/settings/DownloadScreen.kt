@@ -55,6 +55,9 @@ import com.hippo.ehviewer.client.parser.ParserUtils
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.downloadDir
 import com.hippo.ehviewer.download.downloadLocation
+import com.hippo.ehviewer.download.recovery.DownloadRecoveryWork
+import com.hippo.ehviewer.ui.destinations.DownloadRecoveryCandidatesScreenDestination
+import com.hippo.ehviewer.ui.destinations.DownloadRecoveryProgressScreenDestination
 import com.hippo.ehviewer.spider.COMIC_INFO_FILE
 import com.hippo.ehviewer.spider.MIN_SPEED_LEVEL
 import com.hippo.ehviewer.spider.SpiderDen
@@ -220,6 +223,34 @@ fun AnimatedVisibilityScope.DownloadScreen(navigator: DestinationsNavigator) = S
                 summary = stringResource(id = R.string.settings_download_archive_metadata_summary),
                 state = Settings.archiveMetadata.asMutableState(),
             )
+            val rustRecoveryEnabled = Settings.useRustCore.asMutableState().value
+            Preference(
+                title = stringResource(id = R.string.settings_download_recovery),
+                summary = if (rustRecoveryEnabled) {
+                    stringResource(id = R.string.settings_download_recovery_summary)
+                } else {
+                    stringResource(id = R.string.download_recovery_rust_required)
+                },
+                enabled = rustRecoveryEnabled,
+            ) {
+                launch {
+                    awaitConfirmationOrCancel(
+                        title = R.string.download_recovery_confirmation_title,
+                        confirmText = R.string.download_recovery_start,
+                        dismissText = R.string.download_recovery_cancel,
+                    ) {
+                        Text(stringResource(id = R.string.download_recovery_confirmation_message))
+                    }
+                    DownloadRecoveryWork.enqueue(contextOf<Context>(), downloadLocation.toUri())
+                    navigator.navigate(DownloadRecoveryProgressScreenDestination)
+                }
+            }
+            Preference(
+                title = stringResource(id = R.string.settings_download_recovery_pending),
+                summary = stringResource(id = R.string.settings_download_recovery_pending_summary),
+            ) {
+                navigator.navigate(DownloadRecoveryCandidatesScreenDestination())
+            }
             WorkPreference(
                 title = stringResource(id = R.string.settings_download_reload_metadata),
                 summary = stringResource(id = R.string.settings_download_reload_metadata_summary),

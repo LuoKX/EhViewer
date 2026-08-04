@@ -24,10 +24,37 @@ import arrow.fx.coroutines.parZip
 import com.ehviewer.core.i18n.R
 import com.ehviewer.core.model.BaseGalleryInfo
 import com.ehviewer.core.model.GalleryInfo
+import com.ehviewer.core.model.GalleryTagGroup
 import com.ehviewer.core.network.EhCookieStore
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.CoreBackend
+import com.hippo.ehviewer.bridge.CoreBackendSelector
+import com.hippo.ehviewer.bridge.RustFailureException
+import com.hippo.ehviewer.bridge.auth.SessionFailureDecisionKind
+import com.hippo.ehviewer.bridge.auth.SessionFailurePlan
+import com.hippo.ehviewer.bridge.auth.SessionFailureSnapshot
+import com.hippo.ehviewer.bridge.auth.SessionFailureSource
+import com.hippo.ehviewer.bridge.auth.SessionGallerySite
+import com.hippo.ehviewer.bridge.auth.classifySessionFailure
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationBulk
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationField
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationKind
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationPlan
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationRequest
+import com.hippo.ehviewer.bridge.gallery.FavoriteMutationSingle
+import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequest
+import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequestKind
+import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequestPlan
+import com.hippo.ehviewer.bridge.gallery.GalleryFormField
+import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
+import com.hippo.ehviewer.bridge.gallery.planFavoriteMutation
+import com.hippo.ehviewer.bridge.gallery.planGalleryArchiveRequest
+import com.hippo.ehviewer.bridge.gallery.selectFavoriteMutationPlan
+import com.hippo.ehviewer.bridge.gallery.selectGalleryArchiveRequestPlan
+import com.hippo.ehviewer.bridge.toLegacyError
+import com.hippo.ehviewer.bridge.toRustError
 import com.hippo.ehviewer.client.data.FavListUrlBuilder
 import com.hippo.ehviewer.client.data.fillInfo
 import com.hippo.ehviewer.client.data.filterComments
@@ -53,11 +80,13 @@ import com.hippo.ehviewer.client.parser.GalleryPageParser
 import com.hippo.ehviewer.client.parser.GalleryTokenApiParser
 import com.hippo.ehviewer.client.parser.HomeParser
 import com.hippo.ehviewer.client.parser.ProfileParser
+import com.hippo.ehviewer.client.parser.RateGalleryParser
 import com.hippo.ehviewer.client.parser.RateGalleryResult
 import com.hippo.ehviewer.client.parser.SignInParser
 import com.hippo.ehviewer.client.parser.TorrentParser
 import com.hippo.ehviewer.client.parser.TorrentResult
 import com.hippo.ehviewer.client.parser.UserConfigParser
+import com.hippo.ehviewer.client.parser.VoteCommentParser
 import com.hippo.ehviewer.client.parser.VoteCommentResult
 import com.hippo.ehviewer.client.parser.VoteTagParser
 import com.hippo.ehviewer.dailycheck.showEventNotification
@@ -98,401 +127,749 @@ private const val MAX_REQUEST_SIZE = 25
 private const val MAX_SEQUENTIAL_REQUESTS = 5
 private const val REQUEST_INTERVAL = 5000L
 
-private val Url.isLogin get() = segments.firstOrNull() == "bounce_login.php"
+private val Url.isLogin
+  get() = segments.firstOrNull() == "bounce_login.php"
 
 private fun Either<String, ByteBuffer>.saveParseError(e: Throwable) {
-    val dir = AppConfig.externalParseErrorDir ?: return
-    val file = File(dir, ReadableTime.getFilenamableTime() + ".txt")
-    file.sink().buffer().use { sink ->
-        with(sink) {
-            writeUtf8(e.message + "\n")
-            onLeft { writeUtf8(it) }
-            onRight { write(it) }
-        }
+  val dir = AppConfig.externalParseErrorDir ?: return
+  val file = File(dir, ReadableTime.getFilenamableTime() + ".txt")
+  file.sink().buffer().use { sink ->
+    with(sink) {
+      writeUtf8(e.message + "\n")
+      onLeft { writeUtf8(it) }
+      onRight { write(it) }
     }
+  }
 }
 
-private fun rethrowExactly(response: HttpResponse, body: Either<String, ByteBuffer>, e: Throwable): Nothing {
-    // Don't translate coroutine cancellation
-    if (e is CancellationException) throw e
+private fun rethrowExactly(
+  response: HttpResponse,
+  body: Either<String, ByteBuffer>,
+  e: Throwable,
+): Nothing {
+  // Cancellation is a coroutine control signal and never enters a native policy.
+  if (e is CancellationException) throw e
 
-    if (response.headers["cf-mitigated"] == "challenge") throw CloudflareBypassException()
+  if (CoreBackendSelector.snapshot() == CoreBackend.RUST) {
+    val plan = classifySessionFailure(buildSessionFailureSnapshot(response, body, e))
+    applySessionFailurePlan(plan, response, body, e)
+  }
+  rethrowExactlyLegacy(response, body, e)
+}
 
-    // Check sad panda (without panda)
-    val empty = body.fold(
-        { it.isEmpty() },
-        { !it.hasRemaining() },
-    )
-    if (empty) {
-        val message = if (response.request.url.host == EhUrl.DOMAIN_EX) {
-            "Sad Panda\n(without panda)"
+private fun buildSessionFailureSnapshot(
+  response: HttpResponse,
+  body: Either<String, ByteBuffer>,
+  error: Throwable,
+): SessionFailureSnapshot {
+  val cloudflareChallenge = response.headers["cf-mitigated"] == "challenge"
+  val emptyBody = body.fold(String::isEmpty) { !it.hasRemaining() }
+  val parserFailure = error is ParseException || error is SerializationException
+  val domainError =
+    if (cloudflareChallenge || emptyBody) {
+      null
+    } else {
+      (error as? RustFailureException)?.failure
+        ?: body
+          .getOrNull()
+          ?.runCatching {
+            val array = moveToByteArray()
+            rewind()
+            Cbor.decodeFromByteArray<EhError>(array)
+          }
+          ?.getOrNull()
+          ?.toRustError()
+    }
+  return SessionFailureSnapshot(
+    site =
+      if (response.request.url.host == EhUrl.DOMAIN_EX) SessionGallerySite.EX_HENTAI
+      else SessionGallerySite.PUBLIC,
+    cloudflareChallenge = cloudflareChallenge,
+    emptyBody = emptyBody,
+    domainError = domainError,
+    httpStatusSuccess = response.status.value in 200..299,
+    source =
+      if (parserFailure) {
+        SessionFailureSource.parse(nonHtmlText = body.leftOrNull()?.contains('<') == false)
+      } else {
+        SessionFailureSource.other()
+      },
+  )
+}
+
+private fun applySessionFailurePlan(
+  plan: SessionFailurePlan,
+  response: HttpResponse,
+  body: Either<String, ByteBuffer>,
+  cause: Throwable,
+): Nothing =
+  when (plan.decision.kind) {
+    SessionFailureDecisionKind.CLOUDFLARE_CHALLENGE -> throw CloudflareBypassException()
+    SessionFailureDecisionKind.EMPTY_BODY_IP_BANNED -> {
+      val message =
+        if (plan.decision.site == SessionGallerySite.EX_HENTAI) {
+          "Sad Panda\n(without panda)"
         } else {
-            appCtx.getString(R.string.error_ip_banned)
+          appCtx.getString(R.string.error_ip_banned)
         }
-        throw IpBannedException(message)
+      throw IpBannedException(message)
     }
-
-    // Parse error from rust
-    val error = body.getOrNull()?.runCatching {
-        val array = moveToByteArray()
-        rewind()
-        Cbor.decodeFromByteArray<EhError>(array)
-    }?.getOrNull()
-
-    // Check Gallery Not Available - 404
-    if (error is EhError.GalleryUnavailable) throw EhException(error.message)
-
-    // Check bad response code
-    response.status.ensureSuccess()
-
-    when (error) {
-        EhError.NoHits -> throw NoHitsFoundException()
-        EhError.NoWatched -> throw EhException(R.string.gallery_list_empty_hit_subscription)
-        EhError.NeedLogin -> throw NotLoggedInException()
-        EhError.NoHathClient -> throw NoHathClientException()
-        EhError.InsufficientFunds -> throw InsufficientFundsException()
-        is EhError.IpBanned -> throw IpBannedException(error.message)
-        is EhError.Error -> throw EhException(error.message)
-        else -> Unit
+    SessionFailureDecisionKind.DOMAIN ->
+      throwLegacyDomainError(checkNotNull(plan.decision.error).toLegacyError())
+    SessionFailureDecisionKind.HTTP_STATUS -> {
+      response.status.ensureSuccess()
+      error("Session Policy selected HTTP failure for a successful status")
     }
-
-    if (e is ParseException || e is SerializationException) {
-        body.onLeft { if ("<" !in it) throw IpBannedException(it) }
-        if (Settings.saveParseErrorBody.value) body.saveParseError(e)
-        throw EhException(appCtx.getString(R.string.error_parse_error), e)
+    SessionFailureDecisionKind.NON_HTML_TEXT_IP_BANNED ->
+      throw IpBannedException(checkNotNull(body.leftOrNull()))
+    SessionFailureDecisionKind.PARSE_FAILURE -> {
+      if (Settings.saveParseErrorBody.value) body.saveParseError(cause)
+      throw EhException(appCtx.getString(R.string.error_parse_error), cause)
     }
+    SessionFailureDecisionKind.RETHROW -> throw cause
+  }
 
-    // We can't translate it, rethrow it anyway
-    throw e
+private fun throwLegacyDomainError(error: EhError): Nothing =
+  when (error) {
+    EhError.NoHits -> throw NoHitsFoundException()
+    EhError.NoWatched -> throw EhException(R.string.gallery_list_empty_hit_subscription)
+    EhError.NeedLogin -> throw NotLoggedInException()
+    EhError.NoHathClient -> throw NoHathClientException()
+    EhError.InsufficientFunds -> throw InsufficientFundsException()
+    is EhError.GalleryUnavailable -> throw EhException(error.message)
+    is EhError.IpBanned -> throw IpBannedException(error.message)
+    is EhError.Error -> throw EhException(error.message)
+  }
+
+private fun rethrowExactlyLegacy(
+  response: HttpResponse,
+  body: Either<String, ByteBuffer>,
+  e: Throwable,
+): Nothing {
+  // Don't translate coroutine cancellation
+  if (e is CancellationException) throw e
+
+  if (response.headers["cf-mitigated"] == "challenge") throw CloudflareBypassException()
+
+  // Check sad panda (without panda)
+  val empty =
+    body.fold(
+      { it.isEmpty() },
+      { !it.hasRemaining() },
+    )
+  if (empty) {
+    val message =
+      if (response.request.url.host == EhUrl.DOMAIN_EX) {
+        "Sad Panda\n(without panda)"
+      } else {
+        appCtx.getString(R.string.error_ip_banned)
+      }
+    throw IpBannedException(message)
+  }
+
+  // Prefer the versioned Rust error carried by the bridge. During rollout the
+  // legacy parser still overwrites the response buffer with its tuple-shaped
+  // EhError, so retain that decoder as the fallback.
+  val error =
+    (e as? RustFailureException)?.failure?.toLegacyError()
+      ?: body
+        .getOrNull()
+        ?.runCatching {
+          val array = moveToByteArray()
+          rewind()
+          Cbor.decodeFromByteArray<EhError>(array)
+        }
+        ?.getOrNull()
+
+  // Check Gallery Not Available - 404
+  if (error is EhError.GalleryUnavailable) throw EhException(error.message)
+
+  // Check bad response code
+  response.status.ensureSuccess()
+
+  when (error) {
+    EhError.NoHits -> throw NoHitsFoundException()
+    EhError.NoWatched -> throw EhException(R.string.gallery_list_empty_hit_subscription)
+    EhError.NeedLogin -> throw NotLoggedInException()
+    EhError.NoHathClient -> throw NoHathClientException()
+    EhError.InsufficientFunds -> throw InsufficientFundsException()
+    is EhError.IpBanned -> throw IpBannedException(error.message)
+    is EhError.Error -> throw EhException(error.message)
+    else -> Unit
+  }
+
+  if (e is ParseException || e is SerializationException) {
+    body.onLeft { if ("<" !in it) throw IpBannedException(it) }
+    if (Settings.saveParseErrorBody.value) body.saveParseError(e)
+    throw EhException(appCtx.getString(R.string.error_parse_error), e)
+  }
+
+  // We can't translate it, rethrow it anyway
+  throw e
 }
 
 private val httpContentPool = DirectByteBufferPool(8, 0x80000)
 
-private suspend inline fun <T> HttpStatement.fetchUsingAsText(crossinline block: suspend String.() -> T) = executeSafely { response ->
-    if (response.request.url.isLogin) throw NotLoggedInException()
-    val body = response.bodyAsUtf8Text()
-    runSuspendCatching {
-        block(body)
-    }.onFailure {
-        rethrowExactly(response, body.left(), it)
-    }.getOrThrow()
+private suspend inline fun <T> HttpStatement.fetchUsingAsText(
+  crossinline block: suspend String.() -> T
+) = executeSafely { response ->
+  if (response.request.url.isLogin) throw NotLoggedInException()
+  val body = response.bodyAsUtf8Text()
+  runSuspendCatching {
+    block(body)
+  }
+    .onFailure {
+      rethrowExactly(response, body.left(), it)
+    }
+    .getOrThrow()
 }
 
-private suspend inline fun <T> HttpStatement.fetchUsingAsByteBuffer(crossinline block: suspend ByteBuffer.() -> T) = executeSafely { response ->
-    if (response.request.url.isLogin) throw NotLoggedInException()
-    httpContentPool.useInstance { buffer ->
-        with(response.bodyAsChannel()) { while (!isClosedForRead) readAvailable(buffer) }
-        buffer.flip()
-        runSuspendCatching {
-            block(buffer)
-        }.onFailure {
-            buffer.rewind()
-            rethrowExactly(response, buffer.right(), it)
-        }.getOrThrow()
+private suspend inline fun <T> HttpStatement.fetchUsingAsByteBuffer(
+  crossinline block: suspend ByteBuffer.() -> T
+) = executeSafely { response ->
+  if (response.request.url.isLogin) throw NotLoggedInException()
+  httpContentPool.useInstance { buffer ->
+    with(response.bodyAsChannel()) { while (!isClosedForRead) readAvailable(buffer) }
+    buffer.flip()
+    runSuspendCatching {
+      block(buffer)
     }
+      .onFailure {
+        buffer.rewind()
+        rethrowExactly(response, buffer.right(), it)
+      }
+      .getOrThrow()
+  }
 }
 
 object EhEngine {
-    suspend fun getOriginalImageUrl(url: String, referer: String?) = noRedirectEhRequest(url, referer).executeSafely { response ->
-        val location = response.headers["Location"] ?: run {
+  suspend fun getOriginalImageUrl(url: String, referer: String?) =
+    noRedirectEhRequest(url, referer).executeSafely { response ->
+      val location =
+        response.headers["Location"]
+          ?: run {
             val body = response.bodyAsUtf8Text()
             rethrowExactly(response, body.left(), InsufficientGpException())
-        }
-        if (Url(location).isLogin) throw InsufficientGpException()
-        location
+          }
+      if (Url(location).isLogin) throw InsufficientGpException()
+      location
     }
 
-    suspend fun getPTokenListFromMpv(gid: Long, token: String) = ehRequest(EhUrl.getGalleryMultiPageViewerUrl(gid, token), EhUrl.referer)
-        .fetchUsingAsText(GalleryMultiPageViewerPTokenParser::parse)
+  suspend fun getPTokenListFromMpv(gid: Long, token: String): List<String> {
+    val request = ehRequest(EhUrl.getGalleryMultiPageViewerUrl(gid, token), EhUrl.referer)
+    return GalleryMultiPageViewerPTokenParser.parseWithAdapters(
+      useRust = Settings.useRustCore.value,
+      legacyParser = { request.fetchUsingAsText(GalleryMultiPageViewerPTokenParser::parse) },
+      rustParser = { request.fetchUsingAsByteBuffer(GalleryMultiPageViewerPTokenParser::parseV1) },
+    )
+  }
 
-    suspend fun getTorrentList(gid: Long, token: String): TorrentResult {
-        val url = EhUrl.getTorrentUrl(gid, token)
-        val referer = EhUrl.getGalleryDetailUrl(gid, token)
-        return ehRequest(url, referer).fetchUsingAsByteBuffer(TorrentParser::parse)
+  suspend fun getTorrentList(gid: Long, token: String): TorrentResult {
+    val url = EhUrl.getTorrentUrl(gid, token)
+    val referer = EhUrl.getGalleryDetailUrl(gid, token)
+    return ehRequest(url, referer).fetchUsingAsByteBuffer(TorrentParser::parse)
+  }
+
+  suspend fun getTorrentKey() =
+    EhCookieStore.getUserId()?.let { id ->
+      val key = ehRequest(EhUrl.URL_HOME).fetchUsingAsText(HomeParser::parseTorrentKey)
+      "${id}x$key"
     }
 
-    suspend fun getTorrentKey() = EhCookieStore.getUserId()?.let { id ->
-        val key = ehRequest(EhUrl.URL_HOME).fetchUsingAsText(HomeParser::parseTorrentKey)
-        "${id}x$key"
-    }
+  suspend fun getArchiveList(gid: Long, token: String): ArchiveParser.Result {
+    val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
+    val plan =
+      selectGalleryArchiveRequestPlan(
+        legacyPlanner = {
+          GalleryArchiveRequestPlan(
+            GalleryArchiveRequestKind.LIST,
+            EhUrl.getArchiveUrl(gid, token),
+            EhUrl.getGalleryDetailUrl(gid, token),
+            null,
+            emptyList(),
+          )
+        },
+        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
+        rustPlanner = {
+          planGalleryArchiveRequest(
+            GalleryArchiveRequest(1, site, GalleryArchiveRequestKind.LIST, gid, token)
+          )
+        },
+      )
+    val url = plan.url
+    val funds = if (EhUtils.isExHentai) getFunds() else null
+    return ehRequest(url, plan.referer)
+      .fetchUsingAsByteBuffer(ArchiveParser::parse.partially2(funds))
+  }
 
-    suspend fun getArchiveList(gid: Long, token: String): ArchiveParser.Result {
-        val url = EhUrl.getArchiveUrl(gid, token)
-        val funds = if (EhUtils.isExHentai) getFunds() else null
-        return ehRequest(url, EhUrl.getGalleryDetailUrl(gid, token))
-            .fetchUsingAsByteBuffer(ArchiveParser::parse.partially2(funds))
-    }
-
-    suspend fun getImageLimits() = parZip(
-        { ehRequest(EhUrl.URL_HOME).fetchUsingAsByteBuffer(HomeParser::parse) },
-        { getFunds() },
-        { limits, funds -> HomeParser.Result(limits, funds) },
+  suspend fun getImageLimits() =
+    parZip(
+      { ehRequest(EhUrl.URL_HOME).fetchUsingAsByteBuffer(HomeParser::parse) },
+      { getFunds() },
+      { limits, funds -> HomeParser.Result(limits, funds) },
     )
 
-    private suspend fun getFunds() = ehRequest(EhUrl.URL_FUNDS).fetchUsingAsText(HomeParser::parseFunds)
+  private suspend fun getFunds() =
+    ehRequest(EhUrl.URL_FUNDS).fetchUsingAsText(HomeParser::parseFunds)
 
-    suspend fun getNews(parse: Boolean) = ehRequest(EhUrl.URL_NEWS, EhUrl.REFERER_E)
-        .fetchUsingAsByteBuffer { if (parse) EventPaneParser.parse(this) else null }
-
-    suspend fun getProfile(): ProfileParser.Result {
-        val url = ehRequest(EhUrl.URL_FORUMS).fetchUsingAsByteBuffer(ProfileParser::parseProfileUrl)
-        return ehRequest(url, EhUrl.URL_FORUMS).fetchUsingAsByteBuffer(ProfileParser::parse)
+  suspend fun getNews(parse: Boolean) =
+    ehRequest(EhUrl.URL_NEWS, EhUrl.REFERER_E).fetchUsingAsByteBuffer {
+      if (parse) EventPaneParser.parse(this) else null
     }
 
-    suspend fun getUConfig(gallerySite: Int) {
-        val url = EhUrl.getUConfigUrl(gallerySite)
-        runSuspendCatching {
-            ehRequest(url).fetchUsingAsByteBuffer(UserConfigParser::parse)
-        }.onFailure { throwable ->
-            // It may get redirected when accessing ex for the first time
-            if (url == EhUrl.URL_UCONFIG_EX) {
-                logcat(throwable)
-                ehRequest(url).fetchUsingAsByteBuffer(UserConfigParser::parse)
-            } else {
-                throw throwable
-            }
+  suspend fun getProfile(): ProfileParser.Result {
+    val url = ehRequest(EhUrl.URL_FORUMS).fetchUsingAsByteBuffer(ProfileParser::parseProfileUrl)
+    return ehRequest(url, EhUrl.URL_FORUMS).fetchUsingAsByteBuffer(ProfileParser::parse)
+  }
+
+  suspend fun getUConfig(gallerySite: Int) {
+    val url = EhUrl.getUConfigUrl(gallerySite)
+    runSuspendCatching {
+      ehRequest(url).fetchUsingAsByteBuffer(UserConfigParser::parse)
+    }
+      .onFailure { throwable ->
+        // It may get redirected when accessing ex for the first time
+        if (url == EhUrl.URL_UCONFIG_EX) {
+          logcat(throwable)
+          ehRequest(url).fetchUsingAsByteBuffer(UserConfigParser::parse)
+        } else {
+          throw throwable
         }
+      }
+  }
+
+  suspend fun getGalleryPage(url: String, gid: Long, token: String): GalleryPageParser.Result {
+    val referer = EhUrl.getGalleryDetailUrl(gid, token)
+    val request = ehRequest(url, referer)
+    return if (Settings.useRustCore.value) {
+      request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
+    } else {
+      request.fetchUsingAsText(GalleryPageParser::parse)
+    }
+  }
+
+  suspend fun getGalleryList(url: String) =
+    ehRequest(url, EhUrl.referer)
+      .fetchUsingAsByteBuffer(GalleryListParser::parse)
+      .apply { galleryInfoList.fillInfo(url, true) }
+      .takeUnless { it.galleryInfoList.isEmpty() } ?: GalleryListParser.emptyResult
+
+  /** Recovery-only neutral list request: no browsing filters, favorites, or implicit gdata. */
+  internal suspend fun getRecoveryGalleryList(url: String, useRust: Boolean) =
+    ehRequest(url, EhUrl.referer)
+      .fetchUsingAsByteBuffer { GalleryListParser.parse(this, useRust) }
+      .takeUnless { it.galleryInfoList.isEmpty() } ?: GalleryListParser.emptyResult
+
+  suspend fun getGalleryDetail(url: String) =
+    ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryDetailParser::parse).run {
+      event?.let {
+        Settings.lastDawnDays = today
+        showEventNotification(it)
+      }
+      detail.apply {
+        // Fill info for database
+        fillInfo()
+        filterComments()
+      }
     }
 
-    suspend fun getGalleryPage(url: String, gid: Long, token: String): GalleryPageParser.Result {
-        val referer = EhUrl.getGalleryDetailUrl(gid, token)
-        return ehRequest(url, referer).fetchUsingAsText(GalleryPageParser::parse)
+  suspend fun getPreviewList(url: String) =
+    ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryDetailParser::parsePreviews)
+
+  suspend fun getFavorites(url: String) =
+    ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(FavoritesParser::parse).apply {
+      galleryInfoList.fillInfo(url)
     }
 
-    suspend fun getGalleryList(url: String) = ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryListParser::parse)
-        .apply { galleryInfoList.fillInfo(url, true) }
-        .takeUnless { it.galleryInfoList.isEmpty() } ?: GalleryListParser.emptyResult
-
-    suspend fun getGalleryDetail(url: String) = ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryDetailParser::parse).run {
-        event?.let {
-            Settings.lastDawnDays = today
-            showEventNotification(it)
-        }
-        detail.apply {
-            // Fill info for database
-            fillInfo()
-            filterComments()
-        }
-    }
-
-    suspend fun getPreviewList(url: String) = ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryDetailParser::parsePreviews)
-
-    suspend fun getFavorites(url: String) = ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(FavoritesParser::parse)
-        .apply { galleryInfoList.fillInfo(url) }
-
-    suspend fun signIn(username: String, password: String): String {
-        val referer = "https://forums.e-hentai.org/index.php?act=Login&CODE=00"
-        val url = EhUrl.API_SIGN_IN
-        val origin = "https://forums.e-hentai.org"
-        return ehRequest(url, referer, origin) {
-            formBody {
-                append("referer", referer)
-                append("b", "")
-                append("bt", "")
-                append("UserName", username)
-                append("PassWord", password)
-                append("CookieDate", "1")
-            }
-        }.fetchUsingAsText(SignInParser::parse)
-    }
-
-    suspend fun commentGallery(url: String, comment: String, id: Long = -1) = ehRequest(url, url, EhUrl.origin) {
+  suspend fun signIn(username: String, password: String): String {
+    val referer = "https://forums.e-hentai.org/index.php?act=Login&CODE=00"
+    val url = EhUrl.API_SIGN_IN
+    val origin = "https://forums.e-hentai.org"
+    val request =
+      ehRequest(url, referer, origin) {
         formBody {
-            if (id == -1L) {
-                append("commenttext_new", comment)
-            } else {
-                append("commenttext_edit", comment)
-                append("edit_comment", id.toString())
-            }
+          append("referer", referer)
+          append("b", "")
+          append("bt", "")
+          append("UserName", username)
+          append("PassWord", password)
+          append("CookieDate", "1")
         }
-    }.executeSafely { response ->
+      }
+    return if (Settings.useRustCore.value) {
+      request.fetchUsingAsByteBuffer(SignInParser::parseV1)
+    } else {
+      request.fetchUsingAsText(SignInParser::parse)
+    }
+  }
+
+  suspend fun commentGallery(url: String, comment: String, id: Long = -1) =
+    ehRequest(url, url, EhUrl.origin) {
+        formBody {
+          if (id == -1L) {
+            append("commenttext_new", comment)
+          } else {
+            append("commenttext_edit", comment)
+            append("edit_comment", id.toString())
+          }
+        }
+      }
+      .executeSafely { response ->
         // Ktor does not handle POST redirect, we need to do it manually
         // https://youtrack.jetbrains.com/issue/KTOR-478
         val location = response.headers["Location"] ?: url
         ehRequest(location, url).fetchUsingAsByteBuffer(GalleryDetailParser::parseComments)
-    }
+      }
 
-    suspend fun modifyFavorites(gid: Long, token: String, dstCat: Int = -1, note: String = "") {
-        val catStr: String = when (dstCat) {
-            -1 -> "favdel"
-            in 0..9 -> dstCat.toString()
-            else -> throw EhException("Invalid dstCat: $dstCat")
-        }
-        val url = EhUrl.getAddFavorites(gid, token)
-        ehRequest(url, url, EhUrl.origin) {
-            formBody {
-                append("favcat", catStr)
-                append("favnote", note)
-                // apply=Add+to+Favorites is not necessary, just use apply=Apply+Changes all the time
-                append("apply", "Apply Changes")
-                append("update", "1")
-            }
-        }.executeSafely { }
-    }
-
-    suspend fun getFavoriteNote(gid: Long, token: String) = ehRequest(EhUrl.getAddFavorites(gid, token), EhUrl.getGalleryDetailUrl(gid, token))
-        .fetchUsingAsText(FavoritesParser::parseNote)
-
-    suspend fun downloadArchive(gid: Long, token: String, res: String, isHath: Boolean): String? {
-        val url = EhUrl.getArchiveUrl(gid, token)
-        val referer = EhUrl.getGalleryDetailUrl(gid, token)
-        val request = ehRequest(url, referer, EhUrl.origin) {
-            formBody {
-                if (isHath) {
-                    append("hathdl_xres", res)
-                } else {
-                    append("dltype", res)
-                    if (res == "org") {
-                        append("dlcheck", "Download Original Archive")
-                    } else {
-                        append("dlcheck", "Download Resample Archive")
-                    }
-                }
-            }
-        }
-        var result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
-        if (!isHath) {
-            if (result == null) {
-                // Wait for the server to prepare archives
-                delay(1000)
-                result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
-                if (result == null) throw EhException("Archive unavailable")
-            }
-            return result
-        }
-        return null
-    }
-
-    suspend fun resetImageLimits() = ehRequest(EhUrl.URL_HOME) {
+  suspend fun modifyFavorites(gid: Long, token: String, dstCat: Int = -1, note: String = "") {
+    if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
+    val selectedPlan =
+      selectFavoriteMutationPlan(
+        legacyPlanner = {
+          val catStr = if (dstCat == -1) "favdel" else dstCat.toString()
+          val url = EhUrl.getAddFavorites(gid, token)
+          FavoriteMutationPlan(
+            FavoriteMutationKind.SINGLE,
+            url,
+            url,
+            EhUrl.origin,
+            listOf(
+              FavoriteMutationField("favcat", catStr),
+              FavoriteMutationField("favnote", note),
+              FavoriteMutationField("apply", "Apply Changes"),
+              FavoriteMutationField("update", "1"),
+            ),
+          )
+        },
+        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
+        rustPlanner = {
+          planFavoriteMutation(
+            FavoriteMutationRequest(
+              1,
+              if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
+              single = FavoriteMutationSingle(gid, token, dstCat, note),
+              bulk = null,
+            )
+          )
+        },
+      )
+    ehRequest(selectedPlan.url, selectedPlan.referer, selectedPlan.origin) {
         formBody {
-            append("reset_imagelimit", "Reset Quota")
+          selectedPlan.form.forEach { append(it.name, it.value) }
         }
-    }.fetchUsingAsText(HomeParser::parseResetLimits)
+      }
+      .executeSafely {}
+  }
 
-    suspend fun modifyFavorites(gidArray: LongArray, srcCat: Int, dstCat: Int): FavParserResult {
-        val url = ehUrl(EhUrl.FAV_PATH) {
-            if (FavListUrlBuilder.isValidFavCat(srcCat)) addQueryParameter("favcat", srcCat.toString())
-        }.buildString()
-        val catStr: String = when (dstCat) {
-            -1 -> "delete"
-            in 0..9 -> "fav$dstCat"
-            else -> throw EhException("Invalid dstCat: $dstCat")
+  suspend fun getFavoriteNote(gid: Long, token: String) =
+    ehRequest(EhUrl.getAddFavorites(gid, token), EhUrl.getGalleryDetailUrl(gid, token))
+      .fetchUsingAsText(FavoritesParser::parseNote)
+
+  suspend fun downloadArchive(gid: Long, token: String, res: String, isHath: Boolean): String? {
+    val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
+    val plan =
+      selectGalleryArchiveRequestPlan(
+        legacyPlanner = {
+          val url = EhUrl.getArchiveUrl(gid, token)
+          val referer = EhUrl.getGalleryDetailUrl(gid, token)
+          val form =
+            if (isHath) listOf(GalleryFormField("hathdl_xres", res))
+            else
+              listOf(
+                GalleryFormField("dltype", res),
+                GalleryFormField(
+                  "dlcheck",
+                  if (res == "org") "Download Original Archive" else "Download Resample Archive",
+                ),
+              )
+          GalleryArchiveRequestPlan(
+            GalleryArchiveRequestKind.DOWNLOAD,
+            url,
+            referer,
+            EhUrl.origin,
+            form,
+          )
+        },
+        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
+        rustPlanner = {
+          planGalleryArchiveRequest(
+            GalleryArchiveRequest(
+              1,
+              site,
+              GalleryArchiveRequestKind.DOWNLOAD,
+              gid,
+              token,
+              res,
+              isHath,
+            )
+          )
+        },
+      )
+    val request =
+      ehRequest(plan.url, plan.referer, plan.origin) {
+        formBody {
+          plan.form.forEach { append(it.name, it.value) }
         }
-        return ehRequest(url, url, EhUrl.origin) {
-            formBody {
-                append("ddact", catStr)
-                gidArray.forEach { append("modifygids[]", it.toString()) }
-            }
-        }.fetchUsingAsByteBuffer(FavoritesParser::parse).apply { galleryInfoList.fillInfo(url) }
+      }
+    var result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
+    if (!isHath) {
+      if (result == null) {
+        // Wait for the server to prepare archives
+        delay(1000)
+        result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
+        if (result == null) throw EhException("Archive unavailable")
+      }
+      return result
     }
+    return null
+  }
 
-    suspend fun getGalleryPageApi(gid: Long, index: Int, pToken: String, showKey: String?, previousPToken: String?): GalleryPageParser.Result {
-        val referer = if (index > 0 && previousPToken != null) EhUrl.getPageUrl(gid, index - 1, previousPToken) else null
-        return ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
+  suspend fun resetImageLimits() =
+    ehRequest(EhUrl.URL_HOME) {
+        formBody {
+          append("reset_imagelimit", "Reset Quota")
+        }
+      }
+      .fetchUsingAsText(HomeParser::parseResetLimits)
+
+  suspend fun modifyFavorites(gidArray: LongArray, srcCat: Int, dstCat: Int): FavParserResult {
+    if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
+    val selectedPlan =
+      selectFavoriteMutationPlan(
+        legacyPlanner = {
+          val url =
+            ehUrl(EhUrl.FAV_PATH) {
+                if (FavListUrlBuilder.isValidFavCat(srcCat))
+                  addQueryParameter("favcat", srcCat.toString())
+              }
+              .buildString()
+          val catStr = if (dstCat == -1) "delete" else "fav$dstCat"
+          FavoriteMutationPlan(
+            FavoriteMutationKind.BULK,
+            url,
+            url,
+            EhUrl.origin,
+            listOf(FavoriteMutationField("ddact", catStr)) +
+              gidArray.map { FavoriteMutationField("modifygids[]", it.toString()) },
+          )
+        },
+        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
+        rustPlanner = {
+          planFavoriteMutation(
+            FavoriteMutationRequest(
+              1,
+              if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
+              single = null,
+              bulk = FavoriteMutationBulk(gidArray.toList(), srcCat, dstCat),
+            )
+          )
+        },
+      )
+    return ehRequest(selectedPlan.url, selectedPlan.referer, selectedPlan.origin) {
+        formBody {
+          selectedPlan.form.forEach { append(it.name, it.value) }
+        }
+      }
+      .fetchUsingAsByteBuffer(FavoritesParser::parse)
+      .apply { galleryInfoList.fillInfo(selectedPlan.url) }
+  }
+
+  suspend fun getGalleryPageApi(
+    gid: Long,
+    index: Int,
+    pToken: String,
+    showKey: String?,
+    previousPToken: String?,
+  ): GalleryPageParser.Result {
+    val referer =
+      if (index > 0 && previousPToken != null) EhUrl.getPageUrl(gid, index - 1, previousPToken)
+      else null
+    val request =
+      ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
+        jsonBody {
+          put("method", "showpage")
+          put("gid", gid)
+          put("page", index + 1)
+          put("imgkey", pToken)
+          put("showkey", showKey)
+        }
+      }
+    return if (Settings.useRustCore.value) {
+      request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
+    } else {
+      request.fetchUsingAsText { GalleryPageParser.parse(filterNot { it == '\\' }) }
+    }
+  }
+
+  suspend fun rateGallery(
+    apiUid: Long,
+    apiKey: String?,
+    gid: Long,
+    token: String,
+    rating: Float,
+  ): RateGalleryResult {
+    val request =
+      ehRequest(EhUrl.apiUrl, EhUrl.getGalleryDetailUrl(gid, token), EhUrl.origin) {
+        jsonBody {
+          put("method", "rategallery")
+          put("apiuid", apiUid)
+          put("apikey", requireNotNull(apiKey))
+          put("gid", gid)
+          put("token", token)
+          put("rating", ceil((rating * 2).toDouble()).toInt())
+        }
+      }
+    return RateGalleryParser.parseWithAdapters(
+      useRust = Settings.useRustCore.value,
+      legacyParser = { request.fetchUsingAsText(RateGalleryParser::parse) },
+      rustParser = { request.fetchUsingAsByteBuffer(RateGalleryParser::parseV1) },
+    )
+  }
+
+  suspend fun fillGalleryListByApi(
+    galleryInfoList: List<GalleryInfo>,
+    referer: String? = null,
+    useRust: Boolean = Settings.useRustCore.value,
+  ) =
+    galleryInfoList.chunked(MAX_REQUEST_SIZE).chunked(MAX_SEQUENTIAL_REQUESTS).forEachIndexed {
+      index,
+      chunk ->
+      if (index != 0) {
+        delay(REQUEST_INTERVAL)
+      }
+      chunk.parMap { galleries ->
+        val request =
+          ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
             jsonBody {
-                put("method", "showpage")
-                put("gid", gid)
-                put("page", index + 1)
-                put("imgkey", pToken)
-                put("showkey", showKey)
-            }
-        }.fetchUsingAsText { GalleryPageParser.parse(filterNot { it == '\\' }) }
-    }
-
-    suspend fun rateGallery(apiUid: Long, apiKey: String?, gid: Long, token: String, rating: Float): RateGalleryResult = ehRequest(EhUrl.apiUrl, EhUrl.getGalleryDetailUrl(gid, token), EhUrl.origin) {
-        jsonBody {
-            put("method", "rategallery")
-            put("apiuid", apiUid)
-            put("apikey", requireNotNull(apiKey))
-            put("gid", gid)
-            put("token", token)
-            put("rating", ceil((rating * 2).toDouble()).toInt())
-        }
-    }.fetchUsingAsText(String::parseAs)
-
-    suspend fun fillGalleryListByApi(galleryInfoList: List<GalleryInfo>, referer: String? = null) = galleryInfoList.chunked(MAX_REQUEST_SIZE).chunked(MAX_SEQUENTIAL_REQUESTS).forEachIndexed { index, chunk ->
-        if (index != 0) {
-            delay(REQUEST_INTERVAL)
-        }
-        chunk.parMap {
-            ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
-                jsonBody {
-                    put("method", "gdata")
-                    array("gidlist") {
-                        it.forEach { info ->
-                            addJsonArray {
-                                add(info.gid)
-                                add(info.token)
-                            }
-                        }
-                    }
-                    put("namespace", 1)
+              put("method", "gdata")
+              array("gidlist") {
+                galleries.forEach { info ->
+                  addJsonArray {
+                    add(info.gid)
+                    add(info.token)
+                  }
                 }
-            }.fetchUsingAsText { GalleryApiParser.parse(this, it) }
-        }
+              }
+              put("namespace", 1)
+            }
+          }
+        GalleryApiParser.parseWithAdapters(
+          useRust = useRust,
+          legacyParser = { request.fetchUsingAsText { GalleryApiParser.parse(this, galleries) } },
+          rustParser = {
+            val batch = request.fetchUsingAsByteBuffer(GalleryApiParser::parseV1)
+            GalleryApiParser.applyV1(batch, galleries)
+          },
+        )
+      }
     }
 
-    suspend fun voteComment(apiUid: Long, apiKey: String?, gid: Long, token: String, commentId: Long, commentVote: Int): VoteCommentResult = ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
+  suspend fun voteComment(
+    apiUid: Long,
+    apiKey: String?,
+    gid: Long,
+    token: String,
+    commentId: Long,
+    commentVote: Int,
+  ): VoteCommentResult {
+    val request =
+      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
         jsonBody {
-            put("method", "votecomment")
-            put("apiuid", apiUid)
-            put("apikey", requireNotNull(apiKey))
-            put("gid", gid)
-            put("token", token)
-            put("comment_id", commentId)
-            put("comment_vote", commentVote)
+          put("method", "votecomment")
+          put("apiuid", apiUid)
+          put("apikey", requireNotNull(apiKey))
+          put("gid", gid)
+          put("token", token)
+          put("comment_id", commentId)
+          put("comment_vote", commentVote)
         }
-    }.fetchUsingAsText(String::parseAs)
+      }
+    return VoteCommentParser.parseWithAdapters(
+      useRust = Settings.useRustCore.value,
+      legacyParser = { request.fetchUsingAsText(VoteCommentParser::parse) },
+      rustParser = { request.fetchUsingAsByteBuffer(VoteCommentParser::parseV1) },
+    )
+  }
 
-    suspend fun voteTag(apiUid: Long, apiKey: String?, gid: Long, token: String, tags: String, vote: Int) = ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
+  suspend fun voteTag(
+    apiUid: Long,
+    apiKey: String?,
+    gid: Long,
+    token: String,
+    tags: String,
+    vote: Int,
+  ): List<GalleryTagGroup> {
+    val request =
+      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
         jsonBody {
-            put("method", "taggallery")
-            put("apiuid", apiUid)
-            put("apikey", requireNotNull(apiKey))
-            put("gid", gid)
-            put("token", token)
-            put("tags", tags)
-            put("vote", vote)
+          put("method", "taggallery")
+          put("apiuid", apiUid)
+          put("apikey", requireNotNull(apiKey))
+          put("gid", gid)
+          put("token", token)
+          put("tags", tags)
+          put("vote", vote)
         }
-    }.fetchUsingAsByteBuffer(VoteTagParser::parse)
+      }
+    return VoteTagParser.parseWithAdapters(
+      useRust = Settings.useRustCore.value,
+      legacyParser = { request.fetchUsingAsByteBuffer(VoteTagParser::parse) },
+      rustParser = { request.fetchUsingAsByteBuffer(VoteTagParser::parseV1) },
+    )
+  }
 
-    suspend fun getGalleryToken(gid: Long, gtoken: String, page: Int) = ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
+  suspend fun getGalleryToken(
+    gid: Long,
+    gtoken: String,
+    page: Int,
+    useRust: Boolean = Settings.useRustCore.value,
+  ): String {
+    val request =
+      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
         jsonBody {
-            put("method", "gtoken")
-            array("pagelist") {
-                addJsonArray {
-                    add(gid)
-                    add(gtoken)
-                    add(page + 1)
-                }
+          put("method", "gtoken")
+          array("pagelist") {
+            addJsonArray {
+              add(gid)
+              add(gtoken)
+              add(page + 1)
             }
+          }
         }
-    }.fetchUsingAsText(GalleryTokenApiParser::parse)
+      }
+    return GalleryTokenApiParser.parseWithAdapters(
+      useRust = useRust,
+      legacyParser = { request.fetchUsingAsText(GalleryTokenApiParser::parse) },
+      rustParser = { request.fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1) },
+    )
+  }
 
-    private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) = with(EhFilter) {
-        if (filter) removeAllSuspend { filterTitle(it) || filterUploader(it) }
-        val hasTags = any { !it.simpleTags.isNullOrEmpty() }
-        val hasPages = any { it.pages != 0 }
-        val hasRated = any { it.rated }
-        val needApi = filter && needTags() && !hasTags || Settings.showGalleryPages.value && !hasPages || hasRated
-        if (needApi) fillGalleryListByApi(this@fillInfo, url)
-        if (filter) removeAllSuspend { filterUploader(it) || filterTag(it) || filterTagNamespace(it) }
-        forEach {
-            if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
-                it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
-            }
-            if (!needApi) it.generateSLang()
+  private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) =
+    with(EhFilter) {
+      if (filter) removeAllSuspend { filterTitle(it) || filterUploader(it) }
+      val hasTags = any { !it.simpleTags.isNullOrEmpty() }
+      val hasPages = any { it.pages != 0 }
+      val hasRated = any { it.rated }
+      val needApi =
+        filter && needTags() && !hasTags || Settings.showGalleryPages.value && !hasPages || hasRated
+      if (needApi) fillGalleryListByApi(this@fillInfo, url)
+      if (filter) removeAllSuspend { filterUploader(it) || filterTag(it) || filterTagNamespace(it) }
+      forEach {
+        if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
+          it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
         }
+        if (!needApi) it.generateSLang()
+      }
     }
 
-    suspend fun addFavorites(galleryList: List<Pair<Long, String>>, dstCat: Int) {
-        galleryList.forEach { (gid, token) ->
-            // https://github.com/FooIbar/EhViewer/issues/1190
-            // Workaround for duplicate items when sorting by favorited time
-            val timeTaken = measureTimeMillis {
-                modifyFavorites(gid, token, dstCat)
-            }
-            delay(1000 - timeTaken)
-        }
+  suspend fun addFavorites(galleryList: List<Pair<Long, String>>, dstCat: Int) {
+    galleryList.forEach { (gid, token) ->
+      // https://github.com/FooIbar/EhViewer/issues/1190
+      // Workaround for duplicate items when sorting by favorited time
+      val timeTaken = measureTimeMillis {
+        modifyFavorites(gid, token, dstCat)
+      }
+      delay(1000 - timeTaken)
     }
+  }
 }

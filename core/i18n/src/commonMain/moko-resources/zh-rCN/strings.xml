@@ -347,6 +347,8 @@
     <string name="settings_download_clean_redundancy_no_redundancy">未发现冗余</string>
     <string name="settings_download_clean_redundancy_done">完成冗余清理，共清理 %d 项</string>
     <string name="settings_advanced">高级</string>
+    <string name="settings_advanced_use_rust_core">使用 Rust 核心</string>
+    <string name="settings_advanced_use_rust_core_summary">新启动的操作将使用 Rust 后端。Rust 执行失败时不会自动回退；关闭此开关可使用旧版后端。</string>
     <string name="settings_advanced_save_parse_error_body">解析失败时保存页面内容</string>
     <string name="settings_advanced_save_parse_error_body_summary">页面内容可能含有隐私敏感信息</string>
     <string name="settings_advanced_save_crash_log">应用崩溃时保存错误日志</string>
@@ -614,4 +616,36 @@
     <string name="blocked_image">已屏蔽的图片</string>
     <string name="show_blocked_image">显示已屏蔽的图片</string>
     <!-- Tachiyomi Reader End-->
+    <string name="settings_download_recovery">扫描并恢复本地下载</string>
+    <string name="settings_download_recovery_summary">扫描当前下载根目录，默认不会访问 EH</string>
+    <string name="settings_download_recovery_pending">待恢复下载项</string>
+    <string name="settings_download_recovery_pending_summary">查看未解析、不可读及存在冲突的本地项目</string>
+    <string name="download_recovery_rust_required">请先启用 Rust 核心后再使用下载恢复</string>
+    <string name="download_recovery_confirmation_title">扫描下载目录？</string>
+    <string name="download_recovery_confirmation_message">扫描只读取本地文件，并把已验证或待处理记录写入数据库；不会删除、移动、重命名文件，也不会访问 EH。</string>
+    <string name="download_recovery_start">开始扫描</string>
+    <string name="download_recovery_cancel">取消</string>
+    <string name="download_recovery_progress_title">下载恢复</string>
+    <string name="download_recovery_progress_counters">已发现：%1$d\n候选项：%2$d\n已处理：%3$d\n已恢复：%4$d\n待处理：%5$d</string>
+    <string name="download_recovery_running">正在扫描本地下载</string>
+    <string name="download_recovery_finished">扫描完成</string>
+    <string name="download_recovery_failed">扫描失败</string>
+    <string name="download_recovery_cancelled">扫描已取消</string>
+    <string name="download_recovery_view_pending">查看待恢复项</string>
+    <string name="download_recovery_missing_title">缺失了关键数据</string>
+    <string name="download_recovery_missing_message">以下项目缺少 gid 或 token。选择退出仍会将它们保留在数据库中；选择从 EH 重新获取会发起明确的网络请求。</string>
+    <string name="download_recovery_more_items">另有 %d 项</string>
+    <string name="download_recovery_exit">退出</string>
+    <string name="download_recovery_fetch_from_eh">从 EH 重新获取</string>
+    <string name="download_recovery_candidates_title">待恢复下载项</string>
+    <string name="download_recovery_empty">没有待恢复下载项</string>
+    <string name="download_recovery_status">状态：%s</string>
+    <string name="download_recovery_fetching">正在获取…</string>
+    <string name="download_recovery_fetch_failed">无法安全恢复该项目</string>
+    <string name="download_recovery_no_match">没有找到匹配的本子</string>
+    <string name="download_recovery_item_recovered">该项目已恢复</string>
+    <string name="download_recovery_remove">移除记录</string>
+    <string name="download_recovery_choose_match">选择匹配的本子</string>
+    <string name="download_recovery_notification_title">正在扫描已下载本子</string>
+    <string name="download_recovery_notification_progress">已发现 %1$d，候选 %2$d，已处理 %3$d，已恢复 %4$d，待处理 %5$d</string>
 </resources>

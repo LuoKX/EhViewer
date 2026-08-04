@@ -119,6 +119,9 @@ FetchContent_Declare(
         GIT_SHALLOW 1
 )
 
+# The Android libwebp-sys2 fork used by eh_ffi is bindings-only (`build = false`).
+# CMake therefore supplies the C implementation to the final shared-library link;
+# decoder state and every WebP JNI export remain owned by eh_ffi.
 option(WEBP_BUILD_ANIM_UTILS OFF)
 option(WEBP_BUILD_CWEBP OFF)
 option(WEBP_BUILD_DWEBP OFF)
@@ -152,13 +155,17 @@ corrosion_import_crate(
         FEATURES $<IF:$<VERSION_GREATER_EQUAL:${ANDROID_NATIVE_API_LEVEL},26>,android-26,android>
         FLAGS $<$<NOT:$<CONFIG:Debug>>:-Z build-std -Z build-std-features=>
 )
-corrosion_add_target_rustflags(ehviewer_rust $<$<NOT:$<CONFIG:Debug>>:-Z unstable-options -C panic=immediate-abort -Z location-detail=none -Z fmt-debug=none>)
+corrosion_add_target_rustflags(
+        ehviewer_rust
+        -Clink-arg=--target=${CMAKE_C_COMPILER_TARGET}
+        $<$<NOT:$<CONFIG:Debug>>:-Z unstable-options -C panic=immediate-abort -Z location-detail=none -Z fmt-debug=none>
+)
 corrosion_link_libraries(ehviewer_rust android jnigraphics log webp webpdemux)
 
 # Build and link our app's native lib
 add_library(${PROJECT_NAME} SHARED archive.c gifutils.c hash.c natsort/strnatcmp.c)
 target_link_libraries(
-        ${PROJECT_NAME} archive_static ehviewer_rust
+        ${PROJECT_NAME} ehviewer_rust archive_static
         -Wl,-u,JNI_OnLoad -Wl,--undefined-glob,Java_*
         -Wl,--version-script,${CMAKE_SOURCE_DIR}/libehviewer.map.txt
 )

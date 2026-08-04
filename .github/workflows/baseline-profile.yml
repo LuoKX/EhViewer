@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Free disk space
-        run: rm -rf $AGENT_TOOLSDIRECTORY
+        run: rm -rf "$AGENT_TOOLSDIRECTORY"
 
       - name: Enable KVM group perms
         run: |
@@ -34,7 +34,7 @@ jobs:
           java-version-file: .java-version
 
       - name: Install Rust Toolchain
-        run: rustup target add thumbv7neon-linux-androideabi
+        run: rustup target add armv7-linux-androideabi
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2

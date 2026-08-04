@@ -20,6 +20,9 @@ import com.ehviewer.core.files.openFileDescriptor
 import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.Settings.archivePasswds
+import com.hippo.ehviewer.bridge.CoreBackend
+import com.hippo.ehviewer.bridge.CoreBackendSelector
+import com.hippo.ehviewer.bridge.archive.RustArchiveReaderV2
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.image.ImageSource
 import com.hippo.ehviewer.image.byteBufferSource
@@ -29,7 +32,6 @@ import com.hippo.ehviewer.jni.extractToFd
 import com.hippo.ehviewer.jni.getExtension
 import com.hippo.ehviewer.jni.needPassword
 import com.hippo.ehviewer.jni.openArchive
-import com.hippo.ehviewer.jni.providePassword
 import com.hippo.ehviewer.jni.releaseByteBuffer
 import com.hippo.ehviewer.util.FileUtils
 import com.hippo.ehviewer.util.displayName
@@ -38,59 +40,141 @@ import moe.tarsin.kt.install
 import okio.Path
 
 typealias PasswdInvalidator = (String) -> Boolean
+
 typealias PasswdProvider = suspend (PasswdInvalidator) -> String
 
-suspend inline fun <T> useArchivePageLoader(
-    file: Path,
-    info: GalleryInfo? = null,
-    startPage: Int = 0,
-    hasAds: Boolean = false,
-    crossinline passwdProvider: PasswdProvider,
-    crossinline block: suspend (PageLoader) -> T,
+suspend fun <T> useArchivePageLoader(
+  file: Path,
+  info: GalleryInfo? = null,
+  startPage: Int = 0,
+  hasAds: Boolean = false,
+  passwdProvider: PasswdProvider,
+  block: suspend (PageLoader) -> T,
 ) = autoCloseScope {
-    coroutineScope {
-        val pfd = install(file.openFileDescriptor("r"))
-        val size = install(
-            { openArchive(pfd.fd, pfd.statSize, info == null || file.name.endsWith(".zip")) },
-            { _, _ -> closeArchive() },
+  coroutineScope {
+    val pfd = install(file.openFileDescriptor("r"))
+    val sortEntries = info == null || file.name.endsWith(".zip")
+    val archiveReader =
+      install(
+        openArchiveReader(
+          fileDescriptor = pfd.fd,
+          fileSize = pfd.statSize,
+          sortEntries = sortEntries,
         )
-        check(size > 0) { "Archive have no content!" }
-        if (needPassword() && archivePasswds.none(::providePassword)) {
-            archivePasswds += passwdProvider(::providePassword)
-        }
-        val loader = install(
-            object : PageLoader(this, info, startPage, size, hasAds) {
-                override val title by lazy {
-                    if (info != null) {
-                        EhUtils.getSuitableTitle(info)
-                    } else {
-                        FileUtils.getNameFromFilename(file.displayName)!!
-                    }
-                }
-
-                override fun getImageExtension(index: Int) = getExtension(index)
-
-                override fun save(index: Int, file: Path) = runCatching {
-                    file.openFileDescriptor("w").use {
-                        extractToFd(index, it.fd)
-                    }
-                }.getOrElse {
-                    logcat(it)
-                    false
-                }
-
-                override fun openSource(index: Int): ImageSource {
-                    val buffer = extractToByteBuffer(index)
-                    checkNotNull(buffer) { "Extract archive content $index failed!" }
-                    check(buffer.isDirect)
-                    return byteBufferSource(buffer) { releaseByteBuffer(buffer) }
-                }
-
-                override fun prefetchPages(pages: List<Int>, bounds: IntRange) = Unit
-
-                override fun onRequest(index: Int, force: Boolean, orgImg: Boolean) = notifySourceReady(index)
-            },
-        )
-        block(loader)
+      )
+    if (archiveReader.needsPassword && archivePasswds.none(archiveReader::providePassword)) {
+      archivePasswds += passwdProvider(archiveReader::providePassword)
     }
+    val size = archiveReader.entryCount
+    check(size > 0) { "Archive have no content!" }
+    val loader =
+      install(
+        object : PageLoader(this, info, startPage, size, hasAds) {
+          override val title by lazy {
+            if (info != null) {
+              EhUtils.getSuitableTitle(info)
+            } else {
+              FileUtils.getNameFromFilename(file.displayName)!!
+            }
+          }
+
+          override fun getImageExtension(index: Int) = archiveReader.extension(index)
+
+          override fun save(index: Int, file: Path) = runCatching {
+            file.openFileDescriptor("w").use {
+              archiveReader.extractToFileDescriptor(index, it.fd)
+            }
+          }
+            .getOrElse {
+              logcat(it)
+              false
+            }
+
+          override fun openSource(index: Int): ImageSource {
+            return archiveReader.openSource(index)
+          }
+
+          override fun prefetchPages(pages: List<Int>, bounds: IntRange) = Unit
+
+          override fun onRequest(index: Int, force: Boolean, orgImg: Boolean) =
+            notifySourceReady(index)
+        }
+      )
+    block(loader)
+  }
+}
+
+private interface ArchiveReader : AutoCloseable {
+  val entryCount: Int
+  val needsPassword: Boolean
+
+  fun providePassword(password: String): Boolean
+
+  fun extension(index: Int): String
+
+  fun extractToFileDescriptor(index: Int, fileDescriptor: Int): Boolean
+
+  fun openSource(index: Int): ImageSource
+}
+
+private class LegacyArchiveReader private constructor(override val entryCount: Int) :
+  ArchiveReader {
+  override val needsPassword
+    get() = needPassword()
+
+  override fun providePassword(password: String) = com.hippo.ehviewer.jni.providePassword(password)
+
+  override fun extension(index: Int) = getExtension(index)
+
+  override fun extractToFileDescriptor(index: Int, fileDescriptor: Int) =
+    extractToFd(index, fileDescriptor)
+
+  override fun openSource(index: Int): ImageSource {
+    val buffer = extractToByteBuffer(index)
+    checkNotNull(buffer) { "Extract archive content $index failed!" }
+    check(buffer.isDirect)
+    return byteBufferSource(buffer) { releaseByteBuffer(buffer) }
+  }
+
+  override fun close() = closeArchive()
+
+  companion object {
+    fun open(fileDescriptor: Int, fileSize: Long, sortEntries: Boolean) =
+      LegacyArchiveReader(openArchive(fileDescriptor, fileSize, sortEntries))
+  }
+}
+
+private class RustArchiveReader(private val delegate: RustArchiveReaderV2) : ArchiveReader {
+  override val entryCount
+    get() = delegate.entryCount
+
+  override val needsPassword
+    get() = delegate.needsPassword
+
+  override fun providePassword(password: String) = delegate.providePassword(password)
+
+  override fun extension(index: Int) = delegate.extension(index)
+
+  override fun extractToFileDescriptor(index: Int, fileDescriptor: Int) =
+    delegate.extractToFileDescriptor(index, fileDescriptor)
+
+  override fun openSource(index: Int): ImageSource {
+    val buffer = delegate.extract(index)
+    check(buffer.isDirect)
+    return byteBufferSource(buffer) {}
+  }
+
+  override fun close() = delegate.close()
+}
+
+private fun openArchiveReader(
+  fileDescriptor: Int,
+  fileSize: Long,
+  sortEntries: Boolean,
+): ArchiveReader {
+  return if (CoreBackendSelector.snapshot() == CoreBackend.RUST) {
+    RustArchiveReader(RustArchiveReaderV2.open(fileDescriptor, sortEntries))
+  } else {
+    LegacyArchiveReader.open(fileDescriptor, fileSize, sortEntries)
+  }
 }

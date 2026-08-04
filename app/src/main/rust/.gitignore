@@ -1,1 +1,3 @@
 /target
+# Corrosion derives an Android Cargo target directory from the manifest name.
+/Cargo.toml_*/

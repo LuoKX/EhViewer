@@ -1,0 +1,55 @@
+[package]
+name = "eh_ffi"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+jvm = [
+    "dep:eh_archive",
+    "dep:jni",
+    "dep:jni_fn",
+    "dep:libc",
+    "dep:rars",
+    "dep:sevenz-rust2",
+    "dep:webp-android",
+    "dep:webp-host",
+    "dep:zeroize",
+]
+android = ["jvm", "dep:eh_image", "dep:image", "dep:ndk", "ndk/bitmap"]
+android-26 = ["android", "ndk/api-level-26"]
+
+[dependencies]
+anyhow = "1.0"
+eh_archive = { path = "../archive", optional = true }
+eh_domain = { path = "../domain" }
+eh_image = { path = "../image", optional = true }
+eh_net = { path = "../net" }
+image = { default-features = false, version = "0.25", optional = true }
+jni = { version = "0.21", optional = true }
+jni_fn = { version = "0.1", optional = true }
+libc = { version = "0.2", optional = true }
+rars = { version = "0.4.8", optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.11"
+sevenz-rust2 = { version = "0.21.3", default-features = false, features = ["aes256", "bzip2", "ppmd", "util"], optional = true }
+zeroize = { version = "1.8", optional = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+ndk = { version = "0.9", optional = true }
+webp-android = { package = "libwebp-sys2", git = "https://github.com/FooIbar/libwebp-sys2-rs.git", features = ["1_5", "demux", "extern-types"], optional = true }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+webp-host = { package = "libwebp-sys2", version = "0.1.10", features = ["1_5", "demux", "extern-types", "static"], optional = true }
+
+[lints.rust]
+missing_docs = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unsafe_code = "deny"
+unused_lifetimes = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }

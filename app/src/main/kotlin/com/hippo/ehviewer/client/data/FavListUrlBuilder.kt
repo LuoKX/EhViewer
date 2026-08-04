@@ -15,6 +15,13 @@
  */
 package com.hippo.ehviewer.client.data
 
+import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.CoreBackend
+import com.hippo.ehviewer.bridge.CoreBackendSelector
+import com.hippo.ehviewer.bridge.gallery.FAVORITES_URL_API_VERSION
+import com.hippo.ehviewer.bridge.gallery.FavoritesUrlRequest
+import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
+import com.hippo.ehviewer.bridge.gallery.buildFavoritesUrl
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.addQueryParameter
 import com.hippo.ehviewer.client.addQueryParameterIfNotBlank
@@ -23,35 +30,59 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FavListUrlBuilder(
-    val favCat: Int = FAV_CAT_ALL,
-    val keyword: String? = null,
-    private var jumpTo: String? = null,
-    private var prev: String? = null,
-    private var next: String? = null,
+  val favCat: Int = FAV_CAT_ALL,
+  val keyword: String? = null,
+  private var jumpTo: String? = null,
+  private var prev: String? = null,
+  private var next: String? = null,
 ) {
-    val isLocal
-        get() = favCat == FAV_CAT_LOCAL
+  val isLocal
+    get() = favCat == FAV_CAT_LOCAL
 
-    fun setIndex(index: String?, isNext: Boolean) {
-        next = index.takeIf { isNext }
-        prev = index.takeUnless { isNext }
-        jumpTo = null
+  fun setIndex(index: String?, isNext: Boolean) {
+    next = index.takeIf { isNext }
+    prev = index.takeUnless { isNext }
+    jumpTo = null
+  }
+
+  fun build(): String {
+    if (isLocal) return buildLegacy()
+    return when (CoreBackendSelector.snapshot()) {
+      CoreBackend.LEGACY -> buildLegacy()
+      CoreBackend.RUST -> buildFavoritesUrl(rustUrlRequest())
     }
+  }
 
-    fun build() = ehUrl(EhUrl.FAV_PATH) {
+  private fun rustUrlRequest() =
+    FavoritesUrlRequest(
+      version = FAVORITES_URL_API_VERSION,
+      site =
+        if (Settings.gallerySite.value == EhUrl.SITE_EX) GalleryUrlSite.EX_HENTAI
+        else GalleryUrlSite.PUBLIC,
+      favoriteCategory = favCat,
+      keyword = keyword,
+      previous = prev,
+      next = next,
+      seek = jumpTo,
+    )
+
+  private fun buildLegacy() =
+    ehUrl(EhUrl.FAV_PATH) {
         when {
-            isValidFavCat(favCat) -> addQueryParameter("favcat", "$favCat")
-            favCat == FAV_CAT_ALL -> addQueryParameter("favcat", "all")
+          isValidFavCat(favCat) -> addQueryParameter("favcat", "$favCat")
+          favCat == FAV_CAT_ALL -> addQueryParameter("favcat", "all")
         }
         addQueryParameterIfNotBlank("f_search", keyword)
         addQueryParameterIfNotBlank("prev", prev)
         addQueryParameterIfNotBlank("next", next)
         addQueryParameterIfNotBlank("seek", jumpTo)
-    }.buildString()
+      }
+      .buildString()
 
-    companion object {
-        const val FAV_CAT_ALL = -1
-        const val FAV_CAT_LOCAL = -2
-        fun isValidFavCat(favCat: Int) = favCat in 0..9
-    }
+  companion object {
+    const val FAV_CAT_ALL = -1
+    const val FAV_CAT_LOCAL = -2
+
+    fun isValidFavCat(favCat: Int) = favCat in 0..9
+  }
 }

@@ -3,15 +3,37 @@ name = "ehviewer_rust"
 version = "0.0.0"
 edition = "2024"
 
+[workspace]
+members = ["crates/archive", "crates/domain", "crates/ffi", "crates/image", "crates/net"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/ngnlAYY/EhViewer"
+
+[workspace.lints.rust]
+missing_docs = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unsafe_code = "forbid"
+unused_lifetimes = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+
 [lib]
 crate-type = ["staticlib"]
 
 [features]
-jvm = ["dep:jni", "dep:jni_fn"]
-android = ["dep:ndk", "jvm", "ndk/bitmap"]
-android-26 = ["android", "ndk/api-level-26"]
+jvm = ["dep:jni", "dep:jni_fn", "eh_ffi/jvm"]
+android = ["jvm", "eh_ffi/android"]
+android-26 = ["android", "eh_ffi/android-26"]
 
 [dependencies]
+eh_domain = { path = "crates/domain" }
+eh_ffi = { path = "crates/ffi" }
+eh_net = { path = "crates/net" }
 regex-lite = "0.1"
 jni = { version = "0.21", optional = true }
 jni_fn = { version = "0.1", optional = true }
@@ -24,17 +46,13 @@ serde_cbor = "0.11"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0"
-image = { default-features = false, version = "0.25" }
-rxing = { version = "0.9", default-features = false, features = ["decoders", "qrcode", "no_character_set_support"] }
-ndk = { version = "0.9", optional = true }
-libwebp-sys2 = { git = "https://github.com/FooIbar/libwebp-sys2-rs.git", features = ["1_5", "demux", "extern-types"] }
 
 [dev-dependencies]
 reqwest = "0.13"
 tokio = { version = "1", features = ["macros"] }
 
 [profile.release]
-panic = "abort"
+panic = "unwind"
 strip = true
 lto = true
 codegen-units = 1

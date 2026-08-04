@@ -52,10 +52,16 @@ fun PreferenceHeader(
 }
 
 @Composable
-fun Preference(title: String, summary: String? = null, onClick: () -> Unit = {}) {
+fun Preference(
+    title: String,
+    summary: String? = null,
+    enabled: Boolean = true,
+    onClick: () -> Unit = {},
+) {
     Preference(
         title = { Text(title) },
         summary = summary?.let { { Text(it) } },
+        enabled = enabled,
         onClick = onClick,
     )
 }

@@ -7,6 +7,7 @@ import androidx.room.TypeConverters
 import com.ehviewer.core.database.dao.DownloadArtistDao
 import com.ehviewer.core.database.dao.DownloadDirnameDao
 import com.ehviewer.core.database.dao.DownloadLabelDao
+import com.ehviewer.core.database.dao.DownloadRecoveryDao
 import com.ehviewer.core.database.dao.DownloadsDao
 import com.ehviewer.core.database.dao.FilterDao
 import com.ehviewer.core.database.dao.GalleryDao
@@ -19,6 +20,7 @@ import com.ehviewer.core.database.model.DownloadArtist
 import com.ehviewer.core.database.model.DownloadDirname
 import com.ehviewer.core.database.model.DownloadEntity
 import com.ehviewer.core.database.model.DownloadLabel
+import com.ehviewer.core.database.model.DownloadRecoveryCandidate
 import com.ehviewer.core.database.model.Filter
 import com.ehviewer.core.database.model.FilterModeConverter
 import com.ehviewer.core.database.model.GalleryEntity
@@ -33,9 +35,9 @@ import com.ehviewer.core.database.model.Search
     entities = [
         GalleryEntity::class, DownloadLabel::class, DownloadEntity::class, DownloadDirname::class, DownloadArtist::class,
         Filter::class, HistoryInfo::class, LocalFavoriteInfo::class, ProgressInfo::class, QuickSearch::class,
-        GalleryFtsEntity::class,
+        GalleryFtsEntity::class, DownloadRecoveryCandidate::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 4, to = 5, spec = Schema4to5::class),
@@ -56,6 +58,7 @@ import com.ehviewer.core.database.model.Search
         AutoMigration(from = 20, to = 21, spec = Schema20to21::class),
         AutoMigration(from = 21, to = 22, spec = Schema21to22::class),
         AutoMigration(from = 22, to = 23),
+        AutoMigration(from = 23, to = 24),
     ],
 )
 @TypeConverters(FilterModeConverter::class)
@@ -64,6 +67,7 @@ abstract class EhDatabase : RoomDatabase() {
     abstract fun downloadArtistDao(): DownloadArtistDao
     abstract fun downloadDirnameDao(): DownloadDirnameDao
     abstract fun downloadLabelDao(): DownloadLabelDao
+    abstract fun downloadRecoveryDao(): DownloadRecoveryDao
     abstract fun downloadsDao(): DownloadsDao
     abstract fun filterDao(): FilterDao
     abstract fun historyDao(): HistoryDao
