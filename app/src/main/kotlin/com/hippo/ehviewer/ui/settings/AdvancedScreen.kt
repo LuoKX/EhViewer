@@ -128,11 +128,6 @@ fun AnimatedVisibilityScope.AdvancedScreen(navigator: DestinationsNavigator) =
             .padding(paddingValues)
       ) {
         SwitchPreference(
-          title = stringResource(id = R.string.settings_advanced_use_rust_core),
-          summary = stringResource(id = R.string.settings_advanced_use_rust_core_summary),
-          state = Settings.useRustCore.asMutableState(),
-        )
-        SwitchPreference(
           title = stringResource(id = R.string.settings_advanced_save_parse_error_body),
           summary = stringResource(id = R.string.settings_advanced_save_parse_error_body_summary),
           state = Settings.saveParseErrorBody.asMutableState(),

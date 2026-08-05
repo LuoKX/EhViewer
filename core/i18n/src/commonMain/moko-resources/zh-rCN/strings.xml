@@ -347,8 +347,6 @@
     <string name="settings_download_clean_redundancy_no_redundancy">未发现冗余</string>
     <string name="settings_download_clean_redundancy_done">完成冗余清理，共清理 %d 项</string>
     <string name="settings_advanced">高级</string>
-    <string name="settings_advanced_use_rust_core">使用 Rust 核心</string>
-    <string name="settings_advanced_use_rust_core_summary">新启动的操作将使用 Rust 后端。Rust 执行失败时不会自动回退；关闭此开关可使用旧版后端。</string>
     <string name="settings_advanced_save_parse_error_body">解析失败时保存页面内容</string>
     <string name="settings_advanced_save_parse_error_body_summary">页面内容可能含有隐私敏感信息</string>
     <string name="settings_advanced_save_crash_log">应用崩溃时保存错误日志</string>
@@ -620,7 +618,6 @@
     <string name="settings_download_recovery_summary">扫描当前下载根目录，默认不会访问 EH</string>
     <string name="settings_download_recovery_pending">待恢复下载项</string>
     <string name="settings_download_recovery_pending_summary">查看未解析、不可读及存在冲突的本地项目</string>
-    <string name="download_recovery_rust_required">请先启用 Rust 核心后再使用下载恢复</string>
     <string name="download_recovery_confirmation_title">扫描下载目录？</string>
     <string name="download_recovery_confirmation_message">扫描只读取本地文件，并把已验证或待处理记录写入数据库；不会删除、移动、重命名文件，也不会访问 EH。</string>
     <string name="download_recovery_start">开始扫描</string>
@@ -637,6 +634,7 @@
     <string name="download_recovery_more_items">另有 %d 项</string>
     <string name="download_recovery_exit">退出</string>
     <string name="download_recovery_fetch_from_eh">从 EH 重新获取</string>
+    <string name="download_recovery_open_local">本地阅读</string>
     <string name="download_recovery_candidates_title">待恢复下载项</string>
     <string name="download_recovery_empty">没有待恢复下载项</string>
     <string name="download_recovery_status">状态：%s</string>

@@ -1,24 +1,6 @@
 package com.hippo.ehviewer.bridge.archive
 
 /**
- * Executes exactly one generated-CBZ writer for a default-off rollout.
- *
- * Exceptions propagate directly. In particular, a Rust failure never invokes [legacyWrite] on the
- * potentially partial output.
- */
-internal fun writeGeneratedCbzWithSelectedWriter(
-  useRustWriter: Boolean,
-  rustWrite: () -> Unit,
-  legacyWrite: () -> Unit,
-) {
-  if (useRustWriter) {
-    rustWrite()
-  } else {
-    legacyWrite()
-  }
-}
-
-/**
  * Writes one application-generated CBZ through the Rust archive V1 contract.
  *
  * Every descriptor remains Android-owned and open for the complete synchronous JNI call. Source

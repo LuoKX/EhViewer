@@ -77,16 +77,6 @@ internal fun ApiEnvelope<GalleryArchiveRequestPlan>.toGalleryArchiveRequestPlan(
   return plan
 }
 
-/** Selects exactly one planner before HTTP starts. */
-internal fun selectGalleryArchiveRequestPlan(
-  legacyPlanner: () -> GalleryArchiveRequestPlan,
-  rustEnabled: () -> Boolean,
-  rustPlanner: () -> GalleryArchiveRequestPlan,
-): GalleryArchiveRequestPlan {
-  val useRust = rustEnabled()
-  return if (useRust) rustPlanner() else legacyPlanner()
-}
-
 /** Invokes the Rust V1 owner with separate direct request and response buffers. */
 private external fun nativePlanGalleryArchiveRequestV1(
   request: ByteBuffer,

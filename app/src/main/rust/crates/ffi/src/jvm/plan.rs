@@ -24,8 +24,9 @@ use eh_domain::download_catalog::{
 };
 use eh_domain::library::{
     DatabaseSearchQueryRequest, LIBRARY_RULE_API_VERSION, LIBRARY_RULE_MODULE,
-    LocalFavoriteMutationRequest, QuickSearchMatchRequest, plan_database_search_query,
-    plan_local_favorite_mutation, plan_quick_search_match,
+    LocalFavoriteMutationRequest, QuickSearchImportRequest, QuickSearchMatchRequest,
+    plan_database_search_query, plan_local_favorite_mutation, plan_quick_search_import,
+    plan_quick_search_match,
 };
 use eh_domain::reader::fetch::{
     READER_FETCH_API_VERSION, READER_FETCH_MODULE, ReaderFetchPlan, ReaderFetchRequest,
@@ -568,6 +569,29 @@ pub fn nativePlanQuickSearchMatchV1(
             "Unsupported Library Rule API version"
         );
         let plan = plan_quick_search_match(&request);
+        let response = ApiEnvelope::ok(LIBRARY_RULE_API_VERSION, LIBRARY_RULE_MODULE, plan);
+        let response_bytes = deref_mut_direct_bytebuffer(env, &response_buffer)?;
+        serialize_to_buffer(response_bytes, &response)
+    })
+}
+
+/// Plans an additive `QuickSearch` import before Android performs its Room insert.
+#[jni_fn("com.hippo.ehviewer.bridge.QuickSearchImportBridgeKt")]
+pub fn nativePlanQuickSearchImportV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    request_buffer: JByteBuffer<'_>,
+    request_length: jint,
+    response_buffer: JByteBuffer<'_>,
+) -> jint {
+    jni_throwing(&mut env, |env| {
+        let request_bytes = deref_direct_bytebuffer(env, &request_buffer)?;
+        let request: QuickSearchImportRequest = decode_request(request_bytes, request_length)?;
+        ensure!(
+            request.version == LIBRARY_RULE_API_VERSION,
+            "Unsupported Library Rule API version"
+        );
+        let plan = plan_quick_search_import(&request);
         let response = ApiEnvelope::ok(LIBRARY_RULE_API_VERSION, LIBRARY_RULE_MODULE, plan);
         let response_bytes = deref_mut_direct_bytebuffer(env, &response_buffer)?;
         serialize_to_buffer(response_bytes, &response)

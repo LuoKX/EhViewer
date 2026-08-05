@@ -10,53 +10,6 @@ import kotlinx.serialization.encodeToByteArray
 
 class DailyCheckBridgeTest {
   @Test
-  fun legacyPlannerPreservesUtcDayAndEligibilityRules() {
-    assertEquals(expectedPlan, planLegacyDailyCheck(request))
-    assertEquals(
-      DailyCheckPlan(today = 11, shouldCheck = false),
-      planLegacyDailyCheck(request.copy(signedIn = false)),
-    )
-    assertEquals(
-      DailyCheckPlan(today = 11, shouldCheck = false),
-      planLegacyDailyCheck(request.copy(lastDawnDays = 11)),
-    )
-  }
-
-  @Test
-  fun selectorRunsOnlyTheCapturedBackendAndPropagatesFailures() {
-    var legacyCalls = 0
-    var rustCalls = 0
-    assertEquals(
-      expectedPlan,
-      selectDailyCheckPlan(
-        backend = CoreBackend.LEGACY,
-        legacyPlanner = {
-          legacyCalls += 1
-          expectedPlan
-        },
-        rustPlanner = {
-          rustCalls += 1
-          expectedPlan.copy(today = 12)
-        },
-      ),
-    )
-    assertEquals(1, legacyCalls)
-    assertEquals(0, rustCalls)
-
-    assertFailsWith<LinkageError> {
-      selectDailyCheckPlan(
-        backend = CoreBackend.RUST,
-        legacyPlanner = {
-          legacyCalls += 1
-          expectedPlan
-        },
-        rustPlanner = { throw LinkageError("missing") },
-      )
-    }
-    assertEquals(1, legacyCalls)
-  }
-
-  @Test
   fun nativeCallbackReceivesOneCompleteRequestAndReturnsItsPlan() {
     var calls = 0
     val actual =

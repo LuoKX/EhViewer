@@ -7,35 +7,6 @@ import kotlin.test.assertFailsWith
 
 class ArchiveWriterBridgeTest {
   @Test
-  fun rolloutExecutesExactlyOneSelectedWriter() {
-    var rustCalls = 0
-    var legacyCalls = 0
-    val rustWrite = { rustCalls += 1 }
-    val legacyWrite = { legacyCalls += 1 }
-
-    writeGeneratedCbzWithSelectedWriter(true, rustWrite, legacyWrite)
-    assertEquals(1, rustCalls)
-    assertEquals(0, legacyCalls)
-
-    writeGeneratedCbzWithSelectedWriter(false, rustWrite, legacyWrite)
-    assertEquals(1, rustCalls)
-    assertEquals(1, legacyCalls)
-  }
-
-  @Test
-  fun rolloutNeverFallsBackAfterRustFailure() {
-    var legacyCalls = 0
-    assertFailsWith<IllegalStateException> {
-      writeGeneratedCbzWithSelectedWriter(
-        useRustWriter = true,
-        rustWrite = { error("injected Rust failure") },
-        legacyWrite = { legacyCalls += 1 },
-      )
-    }
-    assertEquals(0, legacyCalls)
-  }
-
-  @Test
   fun invokesSelectedNativeWriterOnceWithExactInputs() {
     val descriptors = intArrayOf(11, 12, 13)
     val names = arrayOf("00000001.jpg", "00000002.webp", "ComicInfo.xml")

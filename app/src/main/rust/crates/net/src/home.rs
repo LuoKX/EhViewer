@@ -1,6 +1,11 @@
-//! Home-page image-limit response parsing.
+//! Home-page image-limit, torrent-key, and account-funds response parsing.
 
-use eh_domain::contracts::{ApiEnvelope, ImageLimits, RustError};
+use std::sync::LazyLock;
+
+use eh_domain::contracts::{
+    ApiEnvelope, ArchiveFunds, ImageLimits, ImageLimitsReset, RustError, TorrentKey,
+};
+use regex_lite::Regex;
 use tl::{Node, ParserOptions};
 
 use crate::html::first_by_class;
@@ -11,6 +16,26 @@ pub const API_VERSION: u8 = 1;
 /// Stable module discriminator used by the Android bridge.
 pub const MODULE: &str = "imageLimits";
 
+/// Stable module discriminator for image-limit reset responses.
+pub const RESET_LIMITS_MODULE: &str = "homeResetLimits";
+
+/// Stable module discriminator for torrent-key responses.
+pub const TORRENT_KEY_MODULE: &str = "homeTorrentKey";
+
+/// Stable module discriminator for account-funds responses.
+pub const FUNDS_MODULE: &str = "homeFunds";
+
+const INSUFFICIENT_FUNDS: &str = "Insufficient funds.";
+
+static TORRENT_KEY_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"Your current key is: <[^>]*>([^<]*)<")
+        .expect("torrent-key pattern is a compile-time constant")
+});
+static FUNDS_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"Available: ([0-9,]+) Credits[\s\S]*Available: ([0-9,]+) kGP")
+        .expect("funds pattern is a compile-time constant")
+});
+
 /// Parses home-page image limits into a V1 response envelope.
 #[must_use]
 pub fn parse_envelope(html: &str) -> ApiEnvelope<ImageLimits> {
@@ -18,6 +43,86 @@ pub fn parse_envelope(html: &str) -> ApiEnvelope<ImageLimits> {
         Ok(limits) => ApiEnvelope::ok(API_VERSION, MODULE, limits),
         Err(error) => ApiEnvelope::err(API_VERSION, MODULE, error),
     }
+}
+
+/// Parses one image-limit reset response into a V1 response envelope.
+#[must_use]
+pub fn parse_reset_limits_envelope(html: &str) -> ApiEnvelope<ImageLimitsReset> {
+    match parse_reset_limits(html) {
+        Ok(result) => ApiEnvelope::ok(API_VERSION, RESET_LIMITS_MODULE, result),
+        Err(error) => ApiEnvelope::err(API_VERSION, RESET_LIMITS_MODULE, error),
+    }
+}
+
+/// Parses one torrent-key response into a V1 response envelope.
+#[must_use]
+pub fn parse_torrent_key_envelope(html: &str) -> ApiEnvelope<TorrentKey> {
+    match parse_torrent_key(html) {
+        Ok(result) => ApiEnvelope::ok(API_VERSION, TORRENT_KEY_MODULE, result),
+        Err(error) => ApiEnvelope::err(API_VERSION, TORRENT_KEY_MODULE, error),
+    }
+}
+
+/// Parses one account-funds response into a V1 response envelope.
+#[must_use]
+pub fn parse_funds_envelope(html: &str) -> ApiEnvelope<ArchiveFunds> {
+    match parse_funds(html) {
+        Ok(result) => ApiEnvelope::ok(API_VERSION, FUNDS_MODULE, result),
+        Err(error) => ApiEnvelope::err(API_VERSION, FUNDS_MODULE, error),
+    }
+}
+
+/// Detects the exact legacy insufficient-funds marker in a reset response.
+///
+/// # Errors
+///
+/// Returns [`RustError::InsufficientFunds`] only when the case-sensitive marker
+/// occurs. Every other response is accepted, matching the former Kotlin parser.
+pub fn parse_reset_limits(html: &str) -> Result<ImageLimitsReset, RustError> {
+    if html.contains(INSUFFICIENT_FUNDS) {
+        Err(RustError::InsufficientFunds)
+    } else {
+        Ok(ImageLimitsReset { accepted: true })
+    }
+}
+
+/// Captures the torrent key without trimming or normalizing source text.
+///
+/// # Errors
+///
+/// Returns a fixed parse failure when the case-sensitive legacy pattern is absent.
+pub fn parse_torrent_key(html: &str) -> Result<TorrentKey, RustError> {
+    let key = TORRENT_KEY_REGEX
+        .captures(html)
+        .and_then(|captures| captures.get(1))
+        .map(|capture| capture.as_str().to_owned())
+        .ok_or_else(|| RustError::Error("Parse torrent key error".to_owned()))?;
+    Ok(TorrentKey { key })
+}
+
+/// Parses source-ordered Credits and kGP balances with legacy comma handling.
+///
+/// Numeric overflow maps to zero independently for each capture, matching
+/// `ParserUtils.parseInt(..., 0)`. The returned field order remains `(gp, credit)`.
+///
+/// # Errors
+///
+/// Returns a fixed parse failure when the case-sensitive legacy pattern is absent.
+pub fn parse_funds(html: &str) -> Result<ArchiveFunds, RustError> {
+    let captures = FUNDS_REGEX
+        .captures(html)
+        .ok_or_else(|| RustError::Error("Parse funds error".to_owned()))?;
+    let credit = captures
+        .get(1)
+        .map_or(0, |capture| parse_grouped_i32(capture.as_str()));
+    let gp = captures
+        .get(2)
+        .map_or(0, |capture| parse_grouped_i32(capture.as_str()));
+    Ok(ArchiveFunds { gp, credit })
+}
+
+fn parse_grouped_i32(value: &str) -> i32 {
+    value.replace(',', "").parse::<i32>().unwrap_or(0)
 }
 
 /// Parses image-request quota values from the account home page.
@@ -87,9 +192,14 @@ pub fn parse(html: &str) -> Result<ImageLimits, RustError> {
 
 #[cfg(test)]
 mod tests {
-    use eh_domain::contracts::{ApiEnvelope, ImageLimits, RustError};
+    use eh_domain::contracts::{ApiEnvelope, ArchiveFunds, ImageLimits, RustError};
 
-    use super::{API_VERSION, MODULE, parse, parse_envelope};
+    use super::{
+        API_VERSION, FUNDS_MODULE, INSUFFICIENT_FUNDS, MODULE, RESET_LIMITS_MODULE,
+        TORRENT_KEY_MODULE, parse, parse_envelope, parse_funds, parse_funds_envelope,
+        parse_reset_limits, parse_reset_limits_envelope, parse_torrent_key,
+        parse_torrent_key_envelope,
+    };
     use crate::test_support::to_hex;
 
     const LIMITED_PAGE: &str = include_str!("../test_data/image_limits.html");
@@ -232,6 +342,64 @@ mod tests {
         let decoded: ApiEnvelope<ImageLimits> =
             serde_cbor::from_slice(&encoded).expect("golden envelope should decode in Rust");
         assert_eq!(decoded, envelope);
+    }
+
+    #[test]
+    fn parses_reset_torrent_key_and_funds_with_legacy_edge_semantics() {
+        assert!(parse_reset_limits("reset complete").is_ok());
+        assert_eq!(
+            parse_reset_limits("prefix Insufficient funds. suffix"),
+            Err(RustError::InsufficientFunds)
+        );
+        assert!(parse_reset_limits("Insufficient Funds.").is_ok());
+
+        assert_eq!(
+            parse_torrent_key("Your current key is: <strong> raw key </strong>"),
+            Ok(eh_domain::contracts::TorrentKey {
+                key: " raw key ".to_owned(),
+            })
+        );
+        assert_eq!(
+            parse_torrent_key("Your current key is: <b></b>"),
+            Ok(eh_domain::contracts::TorrentKey { key: String::new() })
+        );
+
+        let html = "Available: 1,234 Credits\nanything\nAvailable: 5,678 kGP";
+        assert_eq!(
+            parse_funds(html),
+            Ok(ArchiveFunds {
+                gp: 5_678,
+                credit: 1_234,
+            })
+        );
+        assert_eq!(
+            parse_funds("Available: 999999999999 Credits Available: 999999999999 kGP"),
+            Ok(ArchiveFunds { gp: 0, credit: 0 })
+        );
+    }
+
+    #[test]
+    fn rejects_case_or_shape_drift_and_versions_each_home_contract() {
+        assert!(parse_torrent_key("your current key is: <b>key</b>").is_err());
+        assert!(parse_funds("Available: 1 credits Available: 2 kGP").is_err());
+
+        let reset = parse_reset_limits_envelope("ok");
+        assert_eq!(reset.module, RESET_LIMITS_MODULE);
+        assert!(reset.is_ok());
+        let reset_failure = parse_reset_limits_envelope(INSUFFICIENT_FUNDS);
+        assert!(matches!(
+            reset_failure.error,
+            Some(RustError::InsufficientFunds)
+        ));
+
+        let key = parse_torrent_key_envelope("Your current key is: <b>abc</b>");
+        assert_eq!(key.module, TORRENT_KEY_MODULE);
+        assert_eq!(key.payload.expect("key payload").key, "abc");
+
+        let funds = parse_funds_envelope("Available: 1 Credits Available: 2 kGP");
+        assert_eq!(funds.module, FUNDS_MODULE);
+        assert_eq!(funds.payload.expect("funds payload").gp, 2);
+        assert_eq!(funds.version, API_VERSION);
     }
 
     fn html(text: &str, values: &str) -> String {

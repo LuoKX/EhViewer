@@ -12,8 +12,8 @@ import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.bridge.archive.RecoveryArchiveMetadataKind
 import com.hippo.ehviewer.bridge.archive.RustArchiveReaderV2
-import com.hippo.ehviewer.bridge.download.ExistingRecoveryMapping
 import com.hippo.ehviewer.bridge.download.DOWNLOAD_RECOVERY_API_VERSION
+import com.hippo.ehviewer.bridge.download.ExistingRecoveryMapping
 import com.hippo.ehviewer.bridge.download.RecoveryArchiveInput
 import com.hippo.ehviewer.bridge.download.RecoveryCandidatePlan
 import com.hippo.ehviewer.bridge.download.RecoveryCandidateRequest
@@ -21,13 +21,13 @@ import com.hippo.ehviewer.bridge.download.RecoveryConflictRequest
 import com.hippo.ehviewer.bridge.download.RecoveryEntryInput
 import com.hippo.ehviewer.bridge.download.RecoveryFingerprintInput
 import com.hippo.ehviewer.bridge.download.RecoveryIssue
-import com.hippo.ehviewer.bridge.download.RecoveryPersistenceAction
 import com.hippo.ehviewer.bridge.download.RecoveryPageTokenEvidence
+import com.hippo.ehviewer.bridge.download.RecoveryPersistenceAction
 import com.hippo.ehviewer.bridge.download.RecoverySourceKeyInput
 import com.hippo.ehviewer.bridge.download.RecoverySourceKind
 import com.hippo.ehviewer.bridge.download.RecoveryStatus
-import com.hippo.ehviewer.bridge.download.inspectDownloadRecoveryCandidate
 import com.hippo.ehviewer.bridge.download.extractDownloadRecoveryPageToken
+import com.hippo.ehviewer.bridge.download.inspectDownloadRecoveryCandidate
 import com.hippo.ehviewer.bridge.download.planDownloadRecoveryConflicts
 import com.hippo.ehviewer.download.DownloadManager
 import java.io.ByteArrayOutputStream
@@ -73,23 +73,27 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
         onProgress(progress)
       }
     val filesByParent =
-      tree.nodes.asSequence().filterNot(RecoveryDocumentNode::isDirectory).groupBy { it.parentSourceId }
+      tree.nodes.asSequence().filterNot(RecoveryDocumentNode::isDirectory).groupBy {
+        it.parentSourceId
+      }
     val directoryCandidates =
       tree.nodes
         .asSequence()
         .filter { it.isDirectory && it.relativePath.isNotEmpty() }
         .filter { directory ->
           filesByParent[directory.sourceId].orEmpty().any { child ->
-            child.displayName.equals(".ehviewer", true) ||
-              child.displayName.equals("ComicInfo.xml", true) ||
-              STRICT_PAGE.matches(child.displayName)
+            STRICT_PAGE.matches(child.displayName)
           }
         }
         .toList()
     val archiveCandidates =
-      tree.nodes.asSequence().filterNot(RecoveryDocumentNode::isDirectory).filter {
-        archiveKind(it.displayName) != null
-      }.toList()
+      tree.nodes
+        .asSequence()
+        .filterNot(RecoveryDocumentNode::isDirectory)
+        .filter {
+          archiveKind(it.displayName) != null
+        }
+        .toList()
     val allCandidates =
       (directoryCandidates.map { it to DownloadRecoverySourceKind.DIRECTORY } +
           archiveCandidates.map { it to requireNotNull(archiveKind(it.displayName)) })
@@ -114,7 +118,7 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
         } else {
           archiveRequest(tree.rootKey, node, roomKind, limits, deadline)
         }
-      val plan = inspectOrStage(request)
+      val plan = inspectDownloadRecoveryCandidate(request)
       val pageToken =
         request.spiderInfo?.let { spiderInfo ->
           runCatching { extractDownloadRecoveryPageToken(spiderInfo) }.getOrNull()
@@ -129,21 +133,24 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     }
 
     val existingDownloads = EhDB.getAllDownloadInfo()
-    val mappings =
-      existingDownloads.map { download ->
-        val matched =
-          inspected.firstOrNull { candidate ->
-            recoveryPromotionPath(candidate.node.relativePath, candidate.roomKind, candidate.plan.gid) ==
-              download.dirname
-          }
-        ExistingRecoveryMapping(
-          gid = download.gid,
-          sourceKey =
-            matched?.plan?.sourceKey
-              ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
-          complete = download.state == DownloadInfo.STATE_FINISH,
-        )
+    val mappings = existingDownloads.map { download ->
+      val matched = inspected.firstOrNull { candidate ->
+        candidate.plan.status == RecoveryStatus.READY &&
+          candidate.plan.gid == download.gid &&
+          recoveryPromotionPath(
+            candidate.node.relativePath,
+            candidate.roomKind,
+            candidate.plan.gid,
+          ) == download.dirname
       }
+      ExistingRecoveryMapping(
+        gid = download.gid,
+        sourceKey =
+          matched?.plan?.sourceKey
+            ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
+        complete = download.state == DownloadInfo.STATE_FINISH,
+      )
+    }
     val decisions =
       planDownloadRecoveryConflicts(
           RecoveryConflictRequest(
@@ -160,6 +167,12 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     for (candidate in inspected) {
       currentCoroutineContext().ensureActive()
       val decision = requireNotNull(decisions[candidate.plan.sourceKey])
+      if (decision.action == RecoveryPersistenceAction.KEEP_EXISTING) {
+        oldRows[candidate.plan.sourceKey]?.let { old ->
+          EhDB.removeDownloadRecoveryCandidate(old.candidateId)
+        }
+        continue
+      }
       val plan =
         candidate.plan.copy(
           status = decision.status,
@@ -190,7 +203,8 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
           localPageCount = plan.localPageCount,
           evidence = plan.evidence.joinToString(",") { it.kind.name },
           issues =
-            (plan.issues.map { it.name } + if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList())
+            (plan.issues.map { it.name } +
+                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList())
               .distinct()
               .joinToString(","),
           status = if (pathBlocked) DownloadRecoveryStatus.PATH_CONFLICT else plan.toRoomStatus(),
@@ -237,15 +251,15 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
           favoriteSlot = GalleryInfo.NOT_FAVORITED,
         )
       try {
-          EhDB.promoteDownloadRecoveryCandidate(
-            candidateId = row.candidateId,
-            expectedSourceKey = row.sourceKey,
-            gallery = gallery,
-            relativePath = path,
-            artists = emptyList(),
-            promotedAt = now,
-          )
-          DownloadManager.reconcileVerifiedRecovery(gid)
+        EhDB.promoteDownloadRecoveryCandidate(
+          candidateId = row.candidateId,
+          expectedSourceKey = row.sourceKey,
+          gallery = gallery,
+          relativePath = path,
+          artists = emptyList(),
+          promotedAt = now,
+        )
+        DownloadManager.reconcileVerifiedRecovery(gid)
         recovered++
       } catch (cancelled: CancellationException) {
         throw cancelled
@@ -253,7 +267,10 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
         EhDB.putDownloadRecoveryCandidate(
           row.copy(
             status = DownloadRecoveryStatus.PATH_CONFLICT,
-            issues = (row.issues.split(',').filter(String::isNotBlank) + "PROMOTION_CONFLICT").distinct().joinToString(","),
+            issues =
+              (row.issues.split(',').filter(String::isNotBlank) + "PROMOTION_CONFLICT")
+                .distinct()
+                .joinToString(","),
             updatedAt = System.currentTimeMillis(),
           )
         )
@@ -283,8 +300,7 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     val comic = ordered.firstOrNull { it.displayName.equals("ComicInfo.xml", true) }
     return RecoveryCandidateRequest(
       version = DOWNLOAD_RECOVERY_API_VERSION,
-      source =
-        RecoverySourceKeyInput(rootKey, directory.sourceId, RecoverySourceKind.DIRECTORY),
+      source = RecoverySourceKeyInput(rootKey, directory.sourceId, RecoverySourceKind.DIRECTORY),
       fingerprint =
         RecoveryFingerprintInput(
           size = ordered.sumOf { it.size ?: 0L },
@@ -319,62 +335,72 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       RecoveryArchiveInput(
         format = roomKind.name.lowercase(),
         complete = false,
-        encrypted = false,
-        unsafePath = false,
-        limitExceeded = false,
       )
     try {
-        openDescriptor(node).use { descriptor ->
-          RustArchiveReaderV2.open(descriptor.fd, sortEntries = true).use { reader ->
-            if (reader.needsPassword) {
-              archive = archive.copy(encrypted = true)
+      openDescriptor(node).use { descriptor ->
+        RustArchiveReaderV2.open(descriptor.fd, sortEntries = true).use { reader ->
+          if (reader.needsPassword) {
+            archive =
+              archive.copy(issues = (archive.issues + RecoveryIssue.ENCRYPTED_ARCHIVE).distinct())
+          } else {
+            val count = reader.entryCount
+            if (count > limits.maxArchiveEntries) {
+              archive =
+                archive.copy(issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct())
             } else {
-              val count = reader.entryCount
-              if (count > limits.maxArchiveEntries) {
-                archive = archive.copy(limitExceeded = true)
-              } else {
-                val inspectedEntries = ArrayList<RecoveryEntryInput>(count)
-                for (index in 0 until count) {
-                  currentCoroutineContext().ensureActive()
-                  if (android.os.SystemClock.elapsedRealtime() >= deadline) {
-                    archive = archive.copy(limitExceeded = true)
-                    break
-                  }
-                  inspectedEntries +=
-                    RecoveryEntryInput(
-                      name = reader.name(index),
-                      size = reader.size(index),
-                      regular = true,
-                      readable = runCatching { reader.verify(index) }.getOrDefault(false),
-                    )
-                }
-                entries = inspectedEntries
-                if (
-                  !archive.limitExceeded &&
-                    android.os.SystemClock.elapsedRealtime() < deadline
-                ) {
-                  spiderInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.SPIDER_INFO)
-                  comicInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.COMIC_INFO)
+              val inspectedEntries = ArrayList<RecoveryEntryInput>(count)
+              for (index in 0 until count) {
+                currentCoroutineContext().ensureActive()
+                if (android.os.SystemClock.elapsedRealtime() >= deadline) {
                   archive =
                     archive.copy(
-                      complete =
-                        entries.size == count &&
-                          entries.isNotEmpty() &&
-                          entries.all(RecoveryEntryInput::readable),
-                      unsafePath = reader.hasUnsafePath,
+                      issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct()
                     )
-                } else {
-                  archive = archive.copy(limitExceeded = true)
+                  break
                 }
+                inspectedEntries +=
+                  RecoveryEntryInput(
+                    name = reader.name(index),
+                    size = reader.size(index),
+                    regular = true,
+                    readable = runCatching { reader.verify(index) }.getOrDefault(false),
+                  )
+              }
+              entries = inspectedEntries
+              if (
+                RecoveryIssue.LIMIT_EXCEEDED !in archive.issues &&
+                  android.os.SystemClock.elapsedRealtime() < deadline
+              ) {
+                spiderInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.SPIDER_INFO)
+                comicInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.COMIC_INFO)
+                archive =
+                  archive.copy(
+                    complete =
+                      entries.size == count &&
+                        entries.isNotEmpty() &&
+                        entries.all(RecoveryEntryInput::readable),
+                    issues =
+                      if (reader.hasUnsafePath) {
+                        (archive.issues + RecoveryIssue.UNSAFE_ARCHIVE_PATH).distinct()
+                      } else {
+                        archive.issues
+                      },
+                  )
+              } else {
+                archive =
+                  archive.copy(issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct())
               }
             }
           }
         }
+      }
     } catch (cancelled: CancellationException) {
       throw cancelled
     } catch (failure: Throwable) {
       val limited = failure.message.orEmpty().contains("too many", ignoreCase = true)
-      archive = archive.copy(limitExceeded = limited)
+      if (limited) {
+        archive = archive.copy(issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct())
+      }
     }
     return RecoveryCandidateRequest(
       version = DOWNLOAD_RECOVERY_API_VERSION,
@@ -387,30 +413,6 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       archive = archive,
     )
   }
-
-  private fun inspectOrStage(request: RecoveryCandidateRequest): RecoveryCandidatePlan =
-    runCatching { inspectDownloadRecoveryCandidate(request) }.getOrElse {
-      val archive = request.archive != null
-      RecoveryCandidatePlan(
-        sourceKey =
-          sha256(
-            "${request.source.rootId}\u0000${request.source.sourceId}\u0000${request.source.sourceKind.name}"
-          ),
-        fingerprint =
-          sha256(
-            "${request.fingerprint.size}:${request.fingerprint.modifiedAtMillis}:${request.displayName}"
-          ),
-        sourceKind = request.source.sourceKind,
-        displayName = request.displayName,
-        localPageCount = request.entries.count { IMAGE_ENTRY.matches(it.name) },
-        evidence = emptyList(),
-        issues =
-          if (archive) listOf(RecoveryIssue.UNREADABLE_ARCHIVE)
-          else listOf(RecoveryIssue.INVALID_METADATA, RecoveryIssue.MISSING_GID, RecoveryIssue.MISSING_TOKEN),
-        status = if (archive) RecoveryStatus.UNREADABLE else RecoveryStatus.MISSING_IDENTITY,
-        action = RecoveryPersistenceAction.STAGE,
-      )
-    }
 
   private fun RecoveryCandidatePlan.toRoomStatus(): DownloadRecoveryStatus =
     when (status) {
@@ -442,8 +444,10 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       output.toByteArray()
     }
 
-  private fun canRead(node: RecoveryDocumentNode): Boolean =
-    runCatching { openInput(node).use { it.read() >= 0 } }.getOrDefault(false)
+  private fun canRead(node: RecoveryDocumentNode): Boolean = runCatching {
+    openInput(node).use { it.read() >= 0 }
+  }
+    .getOrDefault(false)
 
   private fun openInput(node: RecoveryDocumentNode) =
     if (node.uri.scheme == "file") {
@@ -465,7 +469,10 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
   private companion object {
     const val MAX_METADATA_BYTES = 512 * 1024
     val STRICT_PAGE =
-      Regex("^[0-9]{8}\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$", RegexOption.IGNORE_CASE)
+      Regex(
+        "^[0-9]{8}\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$",
+        RegexOption.IGNORE_CASE,
+      )
     val IMAGE_ENTRY =
       Regex("^.+\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$", RegexOption.IGNORE_CASE)
   }

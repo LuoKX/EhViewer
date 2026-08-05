@@ -73,7 +73,6 @@ class GalleryNavigationAppLinkDeviceTest {
       try {
         runBlocking {
           Settings.withMutableSnapshot { snapshot ->
-            snapshot[Settings.useRustCore] = true
             snapshot[Settings.needSignIn] = true
             snapshot[Settings.updateIntervalDays] = 0
           }
@@ -99,7 +98,6 @@ class GalleryNavigationAppLinkDeviceTest {
       } finally {
         runBlocking {
           Settings.withMutableSnapshot { snapshot ->
-            snapshot[Settings.useRustCore] = previousSettings[Settings.useRustCore]
             snapshot[Settings.needSignIn] = previousSettings[Settings.needSignIn]
             snapshot[Settings.updateIntervalDays] = previousSettings[Settings.updateIntervalDays]
           }

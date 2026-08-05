@@ -661,6 +661,22 @@ pub struct ImageLimits {
     pub reset_cost: i32,
 }
 
+/// Successful completion marker for an image-limit reset response.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImageLimitsReset {
+    /// Always true for a successful response; insufficient funds is a typed error.
+    pub accepted: bool,
+}
+
+/// Raw torrent key captured from the account home page.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TorrentKey {
+    /// Source token captured without trimming or normalization.
+    pub key: String,
+}
+
 /// Favorite-category names parsed from the remote user-configuration page.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

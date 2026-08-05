@@ -2,8 +2,6 @@ package com.hippo.ehviewer.client.session
 
 import com.ehviewer.core.network.EhCookieStore
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.auth.SessionGallerySite
 import com.hippo.ehviewer.bridge.auth.SessionLifecycleCommand
 import com.hippo.ehviewer.bridge.auth.SessionLifecycleMode
@@ -67,7 +65,6 @@ internal interface SessionStore {
  */
 internal class SessionController(
   private val store: SessionStore,
-  private val backendSelector: () -> CoreBackend,
   private val planner: (SessionLifecycleSnapshot, SessionLifecycleCommand) -> SessionLifecyclePlan =
     ::planSessionLifecycle,
 ) {
@@ -79,16 +76,14 @@ internal class SessionController(
   suspend fun restore() {
     mutex.withLock {
       advanceGeneration()
-      transition(SessionLifecycleCommand.restore(), authentication = null) {
-        // The rollout-disabled startup path intentionally preserves legacy persisted state.
-      }
+      transition(SessionLifecycleCommand.restore(), authentication = null)
     }
   }
 
   /** Clears the previous identity and creates a one-shot token for a new login handoff. */
   suspend fun beginSignIn(): SessionAttempt = mutex.withLock {
     val attempt = SessionAttempt(advanceGeneration())
-    transition(SessionLifecycleCommand.signOut(), authentication = null, ::legacySignOut)
+    transition(SessionLifecycleCommand.signOut(), authentication = null)
     attempt
   }
 
@@ -116,9 +111,7 @@ internal class SessionController(
           authentication.site,
         ),
         authentication,
-      ) {
-        legacySignIn(authentication)
-      }
+      )
       true
     }
   }
@@ -127,7 +120,7 @@ internal class SessionController(
   suspend fun enterGuest() {
     mutex.withLock {
       advanceGeneration()
-      transition(SessionLifecycleCommand.enterGuest(), authentication = null, ::legacyEnterGuest)
+      transition(SessionLifecycleCommand.enterGuest(), authentication = null)
     }
   }
 
@@ -135,7 +128,7 @@ internal class SessionController(
   suspend fun signOut() {
     mutex.withLock {
       advanceGeneration()
-      transition(SessionLifecycleCommand.signOut(), authentication = null, ::legacySignOut)
+      transition(SessionLifecycleCommand.signOut(), authentication = null)
     }
   }
 
@@ -165,19 +158,10 @@ internal class SessionController(
   private suspend fun transition(
     command: SessionLifecycleCommand,
     authentication: SessionAuthentication?,
-    legacyCommit: suspend () -> Unit,
   ) {
     val snapshot = store.snapshot()
-    val plan =
-      when (backendSelector()) {
-        CoreBackend.LEGACY -> null
-        CoreBackend.RUST -> planner(snapshot, command)
-      }
-    if (plan == null) {
-      withContext(NonCancellable) { legacyCommit() }
-    } else {
-      withContext(NonCancellable) { commit(plan, authentication) }
-    }
+    val plan = planner(snapshot, command)
+    withContext(NonCancellable) { commit(plan, authentication) }
   }
 
   private suspend fun commit(
@@ -199,31 +183,6 @@ internal class SessionController(
     publish(plan.state.mode, plan.site)
   }
 
-  private suspend fun legacySignOut() {
-    // Frozen rollback behavior clears the display name but historically retains the avatar.
-    store.clearCookies()
-    store.setDisplayName(null)
-    store.setSignedIn(false)
-    store.setSite(SessionGallerySite.PUBLIC)
-    store.setSignInRequired(true)
-  }
-
-  private fun legacySignIn(authentication: SessionAuthentication) {
-    authentication.profile?.let { profile ->
-      store.setDisplayName(profile.displayName)
-      store.setAvatar(profile.avatar)
-    }
-    store.setSite(authentication.site)
-    store.setSignedIn(true)
-    store.setSignInRequired(false)
-  }
-
-  private fun legacyEnterGuest() {
-    // Frozen rollback behavior changes only the public site and navigation requirement.
-    store.setSite(SessionGallerySite.PUBLIC)
-    store.setSignInRequired(false)
-  }
-
   private fun publish(mode: SessionLifecycleMode, site: SessionGallerySite) {
     store.setSite(site)
     store.setSignedIn(mode == SessionLifecycleMode.AUTHENTICATED)
@@ -238,11 +197,7 @@ internal class SessionController(
 }
 
 /** Process-wide session coordinator used by startup, login, settings, and account UI. */
-internal val sessionController =
-  SessionController(
-    store = AndroidSessionStore,
-    backendSelector = CoreBackendSelector::snapshot,
-  )
+internal val sessionController = SessionController(store = AndroidSessionStore)
 
 private object AndroidSessionStore : SessionStore {
   override fun snapshot() =

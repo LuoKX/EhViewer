@@ -366,8 +366,6 @@
     <string name="settings_download_clean_redundancy_no_redundancy">No redundancy</string>
     <string name="settings_download_clean_redundancy_done">Redundancy cleaning completed, clean-up %d items totally</string>
     <string name="settings_advanced">Advanced</string>
-    <string name="settings_advanced_use_rust_core">Use Rust core</string>
-    <string name="settings_advanced_use_rust_core_summary">Use the Rust backend for new operations. Rust failures do not fall back automatically; turn this off to use the legacy backend.</string>
     <string name="settings_advanced_save_parse_error_body">Save HTML content when parsing error</string>
     <string name="settings_advanced_save_parse_error_body_summary">Html content may be privacy-sensitive</string>
     <string name="settings_advanced_save_crash_log">Save crash log when app crashes</string>
@@ -638,7 +636,6 @@
     <string name="settings_download_recovery_summary">Scan the configured download root without accessing EH</string>
     <string name="settings_download_recovery_pending">Pending recovery items</string>
     <string name="settings_download_recovery_pending_summary">Review unresolved, unreadable, and conflicting local items</string>
-    <string name="download_recovery_rust_required">Enable the Rust core to use download recovery</string>
     <string name="download_recovery_confirmation_title">Scan download directory?</string>
     <string name="download_recovery_confirmation_message">The scan reads local files and writes verified or pending records to the database. It never deletes, moves, renames, or accesses EH.</string>
     <string name="download_recovery_start">Start scan</string>
@@ -655,6 +652,7 @@
     <string name="download_recovery_more_items">and %d more items</string>
     <string name="download_recovery_exit">Exit</string>
     <string name="download_recovery_fetch_from_eh">Fetch from EH</string>
+    <string name="download_recovery_open_local">Read locally</string>
     <string name="download_recovery_candidates_title">Pending recovery items</string>
     <string name="download_recovery_empty">No pending recovery items</string>
     <string name="download_recovery_status">Status: %s</string>

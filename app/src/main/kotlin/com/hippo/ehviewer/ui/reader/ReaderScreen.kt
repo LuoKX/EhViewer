@@ -75,6 +75,7 @@ import com.hippo.ehviewer.gallery.status
 import com.hippo.ehviewer.gallery.unblock
 import com.hippo.ehviewer.gallery.useArchivePageLoader
 import com.hippo.ehviewer.gallery.useEhPageLoader
+import com.hippo.ehviewer.gallery.useLocalDirectoryPageLoader
 import com.hippo.ehviewer.ui.MainActivity
 import com.hippo.ehviewer.ui.Screen
 import com.hippo.ehviewer.ui.theme.EhTheme
@@ -107,6 +108,8 @@ sealed interface ReaderScreenArgs {
   @Serializable data class Gallery(val info: BaseGalleryInfo, val page: Int) : ReaderScreenArgs
 
   @Serializable data class Archive(val path: String) : ReaderScreenArgs
+
+  @Serializable data class Directory(val path: String, val title: String) : ReaderScreenArgs
 }
 
 @Composable
@@ -448,6 +451,12 @@ suspend fun <T> usePageLoader(args: ReaderScreenArgs, block: suspend (PageLoader
             ensure(invalidator(text)) { string(R.string.passwd_wrong) }
           }
         },
+        block = block,
+      )
+    is ReaderScreenArgs.Directory ->
+      useLocalDirectoryPageLoader(
+        directory = args.path.toPath(),
+        title = args.title,
         block = block,
       )
   }

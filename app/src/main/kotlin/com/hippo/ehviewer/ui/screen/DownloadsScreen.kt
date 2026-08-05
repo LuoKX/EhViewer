@@ -113,8 +113,6 @@ import com.ehviewer.core.util.withUIContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.asMutableState
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.download.DownloadFilterRequest
 import com.hippo.ehviewer.bridge.download.filterDownloadCatalog
 import com.hippo.ehviewer.client.EhTagDatabase
@@ -153,7 +151,6 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
     var sortMode by Settings.downloadSortMode.asMutableState()
     val filterMode by Settings.downloadFilterMode.collectAsState { DownloadsFilterMode.from(it) }
     val showProgress by Settings.showReadingProgress.collectAsState()
-    val rustCoreEnabled by Settings.useRustCore.collectAsState()
     var filterState by rememberSerializable {
       mutableStateOf(DownloadsFilterState(filterMode, Settings.recentDownloadLabel.value))
     }
@@ -201,19 +198,13 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
     val hint = stringResource(R.string.search_bar_hint, title)
     val list =
       if (DownloadManager.isInitialized) {
-        remember(filterState, invalidateKey, rustCoreEnabled) {
+        remember(filterState, invalidateKey) {
           val source = DownloadManager.downloadInfoList
+          val request = DownloadFilterRequest.from(source, filterState)
+          val byGalleryId = source.associateBy { it.gid }
           val filtered =
-            when (CoreBackendSelector.snapshot()) {
-              CoreBackend.LEGACY ->
-                source.filterTo(mutableStateListOf()) { info -> filterState.take(info) }
-              CoreBackend.RUST -> {
-                val request = DownloadFilterRequest.from(source, filterState)
-                val byGalleryId = source.associateBy { it.gid }
-                filterDownloadCatalog(request).galleryIds.mapTo(mutableStateListOf()) { galleryId ->
-                  checkNotNull(byGalleryId[galleryId]) { "Rust filtered an unknown download" }
-                }
-              }
+            filterDownloadCatalog(request).galleryIds.mapTo(mutableStateListOf()) { galleryId ->
+              checkNotNull(byGalleryId[galleryId]) { "Rust filtered an unknown download" }
             }
           filtered.also {
             launch {

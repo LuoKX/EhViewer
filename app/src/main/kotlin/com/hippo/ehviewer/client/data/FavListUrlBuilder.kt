@@ -16,16 +16,11 @@
 package com.hippo.ehviewer.client.data
 
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.gallery.FAVORITES_URL_API_VERSION
 import com.hippo.ehviewer.bridge.gallery.FavoritesUrlRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
 import com.hippo.ehviewer.bridge.gallery.buildFavoritesUrl
 import com.hippo.ehviewer.client.EhUrl
-import com.hippo.ehviewer.client.addQueryParameter
-import com.hippo.ehviewer.client.addQueryParameterIfNotBlank
-import com.hippo.ehviewer.client.ehUrl
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -45,13 +40,7 @@ data class FavListUrlBuilder(
     jumpTo = null
   }
 
-  fun build(): String {
-    if (isLocal) return buildLegacy()
-    return when (CoreBackendSelector.snapshot()) {
-      CoreBackend.LEGACY -> buildLegacy()
-      CoreBackend.RUST -> buildFavoritesUrl(rustUrlRequest())
-    }
-  }
+  fun build(): String = buildFavoritesUrl(rustUrlRequest())
 
   private fun rustUrlRequest() =
     FavoritesUrlRequest(
@@ -65,19 +54,6 @@ data class FavListUrlBuilder(
       next = next,
       seek = jumpTo,
     )
-
-  private fun buildLegacy() =
-    ehUrl(EhUrl.FAV_PATH) {
-        when {
-          isValidFavCat(favCat) -> addQueryParameter("favcat", "$favCat")
-          favCat == FAV_CAT_ALL -> addQueryParameter("favcat", "all")
-        }
-        addQueryParameterIfNotBlank("f_search", keyword)
-        addQueryParameterIfNotBlank("prev", prev)
-        addQueryParameterIfNotBlank("next", next)
-        addQueryParameterIfNotBlank("seek", jumpTo)
-      }
-      .buildString()
 
   companion object {
     const val FAV_CAT_ALL = -1

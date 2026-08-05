@@ -15,23 +15,16 @@ internal data class DatabaseSearchQueryRequest(val version: Int, val keyword: St
 
 @Serializable internal data class DatabaseSearchQueryPlan(val query: String)
 
-internal fun planLegacyDatabaseSearchQuery(request: DatabaseSearchQueryRequest) =
-  DatabaseSearchQueryPlan("*${request.keyword}*")
-
 internal fun resolveDatabaseSearchQuery(
   request: DatabaseSearchQueryRequest,
-  backend: CoreBackend,
+  nativeCall: (ByteBuffer, Int, ByteBuffer) -> Int = ::nativePlanDatabaseSearchQueryV1,
 ): String =
-  when (backend) {
-    CoreBackend.LEGACY -> planLegacyDatabaseSearchQuery(request).query
-    CoreBackend.RUST ->
-      invokeLibraryRule<DatabaseSearchQueryPlan>(
-          rustCbor.encodeToByteArray(request),
-          "database search query",
-          ::nativePlanDatabaseSearchQueryV1,
-        )
-        .query
-  }
+  invokeLibraryRule<DatabaseSearchQueryPlan>(
+      rustCbor.encodeToByteArray(request),
+      "database search query",
+      nativeCall,
+    )
+    .query
 
 @Serializable
 internal data class QuickSearchSnapshot(
@@ -66,23 +59,16 @@ internal data class QuickSearchMatchRequest(
 
 @Serializable internal data class QuickSearchMatchPlan(val matches: Boolean)
 
-internal fun planLegacyQuickSearchMatch(request: QuickSearchMatchRequest) =
-  QuickSearchMatchPlan(request.saved == request.current)
-
 internal fun resolveQuickSearchMatch(
   request: QuickSearchMatchRequest,
-  backend: CoreBackend,
+  nativeCall: (ByteBuffer, Int, ByteBuffer) -> Int = ::nativePlanQuickSearchMatchV1,
 ): Boolean =
-  when (backend) {
-    CoreBackend.LEGACY -> planLegacyQuickSearchMatch(request).matches
-    CoreBackend.RUST ->
-      invokeLibraryRule<QuickSearchMatchPlan>(
-          rustCbor.encodeToByteArray(request),
-          "QuickSearch match",
-          ::nativePlanQuickSearchMatchV1,
-        )
-        .matches
-  }
+  invokeLibraryRule<QuickSearchMatchPlan>(
+      rustCbor.encodeToByteArray(request),
+      "QuickSearch match",
+      nativeCall,
+    )
+    .matches
 
 @Serializable
 internal data class LocalFavoriteMutationRequest(
@@ -108,62 +94,16 @@ internal data class LocalFavoriteMutationPlan(
   val added: Boolean,
 )
 
-internal fun planLegacyLocalFavoriteMutation(
-  request: LocalFavoriteMutationRequest
-): LocalFavoriteMutationPlan =
-  when (request.requestedSlot) {
-    NOT_FAVORITED_SLOT ->
-      if (request.currentSlot > LOCAL_FAVORITED_SLOT) {
-        LocalFavoriteMutationPlan(
-          LocalFavoriteAction.REMOVE_CLOUD,
-          if (request.localFavorited) LOCAL_FAVORITED_SLOT else NOT_FAVORITED_SLOT,
-          null,
-          false,
-        )
-      } else {
-        LocalFavoriteMutationPlan(
-          LocalFavoriteAction.REMOVE_LOCAL,
-          NOT_FAVORITED_SLOT,
-          null,
-          false,
-        )
-      }
-    LOCAL_FAVORITED_SLOT ->
-      LocalFavoriteMutationPlan(
-        if (request.localFavorited) LocalFavoriteAction.REMOVE_LOCAL
-        else LocalFavoriteAction.ADD_LOCAL,
-        when (request.currentSlot) {
-          NOT_FAVORITED_SLOT -> LOCAL_FAVORITED_SLOT
-          LOCAL_FAVORITED_SLOT -> NOT_FAVORITED_SLOT
-          else -> request.currentSlot
-        },
-        null,
-        !request.localFavorited,
-      )
-    in 0..9 ->
-      LocalFavoriteMutationPlan(
-        LocalFavoriteAction.SET_CLOUD,
-        request.requestedSlot,
-        request.requestedSlot,
-        true,
-      )
-    else -> error("Invalid favorite slot!")
-  }
-
 internal fun resolveLocalFavoriteMutation(
   request: LocalFavoriteMutationRequest,
-  backend: CoreBackend,
+  nativeCall: (ByteBuffer, Int, ByteBuffer) -> Int = ::nativePlanLocalFavoriteMutationV1,
 ): LocalFavoriteMutationPlan {
   val plan =
-    when (backend) {
-      CoreBackend.LEGACY -> planLegacyLocalFavoriteMutation(request)
-      CoreBackend.RUST ->
-        invokeLibraryRule<LocalFavoriteMutationPlan>(
-          rustCbor.encodeToByteArray(request),
-          "local favorite mutation",
-          ::nativePlanLocalFavoriteMutationV1,
-        )
-    }
+    invokeLibraryRule<LocalFavoriteMutationPlan>(
+      rustCbor.encodeToByteArray(request),
+      "local favorite mutation",
+      nativeCall,
+    )
   require(plan.nextFavoriteSlot in NOT_FAVORITED_SLOT..9) {
     "Invalid next favorite slot"
   }

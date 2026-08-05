@@ -74,7 +74,6 @@ import com.ehviewer.core.ui.util.ifTrueThen
 import com.ehviewer.core.ui.util.thenIf
 import com.hippo.ehviewer.EhApplication.Companion.searchDatabase
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.SearchRuleRequest
 import com.hippo.ehviewer.bridge.resolveSearchRule
 import com.hippo.ehviewer.client.EhTagDatabase
@@ -202,10 +201,7 @@ fun SearchBarScreen(
   fun onApplySearch() {
     // May have invalid whitespaces if pasted from clipboard, replace them with spaces
     val query =
-      resolveSearchRule(
-        SearchRuleRequest.normalizeQuery(searchFieldState.text.toString()),
-        CoreBackendSelector.snapshot(),
-      )
+      resolveSearchRule(SearchRuleRequest.normalizeQuery(searchFieldState.text.toString()))
     if (query.isNotEmpty()) {
       scope.launch {
         mSearchDatabase.deleteQuery(query)
@@ -366,10 +362,7 @@ fun wrapTagKeyword(keyword: String, translate: Boolean = false): String = run {
     } else {
       null
     }
-  resolveSearchRule(
-    SearchRuleRequest.wrapTagKeyword(keyword, translatedPrefix, translatedTag),
-    CoreBackendSelector.snapshot(),
-  )
+  resolveSearchRule(SearchRuleRequest.wrapTagKeyword(keyword, translatedPrefix, translatedTag))
 }
 
 private val TagTerminators = charArrayOf('"', '$')

@@ -66,11 +66,6 @@ fun <T> PrefDelegate<T>.asMutableState(): MutableState<T> {
   }
 }
 
-internal fun resolveMigratedRustCoreEnabled(
-  current: Boolean?,
-  legacyValues: List<Boolean?>,
-): Boolean = current ?: (legacyValues.isNotEmpty() && legacyValues.all { it == true })
-
 object Settings : DataStorePreferences(null) {
   @Suppress("ktlint:standard:backing-property-naming")
   private val _favFlow = MutableSharedFlow<Unit>()
@@ -87,10 +82,9 @@ object Settings : DataStorePreferences(null) {
   val harmonizeCategoryColor = boolPref("harmonize_category_color", true)
   val launchPage = intPref("launch_page_2", 0)
   val listMode = intPref("list_mode_2", 0)
-  val useRustCore = boolPref("use_rust_core", false)
-
-  private val legacyRustCoreFlags =
+  private val retiredRustCoreFlags =
     listOf(
+      boolPref("use_rust_core", false),
       boolPref("use_rust_core_auth", false),
       boolPref("use_rust_core_user_config", false),
       boolPref("use_rust_core_session_policy", false),
@@ -238,12 +232,7 @@ object Settings : DataStorePreferences(null) {
   init {
     runBlocking {
       withMutableSnapshot { pref ->
-        val current = if (useRustCore in pref) pref[useRustCore] else null
-        val legacyValues = legacyRustCoreFlags.map { flag ->
-          if (flag in pref) pref[flag] else null
-        }
-        pref[useRustCore] = resolveMigratedRustCoreEnabled(current, legacyValues)
-        legacyRustCoreFlags.forEach { pref.remove(it) }
+        retiredRustCoreFlags.forEach { pref.remove(it) }
       }
     }
   }
@@ -259,8 +248,7 @@ object Settings : DataStorePreferences(null) {
             recentDownloadLabel = pref[recentDownloadLabel],
             orientationMode = pref[orientationMode],
             validOrientationModes = OrientationType.entries.map { it.prefValue },
-          ),
-          com.hippo.ehviewer.bridge.selectCoreBackend(useRustCore.value),
+          )
         )
       if (plan.enableTagTranslations) pref[showTagTranslations] = true
       if (plan.resetRecentDownloadLabel) pref[recentDownloadLabel] = ""

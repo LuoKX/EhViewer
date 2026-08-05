@@ -203,8 +203,8 @@ pub fn nativeArchiveEntryNameV2(
     index: jint,
 ) -> jstring {
     jni_throwing(&mut env, |env| {
-        let name = ARCHIVE_READER_REGISTRY
-            .entry_name(reader_handle, archive_entry_index(index)?)?;
+        let name =
+            ARCHIVE_READER_REGISTRY.entry_name(reader_handle, archive_entry_index(index)?)?;
         Ok(env.new_string(name)?.into_raw())
     })
 }
@@ -219,8 +219,7 @@ pub fn nativeVerifyArchiveEntryV2(
     index: jint,
 ) -> jboolean {
     jni_throwing(&mut env, |_| {
-        ARCHIVE_READER_REGISTRY
-            .verify_entry(reader_handle, archive_entry_index(index)?)?;
+        ARCHIVE_READER_REGISTRY.verify_entry(reader_handle, archive_entry_index(index)?)?;
         Ok(JNI_TRUE)
     })
 }

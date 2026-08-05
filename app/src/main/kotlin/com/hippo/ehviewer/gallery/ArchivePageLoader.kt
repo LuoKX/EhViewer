@@ -20,19 +20,10 @@ import com.ehviewer.core.files.openFileDescriptor
 import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.Settings.archivePasswds
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.archive.RustArchiveReaderV2
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.image.ImageSource
 import com.hippo.ehviewer.image.byteBufferSource
-import com.hippo.ehviewer.jni.closeArchive
-import com.hippo.ehviewer.jni.extractToByteBuffer
-import com.hippo.ehviewer.jni.extractToFd
-import com.hippo.ehviewer.jni.getExtension
-import com.hippo.ehviewer.jni.needPassword
-import com.hippo.ehviewer.jni.openArchive
-import com.hippo.ehviewer.jni.releaseByteBuffer
 import com.hippo.ehviewer.util.FileUtils
 import com.hippo.ehviewer.util.displayName
 import kotlinx.coroutines.coroutineScope
@@ -58,7 +49,6 @@ suspend fun <T> useArchivePageLoader(
       install(
         openArchiveReader(
           fileDescriptor = pfd.fd,
-          fileSize = pfd.statSize,
           sortEntries = sortEntries,
         )
       )
@@ -117,33 +107,6 @@ private interface ArchiveReader : AutoCloseable {
   fun openSource(index: Int): ImageSource
 }
 
-private class LegacyArchiveReader private constructor(override val entryCount: Int) :
-  ArchiveReader {
-  override val needsPassword
-    get() = needPassword()
-
-  override fun providePassword(password: String) = com.hippo.ehviewer.jni.providePassword(password)
-
-  override fun extension(index: Int) = getExtension(index)
-
-  override fun extractToFileDescriptor(index: Int, fileDescriptor: Int) =
-    extractToFd(index, fileDescriptor)
-
-  override fun openSource(index: Int): ImageSource {
-    val buffer = extractToByteBuffer(index)
-    checkNotNull(buffer) { "Extract archive content $index failed!" }
-    check(buffer.isDirect)
-    return byteBufferSource(buffer) { releaseByteBuffer(buffer) }
-  }
-
-  override fun close() = closeArchive()
-
-  companion object {
-    fun open(fileDescriptor: Int, fileSize: Long, sortEntries: Boolean) =
-      LegacyArchiveReader(openArchive(fileDescriptor, fileSize, sortEntries))
-  }
-}
-
 private class RustArchiveReader(private val delegate: RustArchiveReaderV2) : ArchiveReader {
   override val entryCount
     get() = delegate.entryCount
@@ -169,12 +132,5 @@ private class RustArchiveReader(private val delegate: RustArchiveReaderV2) : Arc
 
 private fun openArchiveReader(
   fileDescriptor: Int,
-  fileSize: Long,
   sortEntries: Boolean,
-): ArchiveReader {
-  return if (CoreBackendSelector.snapshot() == CoreBackend.RUST) {
-    RustArchiveReader(RustArchiveReaderV2.open(fileDescriptor, sortEntries))
-  } else {
-    LegacyArchiveReader.open(fileDescriptor, fileSize, sortEntries)
-  }
-}
+): ArchiveReader = RustArchiveReader(RustArchiveReaderV2.open(fileDescriptor, sortEntries))

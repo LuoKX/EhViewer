@@ -1,69 +1,75 @@
-# ADR 0007: Single Strict Rust Core Selection
+# ADR 0007: Rust Is the Sole Production Core
 
 ## Status
 
-Accepted for the remaining Rust migration. Supersedes ADR 0004 rollout selection semantics.
+Accepted on 2026-08-05. This revision supersedes the runtime-selection decision in
+the original ADR 0007 and all rollout semantics in ADR 0004.
 
 ## Context
 
-The staged rewrite accumulated 32 independently persisted `useRustCore*` settings. Their production semantics are not uniform: some choose one parser, some compute legacy first and compare Rust, some catch JNI/linkage failures and return legacy, and some read preferences repeatedly during a long operation. The 21-setting MVP coordinator does not cover 11 production switches and cannot guarantee that an enabled Rust configuration actually uses Rust for every relevant operation.
-
-Runtime parity and automatic fallback also weaken failure evidence. A Rust boundary can be broken while the application silently succeeds through legacy, so enabling a collection of flags does not establish Rust ownership.
+The staged rewrite first accumulated module switches and later condensed them into
+one master switch. That still left two production architectures, made user-visible
+behavior depend on mutable configuration, and retained Kotlin implementations only
+for runtime rollback. The portable migration is now complete enough that this
+selection layer has no remaining product purpose.
 
 ## Decision
 
-### Persisted state
+### One production architecture
 
-Android persists exactly one user setting, `use_rust_core`, exposed as `Settings.useRustCore`. Its default is `false`.
+There is no Rust feature switch, backend selector, operation snapshot, or
+configuration-controlled legacy path. Every migrated portable parser, planner,
+reducer, state machine, archive operation, and validation rule calls Rust directly.
+JNI, CBOR, envelope, contract, parser, domain, and resource-limit failures surface
+through the existing typed error boundary; production never computes, compares,
+replays, or falls back to a Kotlin business implementation.
 
-The first migration from the 32 old keys is one atomic DataStore mutation:
-
-- If the new key exists, preserve its value.
-- Otherwise set it to `true` only when every old key is present and `true`.
-- Any absent, false, or mixed old state becomes `false`.
-- Remove all old keys in the same mutation.
-- Repeating the migration is idempotent.
-
-Old key names may remain only in the migration implementation and migration tests.
-
-### Runtime selection
-
-Each complete operation captures one backend before work begins. A long operation stores that snapshot in its operation context or native handle and never rereads the setting mid-operation.
-
-| Backend | Contract |
-| --- | --- |
-| `Legacy` | Execute only the legacy business implementation and do not call the corresponding Rust business entry. |
-| `Rust` | Execute only the Rust business implementation and do not compute, call, compare, replay, or fall back to legacy. |
-
-JNI linkage, symbol, CBOR, envelope, contract, parser, domain, and resource-limit failures are surfaced through the existing typed error boundary. The only operational recovery is to disable the global setting and start a new operation.
-
-Production runtime parity is removed. Compatibility remains protected by frozen legacy characterization tests and shared Kotlin/Rust good/base/bad golden fixtures. A mismatch fails tests; it never selects a production result.
+The retired `use_rust_core*` preference names may remain only in a startup cleanup
+list that deletes stale upgrade data. They are not read as values, exposed through
+`Settings`, shown in UI, or used by business routing. There is no replacement master
+preference.
 
 ### Ownership boundary
 
-Rust owns portable business rules, parsers, request/query plans, validation, sorting/filtering and state machines. Kotlin/Android retains Compose, lifecycle, Room, DataStore, SQLite files, Paging, WorkManager, notifications, permissions, SAF, platform network transport, CookieManager and execution of platform transactions/effects.
+Rust owns portable business rules, parsers, request/query plans, validation,
+filtering/sorting, download and reader policy, archive format handling, and state
+machines. Kotlin/Android retains Compose, lifecycle, Room, DataStore, SQLite files,
+Paging, WorkManager, notifications, permissions, SAF, platform HTTP transport,
+CookieManager, Android object adaptation, and execution of platform transactions and
+effects.
 
-Rust Core health and low-level Rust infrastructure without a legacy business alternative are not user-selectable modules. The global setting selects dual-path business operations; it does not disable independent diagnostics.
+This boundary is architectural, not a feature choice: Kotlin may execute a Rust plan
+but must not duplicate the plan's business rules. Rust does not acquire Android
+`Context`, own platform objects, or execute Android lifecycle effects.
 
-### Exposure and completion
+### Compatibility and rollback
 
-The new setting defaults off and is not exposed as user-enablable until all mapped existing and remaining portable functions have strict Rust paths. The archive gate includes ZIP/CBZ, RAR/RAR5, 7z and tar, plus the encrypted-ZIP password flow. Encryption rejected by the pinned codec must surface as an explicit Rust failure and must not select the legacy reader.
+Compatibility is protected by frozen fixtures, Rust unit tests, Kotlin/Rust CBOR
+goldens, JNI contract tests, and device tests. Historical Kotlin implementations may
+remain only as unreachable characterization material while removal is completed.
+They are not a production rollback mechanism.
 
-C1-C6 implementation is complete; exposure and the final completion claim still require C7 non-device acceptance. Real-device execution is deferred to the parent rewrite task. Host-side success must not be described as device acceptance.
+Operational recovery retries or reports the failing operation without changing
+backend. Rollback requires installing or reverting to an earlier complete application
+version; it is never a runtime setting and must not replay a partially applied effect.
 
 ## Alternatives Considered
 
-- Keep the 32 independent settings: rejected because mixed ownership and partial rollout remain valid production states.
-- Keep the 21-setting coordinator: rejected because it excludes 11 active switches and persists no authoritative selection.
-- Use `master || module`: rejected because it retains two sources of truth.
-- Automatically disable or fall back after a Rust failure: rejected because it hides broken Rust ownership and may replay side effects.
-- Run legacy and Rust in production for parity: rejected because it doubles work and can mutate or consume inputs twice.
+- Keep one master switch: rejected because it preserves two production architectures
+  and makes correctness user-configurable.
+- Keep hidden or per-module switches: rejected because mixed ownership and silent
+  regressions become valid runtime states.
+- Automatically fall back after Rust failure: rejected because it hides broken Rust
+  ownership and may duplicate network, database, queue, or file effects.
+- Run Kotlin and Rust in production for parity: rejected because it doubles work and
+  can consume mutable inputs or execute effects twice.
 
 ## Consequences
 
-- Operators lose per-module rollback; rollback is the global setting only.
-- Rust failures become visible and may fail an operation instead of succeeding through legacy.
-- Legacy implementations remain reachable only from global-off mode until final removal is separately approved.
-- Tests and CI must prove mutual exclusion rather than successful fallback.
-- Every migration slice must use the operation snapshot and may not add another feature setting.
-- ADR 0004 remains as historical staged-rollout context but is no longer normative.
+- Rust is a required packaged dependency and its failures are visible.
+- Tests assert the direct Rust contract and absence of fallback rather than backend
+  selection behavior.
+- New portable business logic belongs in Rust; new runtime Rust switches are forbidden.
+- Android-only code remains Kotlin by design and is not counted as incomplete Rust
+  migration.
+- ADR 0004 and the original switch-oriented wording of ADR 0007 are historical only.

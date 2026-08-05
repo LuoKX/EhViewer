@@ -35,11 +35,8 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.archive.validateDownloadedCbzV1
 import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzDescriptorV1
-import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzWithSelectedWriter
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUtils.getSuitableTitle
 import com.hippo.ehviewer.client.ehRequest
@@ -50,7 +47,6 @@ import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.downloadLocation
 import com.hippo.ehviewer.download.tempDownloadDir
 import com.hippo.ehviewer.image.PathSource
-import com.hippo.ehviewer.jni.archiveFdBatch
 import com.hippo.ehviewer.ktbuilder.diskCache
 import com.hippo.ehviewer.util.FileUtils
 import com.hippo.ehviewer.util.copyTo
@@ -298,14 +294,11 @@ class SpiderDen(val info: GalleryInfo) {
     saveAsCbz &&
       downloadDir?.run {
         resolve(archiveName).let { file ->
-          val backend = CoreBackendSelector.snapshot()
           var completed = false
           try {
             runSuspendCatching {
-              archiveTo(file, backend)
-              if (backend == CoreBackend.RUST) {
-                validateDownloadedCbzV1(file, info.pages)
-              }
+              archiveTo(file)
+              validateDownloadedCbzV1(file, info.pages)
             }
               .onSuccess { completed = true }
               .onFailure { logcat(it) }
@@ -335,9 +328,9 @@ class SpiderDen(val info: GalleryInfo) {
   }
 
   suspend fun exportAsCbz(file: Path) =
-    downloadDir!!.find(archiveName)?.sendTo(file) ?: archiveTo(file, CoreBackendSelector.snapshot())
+    downloadDir!!.find(archiveName)?.sendTo(file) ?: archiveTo(file)
 
-  private suspend fun archiveTo(file: Path, backend: CoreBackend) = resourceScope {
+  private suspend fun archiveTo(file: Path) = resourceScope {
     val comicInfo = closeable {
       val f = downloadDir!! / COMIC_INFO_FILE
       if (!f.exists()) {
@@ -360,13 +353,7 @@ class SpiderDen(val info: GalleryInfo) {
     val arcFd = closeable { file.openFileDescriptor("rwt") }
     val sourceDescriptors = fdBatch.toIntArray()
     val entryNames = names.toTypedArray()
-    writeGeneratedCbzWithSelectedWriter(
-      useRustWriter = backend == CoreBackend.RUST,
-      rustWrite = {
-        writeGeneratedCbzDescriptorV1(sourceDescriptors, entryNames, arcFd.fd, pages)
-      },
-      legacyWrite = { archiveFdBatch(sourceDescriptors, entryNames, arcFd.fd, pages + 1) },
-    )
+    writeGeneratedCbzDescriptorV1(sourceDescriptors, entryNames, arcFd.fd, pages)
   }
 
   suspend fun initDownloadDirIfExist() {
@@ -402,8 +389,7 @@ private val sCache by lazy {
     maxSizeBytes(
       com.hippo.ehviewer.bridge
         .resolveReadCacheSize(
-          com.hippo.ehviewer.bridge.ReadCacheSizeRequest.create(Settings.readCacheSize.value),
-          com.hippo.ehviewer.bridge.CoreBackendSelector.snapshot(),
+          com.hippo.ehviewer.bridge.ReadCacheSizeRequest.create(Settings.readCacheSize.value)
         )
         .toLong() * 1024 * 1024
     )

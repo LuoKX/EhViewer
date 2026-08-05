@@ -1,4 +1,4 @@
-//! Recovery-only extraction of non-displayable SpiderInfo evidence.
+//! Recovery-only extraction of non-displayable `SpiderInfo` evidence.
 
 use std::collections::BTreeMap;
 

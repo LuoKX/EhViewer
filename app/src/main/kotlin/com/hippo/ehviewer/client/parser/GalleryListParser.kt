@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.client.parser
 
 import com.ehviewer.core.model.BaseGalleryInfo
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.bridge.ApiEnvelope
 import com.hippo.ehviewer.bridge.GalleryPage as RustGalleryPage
 import com.hippo.ehviewer.bridge.RustFailureException
@@ -12,18 +11,12 @@ import kotlinx.serialization.Serializable
 import moe.tarsin.coroutines.runSuspendCatching
 
 object GalleryListParser {
-  fun parse(body: ByteBuffer) = parse(body, Settings.useRustCore.value)
-
-  internal fun parse(body: ByteBuffer, useRust: Boolean) = runSuspendCatching {
-    if (useRust) {
-      unmarshalParsingAs<ApiEnvelope<RustGalleryPage>>(
-          body,
-          ::parseGalleryInfoListV1,
-        )
-        .toGalleryListResult()
-    } else {
-      unmarshalParsingAs<GalleryListResult>(body, ::parseGalleryInfoList)
-    }
+  fun parse(body: ByteBuffer) = runSuspendCatching {
+    unmarshalParsingAs<ApiEnvelope<RustGalleryPage>>(
+        body,
+        ::parseGalleryInfoListV1,
+      )
+      .toGalleryListResult()
   }
     .getOrElse {
       if (it is RustFailureException) throw it
@@ -39,9 +32,6 @@ data class GalleryListResult(
   val next: String?,
   val galleryInfoList: ArrayList<BaseGalleryInfo>,
 )
-
-/** Invokes the frozen, unversioned `ehviewer_rust` Gallery List rollback parser. */
-private external fun parseGalleryInfoList(body: ByteBuffer, size: Int = body.limit()): Int
 
 /** Invokes the V1 `eh_net::gallery::list` parser and returns an `ApiEnvelope<GalleryPage>`. */
 private external fun parseGalleryInfoListV1(body: ByteBuffer, size: Int = body.limit()): Int

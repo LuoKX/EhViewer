@@ -5,25 +5,9 @@ import com.hippo.ehviewer.bridge.gallery.GalleryListUrlState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class GalleryListUrlParserTest {
-  @Test
-  fun disabledRolloutReturnsLegacyWithoutInvokingRust() {
-    var invoked = false
-
-    val result =
-      GalleryListUrlParser.parseWithRustAdapter(TAG_URL, rustEnabled = false) {
-        invoked = true
-        null
-      }
-
-    assertFalse(invoked)
-    assertEquals(2, result?.mode)
-    assertEquals("artist:alice", result?.keyword)
-  }
-
   @Test
   fun enabledRolloutSendsOnlyTheClosedSanitizedSnapshot() {
     var captured: GalleryListUrlParseRequest? = null
@@ -31,8 +15,7 @@ class GalleryListUrlParserTest {
     val result =
       GalleryListUrlParser.parseWithRustAdapter(
         "https://e-hentai.org/tag/artist%253Aalice/ignored-secret" +
-          "?prev=first&prev=second&f_search=cats&unrelated=ignored",
-        rustEnabled = true,
+          "?prev=first&prev=second&f_search=cats&unrelated=ignored"
       ) { request ->
         captured = request
         tagState()
@@ -48,10 +31,7 @@ class GalleryListUrlParserTest {
   fun preservesEmptyImageHashPresenceAndRejectsUnsupportedUrlsBeforeRust() {
     var invocationCount = 0
     val imageSearch =
-      GalleryListUrlParser.parseWithRustAdapter(
-        "https://e-hentai.org/?f_shash=",
-        rustEnabled = true,
-      ) { request ->
+      GalleryListUrlParser.parseWithRustAdapter("https://e-hentai.org/?f_shash=") { request ->
         invocationCount++
         assertEquals("", request.snapshot.parameters.imageHash)
         tagState().copy(mode = 4, keyword = null, imageHash = "")
@@ -60,19 +40,13 @@ class GalleryListUrlParserTest {
     assertEquals(4, imageSearch?.mode)
     assertEquals("", imageSearch?.hash)
     assertNull(
-      GalleryListUrlParser.parseWithRustAdapter(
-        "https://example.com/tag/value",
-        rustEnabled = true,
-      ) {
+      GalleryListUrlParser.parseWithRustAdapter("https://example.com/tag/value") {
         invocationCount++
         null
       }
     )
     assertNull(
-      GalleryListUrlParser.parseWithRustAdapter(
-        "https://e-hentai.org/tag",
-        rustEnabled = true,
-      ) {
+      GalleryListUrlParser.parseWithRustAdapter("https://e-hentai.org/tag") {
         invocationCount++
         null
       }
@@ -83,17 +57,17 @@ class GalleryListUrlParserTest {
   @Test
   fun selectedRustFailuresPropagateAndReturnedStateIsAdopted() {
     assertFailsWith<IllegalStateException> {
-      GalleryListUrlParser.parseWithRustAdapter(TAG_URL, rustEnabled = true) {
+      GalleryListUrlParser.parseWithRustAdapter(TAG_URL) {
         throw IllegalStateException("transport failure")
       }
     }
     assertFailsWith<UnsatisfiedLinkError> {
-      GalleryListUrlParser.parseWithRustAdapter(TAG_URL, rustEnabled = true) {
+      GalleryListUrlParser.parseWithRustAdapter(TAG_URL) {
         throw UnsatisfiedLinkError("missing native symbol")
       }
     }
     val rustState = tagState().copy(mode = 0)
-    val adopted = GalleryListUrlParser.parseWithRustAdapter(TAG_URL, true) { rustState }
+    val adopted = GalleryListUrlParser.parseWithRustAdapter(TAG_URL) { rustState }
 
     assertEquals(rustState, adopted?.toGalleryListUrlState())
   }

@@ -11,6 +11,14 @@ const REQUEST_CBOR_HEX: &str = concat!(
     "0467636f6d6d616e64a4646b696e646d73657450616765526573756c746866696e69736865",
     "64036a646f776e6c6f616465640465746f74616c0a"
 );
+const ESTIMATE_REQUEST_CBOR_HEX: &str = concat!(
+    "a36776657273696f6e0168736e617073686f74a76573746174656b646f776e6c6f6164696e",
+    "6773737065656442797465735065725365636f6e64207572656d61696e696e674d696c6c6973",
+    "65636f6e6473206866696e6973686564006a646f776e6c6f616465640065746f74616c0a666c",
+    "65676163792067636f6d6d616e64a3646b696e6468657374696d617465737370656564427974",
+    "65735065725365636f6e64192000697472616e736665727381a26d636f6e74656e744c656e67",
+    "7468206c726563656976656453697a65191000"
+);
 const RESPONSE_CBOR_HEX: &str = concat!(
     "a46776657273696f6e01666d6f64756c6570646f776e6c6f616450726f6772657373677061",
     "796c6f6164a168736e617073686f74a7657374617465646e6f6e6573737065656442797465",
@@ -37,6 +45,17 @@ fn to_hex(bytes: &[u8]) -> String {
         write!(&mut output, "{byte:02x}").expect("writing to a String cannot fail");
     }
     output
+}
+
+fn from_hex(value: &str) -> Vec<u8> {
+    value
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            let pair = std::str::from_utf8(pair).expect("hex fixture should be ASCII");
+            u8::from_str_radix(pair, 16).expect("hex fixture should be valid")
+        })
+        .collect()
 }
 
 #[test]
@@ -253,6 +272,37 @@ fn request_and_response_json_and_cbor_goldens_are_exact() {
         serde_cbor::from_slice::<ApiEnvelope<DownloadProgressPlan>>(&response_bytes)
             .expect("response CBOR round trip"),
         response
+    );
+}
+
+#[test]
+fn kotlin_estimate_cbor_uses_camel_case_variant_fields() {
+    let request = DownloadProgressRequest {
+        version: DOWNLOAD_PROGRESS_API_VERSION,
+        snapshot: DownloadProgressSnapshot {
+            state: DownloadState::Downloading,
+            speed_bytes_per_second: -1,
+            remaining_milliseconds: -1,
+            finished: 0,
+            downloaded: 0,
+            total: 10,
+            legacy: -1,
+        },
+        command: DownloadProgressCommand::Estimate {
+            speed_bytes_per_second: 8_192,
+            transfers: vec![ActiveDownloadTransfer {
+                content_length: -1,
+                received_size: 4_096,
+            }],
+        },
+    };
+
+    let encoded = serde_cbor::to_vec(&request).expect("estimate request CBOR");
+    assert_eq!(to_hex(&encoded), ESTIMATE_REQUEST_CBOR_HEX);
+    assert_eq!(
+        serde_cbor::from_slice::<DownloadProgressRequest>(&from_hex(ESTIMATE_REQUEST_CBOR_HEX))
+            .expect("Kotlin estimate request should decode"),
+        request
     );
 }
 

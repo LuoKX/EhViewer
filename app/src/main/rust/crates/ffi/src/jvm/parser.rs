@@ -23,7 +23,12 @@ use eh_net::gallery::preview::parse_envelope as parse_gallery_preview_envelope;
 use eh_net::gallery::rate::parse_envelope as parse_gallery_rate_envelope;
 use eh_net::gallery::tag_vote::parse_envelope as parse_gallery_tag_vote_envelope;
 use eh_net::gallery::token::parse_envelope as parse_gallery_token_envelope;
-use eh_net::home::parse_envelope as parse_image_limits_envelope;
+use eh_net::home::{
+    parse_envelope as parse_image_limits_envelope,
+    parse_funds_envelope as parse_home_funds_envelope,
+    parse_reset_limits_envelope as parse_home_reset_limits_envelope,
+    parse_torrent_key_envelope as parse_home_torrent_key_envelope,
+};
 use eh_net::news::parse_envelope as parse_news_envelope;
 use eh_net::reader::mpv::parse_envelope as parse_mpv_tokens_envelope;
 use eh_net::reader::page::parse_envelope as parse_reader_page_envelope;
@@ -57,6 +62,39 @@ pub fn parseLimitV1(
     limit: jint,
 ) -> jint {
     parse_text_in_place(&mut env, &buffer, limit, parse_image_limits_envelope)
+}
+
+/// Parses an image-limit reset response through the Rust-owned V1 contract.
+#[jni_fn("com.hippo.ehviewer.client.parser.HomeParserKt")]
+pub fn parseResetLimitsV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    buffer: JByteBuffer<'_>,
+    limit: jint,
+) -> jint {
+    parse_text_in_place(&mut env, &buffer, limit, parse_home_reset_limits_envelope)
+}
+
+/// Parses the account torrent key through the Rust-owned V1 contract.
+#[jni_fn("com.hippo.ehviewer.client.parser.HomeParserKt")]
+pub fn parseTorrentKeyV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    buffer: JByteBuffer<'_>,
+    limit: jint,
+) -> jint {
+    parse_text_in_place(&mut env, &buffer, limit, parse_home_torrent_key_envelope)
+}
+
+/// Parses account Credits and kGP through the Rust-owned V1 contract.
+#[jni_fn("com.hippo.ehviewer.client.parser.HomeParserKt")]
+pub fn parseFundsV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    buffer: JByteBuffer<'_>,
+    limit: jint,
+) -> jint {
+    parse_text_in_place(&mut env, &buffer, limit, parse_home_funds_envelope)
 }
 
 /// Parses News HTML event-pane markup into the versioned Rust-first V1 envelope.

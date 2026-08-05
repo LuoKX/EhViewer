@@ -52,16 +52,13 @@ runtime execution is UNRUN on this host and is never reported as a device pass.
 reducer without HTTP. Its source compiles locally. API 35 runtime execution remains
 UNRUN, so these two contracts are not counted as executed device tests.
 
-`MvpFlowDeviceTest` records the superseded 21-setting rollout and remains historical
-native-boundary coverage while C1-C6 replace it. The final cross-module contract must
-set only `useRustCore`, prove global-off Rust V1 business callbacks are never called,
-prove global-on legacy business callbacks are never called, and surface boundary
-failures without fallback. Fixtures remain packaged from `crates/net/test_data`.
+`MvpFlowDeviceTest` records cross-module native-boundary coverage. The current
+contract invokes the Rust business boundaries directly and surfaces boundary failures
+without fallback. Fixtures remain packaged from `crates/net/test_data`.
 Source compilation or APK packaging is not device execution.
 
-`NewsDeviceTest` enables only `useRustCore`, loads the
-canonical `crates/net/test_data/news.html` asset, and parses it through the real V1
-JNI symbol.
+`NewsDeviceTest` loads the canonical `crates/net/test_data/news.html` asset and
+parses it through the real V1 JNI symbol.
 Local source compilation and instrumentation-APK packaging prove the Android/JNI
 contract is buildable, and the packaged `assets/news.html` is byte-identical to the
 Rust fixture. It is not counted as executed until the pinned KVM-enabled job or a
@@ -71,7 +68,7 @@ physical device runs it.
 It first verifies package-scoped Android intent-filter resolution for public and
 restricted HTTP/HTTPS gallery links and rejects an unknown host and FTP scheme. It
 prepares the valid default external-files
-download directory, atomically enables the global Rust core, forces the sign-in start
+download directory, forces the sign-in start
 destination, and disables automatic update HTTP before launching `MainActivity`
 with an implicit page-zero `ACTION_VIEW`. The real `onCreate` → intent channel →
 `navWithUrl` path must render the tagged `ProgressScreen` and its documented
@@ -114,9 +111,8 @@ health denominator is 74/74 lines and 5/5 functions; the JVM suite is 9/9.
 
 The isolated gate covers single/bulk good-base-bad cases, signed/empty/opaque values,
 source omission, ordered repeated fields, sanitized failures, and JSON/CBOR shapes.
-Current Kotlin tests characterize legacy-first parity and fallback. They are not final
-acceptance. Replacement tests must prove global-off no-JNI, global-on no-legacy, exact
-Rust contract validation, and surfaced mismatch/exception/linkage failure.
+Kotlin tests assert direct native invocation, exact Rust contract validation, and
+surfaced mismatch/exception/linkage failure without a fallback callback.
 API-35 instrumentation is wired to invoke the real V1 boundary offline without HTTP;
 the exact manifest count is 41. Local API-35 execution currently runs zero tests and
 is not counted; KVM-enabled device execution remains open.
@@ -127,9 +123,8 @@ The isolated Rust gate covers public and restricted list/download planning, dire
 and H@H form ordering, original/resampled labels, empty and opaque values, every
 invalid optional-field shape, version failures, and exact JSON/request/response CBOR
 goldens. Its current evidence is 5/5 tests, 237/237 lines, and 11/11 functions.
-Current Kotlin tests cover exact Rust goldens plus the transitional legacy-first
-fallback. Final acceptance replaces fallback assertions with global-off Rust zero-calls,
-global-on legacy zero-calls, and surfaced request/envelope/form drift. The real-JNI API-35 test source compiles
+Kotlin tests cover exact Rust goldens, direct invocation, and surfaced
+request/envelope/form drift without fallback. The real-JNI API-35 test source compiles
 and performs no HTTP, but device execution is not counted on this host. The exact V1
 manifest count is 41.
 
@@ -141,9 +136,8 @@ Every behavior covers:
 - base/edge: empty, boundary, missing optional data, first/last state;
 - bad: malformed data, unsupported version, auth expiry, IO/network failure.
 
-Every dual-path business operation also covers global-off Rust zero-calls,
-global-on legacy zero-calls, operation-lifetime snapshot stability, and explicit
-JNI/linkage/CBOR/contract failure without fallback or replay.
+Every Rust-backed operation covers direct native invocation, operation-lifetime state
+stability, and explicit JNI/linkage/CBOR/contract failure without fallback or replay.
 
 Tests assert values and typed errors. `dbg!`, snapshots without reviewed
 semantics, or “does not panic” alone are insufficient.
@@ -296,6 +290,10 @@ must replace the relevant smoke test with offline fixtures; once the final live
 test is removed, `cargo test --workspace` becomes the mandatory command.
 
 ## Current Enforced Packages
+
+The detailed counts and selector wording below are historical pre-mainline evidence.
+Current tests exercise direct Rust bridges; any reference to parity, `default-off`,
+rollback switches, or global backend selection is non-normative.
 
 The current CI gate covers only critical code already migrated into the new
 workspace. It does not represent completion of the full rewrite:
@@ -506,8 +504,8 @@ Schedule 412/412 and 22/22, Session Failure 144/144 and 8/8, Session Lifecycle
 LCOV has exactly one source record, `crates/domain/src/reader/fetch.rs`, with no
 uncovered production line or function.
 
-Those focused counts and the 44/44 V1 ABI are historical; C7 must refresh them for
-the global selector. `ReaderFetchDeviceTest` compiles but API 35 execution is UNRUN.
-Reader Fetch is controlled only by `useRustCore`. The bridge/test files were Google
+Those focused counts and the 44/44 V1 ABI are historical and must be refreshed from
+the current mainline. `ReaderFetchDeviceTest` compiles but API 35 execution is UNRUN.
+Reader Fetch invokes Rust directly. The bridge/test files were Google
 Style clean at the recorded slice; the accepted narrow formatting deviation is the unrelated
 whole-file rewrite that full Spotless requests for legacy `SpiderQueen.kt`.

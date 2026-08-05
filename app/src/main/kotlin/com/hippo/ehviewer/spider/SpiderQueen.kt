@@ -26,8 +26,6 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.model.GalleryPreview
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.reader.ReaderFetchActionKind
 import com.hippo.ehviewer.bridge.reader.ReaderFetchErrorSource
 import com.hippo.ehviewer.bridge.reader.ReaderFetchEvent
@@ -37,7 +35,7 @@ import com.hippo.ehviewer.bridge.reader.ReaderFetchPageSource
 import com.hippo.ehviewer.bridge.reader.ReaderFetchPhase
 import com.hippo.ehviewer.bridge.reader.ReaderFetchState
 import com.hippo.ehviewer.bridge.reader.consumePreappliedImageCleanup
-import com.hippo.ehviewer.bridge.reader.selectReaderFetchPlanner
+import com.hippo.ehviewer.bridge.reader.startReaderFetchPlanner
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUrl.getGalleryDetailUrl
@@ -564,13 +562,12 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
 
       private suspend fun doInJob(index: Int, force: Boolean, orgImg: Boolean, skipHath: Boolean) {
         val selection =
-          selectReaderFetchPlanner(
-            CoreBackendSelector.snapshot() == CoreBackend.RUST,
+          startReaderFetchPlanner(
             ReaderFetchState.initial(
               force,
               skipHath,
               Settings.downloadOriginImage.value || orgImg,
-            ),
+            )
           )
         val planner = selection.planner
 

@@ -6,33 +6,9 @@ import com.hippo.ehviewer.bridge.gallery.GalleryNavigationTarget
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class GalleryNavigationParserTest {
-  @Test
-  fun disabledRolloutUsesOnlyTheFrozenDetailAndPageParsers() {
-    var invoked = false
-    val detail =
-      GalleryDetailUrlParser.parseWithRustAdapter(
-        DETAIL_URL,
-        strict = true,
-        rustEnabled = false,
-      ) { _ ->
-        invoked = true
-        GalleryNavigationPlan.none()
-      }
-    val page =
-      GalleryPageUrlParser.parseWithRustAdapter(PAGE_URL, strict = true, rustEnabled = false) { _ ->
-        invoked = true
-        GalleryNavigationPlan.none()
-      }
-
-    assertFalse(invoked)
-    assertEquals(GalleryDetailUrlParser.Result(42, "0123456789"), detail)
-    assertEquals(GalleryPageUrlParser.Result(42, "abcdef0123", 2), page)
-  }
-
   @Test
   fun enabledBackendSendsTheExactGrammarInputWithoutLegacyPlanning() {
     val requests = mutableListOf<GalleryNavigationRequest>()
@@ -40,14 +16,12 @@ class GalleryNavigationParserTest {
       GalleryDetailUrlParser.parseWithRustAdapter(
         DETAIL_URL,
         strict = true,
-        rustEnabled = true,
       ) { request ->
         requests += request
         GalleryNavigationPlan.detail(42, "0123456789")
       }
     val page =
-      GalleryPageUrlParser.parseWithRustAdapter(PAGE_URL, strict = false, rustEnabled = true) {
-        request ->
+      GalleryPageUrlParser.parseWithRustAdapter(PAGE_URL, strict = false) { request ->
         requests += request
         GalleryNavigationPlan.page(42, "abcdef0123", 2)
       }
@@ -64,40 +38,6 @@ class GalleryNavigationParserTest {
   }
 
   @Test
-  fun preservesLooseSearchPrefixAndZeroBasedPageBehavior() {
-    assertEquals(
-      GalleryDetailUrlParser.Result(42, "0123456789"),
-      GalleryDetailUrlParser.parseWithRustAdapter(
-        "prefix 42/0123456789! suffix",
-        strict = false,
-        rustEnabled = false,
-      ) { _ ->
-        GalleryNavigationPlan.none()
-      },
-    )
-    assertEquals(
-      GalleryPageUrlParser.Result(42, "abcdef0123", -1),
-      GalleryPageUrlParser.parseWithRustAdapter(
-        "prefix abcdef0123/42-0 suffix",
-        strict = false,
-        rustEnabled = false,
-      ) { _ ->
-        GalleryNavigationPlan.none()
-      },
-    )
-    assertEquals(
-      GalleryDetailUrlParser.Result(42, "0123456789"),
-      GalleryDetailUrlParser.parseWithRustAdapter(
-        "prefix $DETAIL_URL suffix",
-        strict = true,
-        rustEnabled = false,
-      ) { _ ->
-        GalleryNavigationPlan.none()
-      },
-    )
-  }
-
-  @Test
   fun noMatchAndNumericOverflowReturnNullWithoutInvokingRust() {
     var invocationCount = 0
     val callback: (GalleryNavigationRequest) -> GalleryNavigationPlan = { _ ->
@@ -109,7 +49,6 @@ class GalleryNavigationParserTest {
       GalleryDetailUrlParser.parseWithRustAdapter(
         "https://example.com/g/42/0123456789",
         strict = true,
-        rustEnabled = true,
         rustParser = callback,
       )
     )
@@ -117,7 +56,6 @@ class GalleryNavigationParserTest {
       GalleryDetailUrlParser.parseWithRustAdapter(
         "https://e-hentai.org/g/9223372036854775808/0123456789",
         strict = true,
-        rustEnabled = true,
         rustParser = callback,
       )
     )
@@ -125,7 +63,6 @@ class GalleryNavigationParserTest {
       GalleryPageUrlParser.parseWithRustAdapter(
         "https://e-hentai.org/s/abcdef0123/42-2147483648",
         strict = true,
-        rustEnabled = true,
         rustParser = callback,
       )
     )
@@ -138,7 +75,6 @@ class GalleryNavigationParserTest {
       GalleryDetailUrlParser.parseWithRustAdapter(
         DETAIL_URL,
         strict = true,
-        rustEnabled = true,
       ) {
         throw IllegalStateException("transport failure")
       }
@@ -147,7 +83,6 @@ class GalleryNavigationParserTest {
       GalleryDetailUrlParser.parseWithRustAdapter(
         DETAIL_URL,
         strict = true,
-        rustEnabled = true,
       ) {
         throw UnsatisfiedLinkError("missing native symbol")
       }
@@ -155,7 +90,7 @@ class GalleryNavigationParserTest {
 
     assertEquals(
       GalleryDetailUrlParser.Result(43, "0123456789"),
-      GalleryDetailUrlParser.parseWithRustAdapter(DETAIL_URL, true, true) {
+      GalleryDetailUrlParser.parseWithRustAdapter(DETAIL_URL, true) {
         GalleryNavigationPlan.detail(43, "0123456789")
       },
     )

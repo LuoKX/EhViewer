@@ -84,15 +84,6 @@ internal fun ApiEnvelope<FavoriteMutationPlan>.toFavoriteMutationPlan(
   return plan
 }
 
-internal fun selectFavoriteMutationPlan(
-  legacyPlanner: () -> FavoriteMutationPlan,
-  rustEnabled: () -> Boolean,
-  rustPlanner: () -> FavoriteMutationPlan,
-): FavoriteMutationPlan {
-  val useRust = rustEnabled()
-  return if (useRust) rustPlanner() else legacyPlanner()
-}
-
 /** Invokes the Rust V1 owner with separate direct request and response buffers. */
 private external fun nativePlanFavoriteMutationV1(
   request: ByteBuffer,

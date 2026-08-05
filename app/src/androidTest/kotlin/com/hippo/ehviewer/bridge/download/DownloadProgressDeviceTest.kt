@@ -47,9 +47,8 @@ class DownloadProgressDeviceTest {
         ),
       )
     val plans = commands.map { command ->
-      val expected = planLegacyDownloadProgress(base, command)
       val request = DownloadProgressRequest(version = 1, snapshot = base, command = command)
-      planDownloadProgress(request).also { assertEquals(expected, it) }
+      planDownloadProgress(request)
     }
 
     assertEquals(22_000, plans[3].snapshot.remainingMilliseconds)

@@ -287,6 +287,12 @@ data class ReaderPage(
 /** Image-request quota state emitted by `eh_net::home`. */
 @Serializable data class ImageLimits(val current: Int, val maximum: Int, val resetCost: Int)
 
+/** Successful image-limit reset marker emitted by `eh_net::home`. */
+@Serializable data class ImageLimitsReset(val accepted: Boolean)
+
+/** Raw torrent key emitted by `eh_net::home` without source normalization. */
+@Serializable data class TorrentKey(val key: String)
+
 /** Favorite-category names emitted by `eh_net::user_config`. */
 @Serializable data class FavoriteCategories(val names: List<String>)
 

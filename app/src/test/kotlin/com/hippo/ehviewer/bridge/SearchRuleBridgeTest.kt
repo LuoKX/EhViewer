@@ -9,25 +9,8 @@ import kotlinx.serialization.encodeToByteArray
 
 class SearchRuleBridgeTest {
   @Test
-  fun legacyPlannerPreservesNormalizationAndTagFormatting() {
-    assertEquals(
-      "foo bar",
-      planLegacySearchRule(SearchRuleRequest.normalizeQuery("\u2003 foo\t\nbar  \u2003")).value,
-    )
-    assertEquals(
-      "artist:\"foo bar$\"",
-      planLegacySearchRule(SearchRuleRequest.wrapTagKeyword("artist:foo bar")).value,
-    )
-    assertEquals(
-      "艺术家：示例",
-      planLegacySearchRule(SearchRuleRequest.wrapTagKeyword("artist:foo", "艺术家", "示例")).value,
-    )
-  }
-
-  @Test
-  fun selectedBackendIsExclusiveAndSelectedFailuresPropagate() {
+  fun nativeFailuresPropagateWithoutFallback() {
     val request = SearchRuleRequest.normalizeQuery(" query ")
-    assertEquals("query", resolveSearchRule(request, CoreBackend.LEGACY))
     assertFailsWith<LinkageError> {
       planSearchRule(request) { _, _, _ -> throw LinkageError("missing") }
     }

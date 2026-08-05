@@ -49,6 +49,7 @@ pub mod list_url;
 pub mod list_url_parser;
 pub mod metadata;
 pub mod navigation;
+pub mod network_policy;
 pub mod preview;
 pub mod rate;
 pub mod tag_vote;

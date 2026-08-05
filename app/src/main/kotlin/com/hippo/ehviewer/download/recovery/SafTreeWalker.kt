@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.SystemClock
 import android.provider.DocumentsContract
 import java.io.File
-import java.nio.file.Files
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
@@ -64,8 +63,9 @@ internal object SafTreeWalker {
     limits: RecoveryScanLimits,
     onDiscovered: suspend (Int) -> Unit,
   ): RecoveryTreeSnapshot {
-    val root = File(requireNotNull(rootUri.path) { "Physical recovery root has no path" }).absoluteFile
-    require(!Files.isSymbolicLink(root.toPath())) { "Recovery root must not be a symbolic link" }
+    val root =
+      File(requireNotNull(rootUri.path) { "Physical recovery root has no path" }).absoluteFile
+    require(!root.isSymbolicLinkCompat()) { "Recovery root must not be a symbolic link" }
     require(root.isDirectory) { "Recovery root is not a directory" }
     val rootKey = "file:${root.path}"
     val nodes = ArrayList<RecoveryDocumentNode>()
@@ -105,7 +105,7 @@ internal object SafTreeWalker {
           limitExceeded = true
           break
         }
-        if (Files.isSymbolicLink(child.toPath())) continue
+        if (child.isSymbolicLinkCompat()) continue
         val isDirectory = child.isDirectory
         val depth = parent.depth + 1
         if (isDirectory && depth > limits.maxDepth) {
@@ -183,64 +183,64 @@ internal object SafTreeWalker {
       val parent = pending.removeFirst()
       val childrenUri =
         DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parent.documentId)
-      resolver
-        .query(childrenUri, DOCUMENT_PROJECTION, null, null, null)
-        ?.use { cursor ->
-          val idColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-          val nameColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-          val mimeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
-          val sizeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
-          val modifiedColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
-          val flagsColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_FLAGS)
-          while (cursor.moveToNext()) {
-            currentCoroutineContext().ensureActive()
-            if (nodes.size >= limits.maxNodes || SystemClock.elapsedRealtime() >= deadline) {
-              limitExceeded = true
-              break
-            }
-            val documentId = cursor.getString(idColumn)
-            if (!seen.add(documentId)) continue
-            val displayName =
-              nameColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
-                ?: documentId.substringAfterLast('/')
-            val mimeType = mimeColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
-            val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
-            val depth = parent.depth + 1
-            if (isDirectory && depth > limits.maxDepth) {
-              limitExceeded = true
-              continue
-            }
-            val sourceId = "$authority:$documentId"
-            val relativePath = parent.relativePath.joinRelative(displayName)
-            val childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
-            val node =
-              RecoveryDocumentNode(
-                rootKey = rootKey,
-                sourceId = sourceId,
-                parentSourceId = parent.sourceId,
-                uri = childUri,
-                displayName = displayName,
-                mimeType = mimeType,
-                size = sizeColumn.longOrNull(cursor),
-                modifiedAtMillis = modifiedColumn.longOrNull(cursor),
-                flags = flagsColumn.intOrZero(cursor),
-                relativePath = relativePath,
-                depth = depth,
-                isDirectory = isDirectory,
-              )
-            nodes += node
-            onDiscovered(nodes.size)
-            if (isDirectory) {
-              pending += PendingDocument(childUri, documentId, sourceId, relativePath, depth)
-            }
+      resolver.query(childrenUri, DOCUMENT_PROJECTION, null, null, null)?.use { cursor ->
+        val idColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+        val nameColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        val mimeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+        val sizeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+        val modifiedColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+        val flagsColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_FLAGS)
+        while (cursor.moveToNext()) {
+          currentCoroutineContext().ensureActive()
+          if (nodes.size >= limits.maxNodes || SystemClock.elapsedRealtime() >= deadline) {
+            limitExceeded = true
+            break
+          }
+          val documentId = cursor.getString(idColumn)
+          if (!seen.add(documentId)) continue
+          val displayName =
+            nameColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
+              ?: documentId.substringAfterLast('/')
+          val mimeType = mimeColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
+          val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
+          val depth = parent.depth + 1
+          if (isDirectory && depth > limits.maxDepth) {
+            limitExceeded = true
+            continue
+          }
+          val sourceId = "$authority:$documentId"
+          val relativePath = parent.relativePath.joinRelative(displayName)
+          val childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+          val node =
+            RecoveryDocumentNode(
+              rootKey = rootKey,
+              sourceId = sourceId,
+              parentSourceId = parent.sourceId,
+              uri = childUri,
+              displayName = displayName,
+              mimeType = mimeType,
+              size = sizeColumn.longOrNull(cursor),
+              modifiedAtMillis = modifiedColumn.longOrNull(cursor),
+              flags = flagsColumn.intOrZero(cursor),
+              relativePath = relativePath,
+              depth = depth,
+              isDirectory = isDirectory,
+            )
+          nodes += node
+          onDiscovered(nodes.size)
+          if (isDirectory) {
+            pending += PendingDocument(childUri, documentId, sourceId, relativePath, depth)
           }
         }
+      }
     }
     return RecoveryTreeSnapshot(rootKey, nodes, limitExceeded)
   }
 
-  private fun Int.longOrNull(cursor: android.database.Cursor): Long? =
-    takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getLong)
+  private fun Int.longOrNull(cursor: android.database.Cursor): Long? = takeIf {
+    it >= 0 && !cursor.isNull(it)
+  }
+    ?.let(cursor::getLong)
 
   private fun Int.intOrZero(cursor: android.database.Cursor): Int =
     takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getInt) ?: 0
@@ -257,3 +257,9 @@ internal object SafTreeWalker {
       DocumentsContract.Document.COLUMN_FLAGS,
     )
 }
+
+internal fun File.isSymbolicLinkCompat(): Boolean = runCatching {
+  val candidate = parentFile?.canonicalFile?.let { File(it, name) } ?: absoluteFile
+  candidate.canonicalFile != candidate.absoluteFile
+}
+  .getOrDefault(true)

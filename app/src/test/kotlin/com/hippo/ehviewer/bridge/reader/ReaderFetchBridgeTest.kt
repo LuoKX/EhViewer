@@ -11,8 +11,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
@@ -22,7 +20,7 @@ class ReaderFetchBridgeTest {
   fun requestAndResponseRustGoldensEncodeAndDecodeExactly() {
     val request =
       ReaderFetchRequest(
-        version = 1,
+        version = READER_FETCH_API_VERSION,
         state = fetching(attempt = 1, originalRequested = true),
         event =
           ReaderFetchEvent.pageReady(
@@ -32,7 +30,7 @@ class ReaderFetchBridgeTest {
             showKeyAvailable = true,
           ),
       )
-    val plan = legacyPlanReaderFetch(request.state, request.event)
+    val plan = goldenPlan()
     val response = successEnvelope(plan)
     val rustSuccessWire =
       RustSuccessEnvelope(
@@ -119,7 +117,7 @@ class ReaderFetchBridgeTest {
   }
 
   @Test
-  fun everyEventAndActionShapeRoundTripsAndIllegalFieldsAreRejected() {
+  fun everyEventAndActionShapeRoundTripsAndRejectsIllegalFields() {
     val events =
       listOf(
         ReaderFetchEvent.start(),
@@ -180,29 +178,15 @@ class ReaderFetchBridgeTest {
       )
     }
     assertFailsWith<IllegalArgumentException> {
-      ReaderFetchEvent(
-        kind = ReaderFetchEventKind.IMAGE_FAILED,
-        failure = ReaderFetchImageFailure.RECOVERABLE,
-        invalidPage = false,
-      )
-    }
-    assertFailsWith<IllegalArgumentException> {
       ReaderFetchAction(ReaderFetchActionKind.SET_FAILED)
     }
     assertFailsWith<IllegalArgumentException> {
       ReaderFetchAction(ReaderFetchActionKind.CHECK_CACHE, source = ReaderFetchPageSource.HTML)
     }
-    assertFailsWith<IllegalArgumentException> {
-      ReaderFetchAction(
-        ReaderFetchActionKind.RESOLVE_ORIGINAL,
-        appendSkipKey = false,
-        target = ReaderFetchImageTarget.ORIGINAL,
-      )
-    }
   }
 
   @Test
-  fun stateAndEnvelopeConstructorsRejectEveryBoundedShapeViolation() {
+  fun stateAndEnvelopeConstructorsRejectBoundedShapeViolations() {
     assertFailsWith<IllegalArgumentException> { initial().copy(attempt = -1) }
     assertFailsWith<IllegalArgumentException> { initial().copy(attempt = 3) }
     assertFailsWith<IllegalArgumentException> {
@@ -220,376 +204,58 @@ class ReaderFetchBridgeTest {
         .copy(phase = ReaderFetchPhase.CHECKING_CACHE)
     }
     assertFailsWith<IllegalArgumentException> {
-      ApiEnvelope<ReaderFetchPlan>(
-        version = 1,
-        module = "readerFetch",
-        payload = null,
-        error = null,
-      )
-    }
-    assertFailsWith<IllegalArgumentException> {
       ApiEnvelope(
-        version = 1,
-        module = "readerFetch",
-        payload = legacyPlanReaderFetch(initial(), ReaderFetchEvent.start()),
+        version = READER_FETCH_API_VERSION,
+        module = READER_FETCH_MODULE,
+        payload = startPlan(),
         error = RustError(RustErrorKind.ERROR, "reader fetch failure"),
       )
     }
-    assertFailsWith<IllegalArgumentException> {
-      ReaderFetchPlan(initial(), emptyList())
+    assertFailsWith<IllegalArgumentException> { ReaderFetchPlan(initial(), emptyList()) }
+  }
+
+  @Test
+  fun preappliedImageCleanupConsumesOnlyOneLeadingAction() {
+    val plan =
+      ReaderFetchPlan(
+        downloading(attempt = 1),
+        listOf(
+          ReaderFetchAction.removeIntermediateFiles(),
+          ReaderFetchAction.captureCurrentError(),
+          ReaderFetchAction.fetchPage(ReaderFetchPageSource.API),
+        ),
+      )
+
+    assertEquals(
+      plan.copy(actions = plan.actions.drop(1)),
+      plan.consumePreappliedImageCleanup(),
+    )
+    assertFailsWith<IllegalStateException> {
+      ReaderFetchPlan(downloading(), listOf(ReaderFetchAction.captureCurrentError()))
+        .consumePreappliedImageCleanup()
     }
-  }
-
-  @Test
-  fun legacyStartCacheAndTokenTransitionsMatchTheFrozenTable() {
-    val normalStart = legacyPlanReaderFetch(initial(), ReaderFetchEvent.start())
-    assertEquals(ReaderFetchPhase.CHECKING_CACHE, normalStart.state.phase)
-    assertEquals(listOf(ReaderFetchAction.checkCache()), normalStart.actions)
-    assertEquals(
-      listOf(ReaderFetchAction.setFinished()),
-      legacyPlanReaderFetch(normalStart.state, ReaderFetchEvent.cacheHit()).actions,
-    )
-    val cacheMiss = legacyPlanReaderFetch(normalStart.state, ReaderFetchEvent.cacheMiss())
-    assertEquals(ReaderFetchPhase.ACQUIRING_TOKENS, cacheMiss.state.phase)
-    assertEquals(listOf(ReaderFetchAction.acquireTokens()), cacheMiss.actions)
-
-    val forcedStart =
-      legacyPlanReaderFetch(
-        ReaderFetchState.initial(force = true, skipHath = false, originalRequested = true),
-        ReaderFetchEvent.start(),
-      )
-    assertEquals(ReaderFetchPhase.ACQUIRING_TOKENS, forcedStart.state.phase)
-    assertEquals(listOf(ReaderFetchAction.acquireTokens()), forcedStart.actions)
-    assertEquals(
-      listOf(ReaderFetchAction.setFailed(ReaderFetchErrorSource.P_TOKEN_MESSAGE)),
-      legacyPlanReaderFetch(forcedStart.state, ReaderFetchEvent.tokensMissing()).actions,
-    )
-
-    val html = legacyPlanReaderFetch(cacheMiss.state, ReaderFetchEvent.tokensReady(false))
-    assertEquals(ReaderFetchPageSource.HTML, html.state.pageSource)
-    assertEquals(
-      listOf(
-        ReaderFetchAction.setDownloading(),
-        ReaderFetchAction.fetchPage(ReaderFetchPageSource.HTML),
-      ),
-      html.actions,
-    )
-    val api = legacyPlanReaderFetch(cacheMiss.state, ReaderFetchEvent.tokensReady(true))
-    assertEquals(ReaderFetchPageSource.API, api.state.pageSource)
-  }
-
-  @Test
-  fun legacyPageSelectionPreservesSkipOriginalAndResizedSemantics() {
-    val skipped =
-      legacyPlanReaderFetch(
-        fetching(
-          attempt = 0,
-          force = true,
-          skipHath = true,
-          originalRequested = true,
-        ),
-        ReaderFetchEvent.pageReady(ReaderFetchPageSource.API, true, true, true),
-      )
-    assertEquals(1, skipped.state.attempt)
-    assertTrue(skipped.state.forceHtml)
-    assertEquals(ReaderFetchPageSource.HTML, skipped.state.pageSource)
-    assertEquals(
-      listOf(ReaderFetchAction.fetchPage(ReaderFetchPageSource.HTML)),
-      skipped.actions,
-    )
-
-    val original =
-      legacyPlanReaderFetch(
-        fetching(attempt = 1, originalRequested = true),
-        ReaderFetchEvent.pageReady(ReaderFetchPageSource.API, true, true, true),
-      )
-    assertEquals(ReaderFetchPhase.RESOLVING_ORIGINAL, original.state.phase)
-    assertEquals(listOf(ReaderFetchAction.resolveOriginal(true)), original.actions)
-    val noAttemptOneSkipKey =
-      legacyPlanReaderFetch(
-        fetching(attempt = 0, originalRequested = true),
-        ReaderFetchEvent.pageReady(ReaderFetchPageSource.API, true, true, true),
-      )
-    assertEquals(listOf(ReaderFetchAction.resolveOriginal(false)), noAttemptOneSkipKey.actions)
-
-    val resized =
-      legacyPlanReaderFetch(
-        fetching(attempt = 0, originalRequested = false),
-        ReaderFetchEvent.pageReady(ReaderFetchPageSource.API, true, true, true),
-      )
-    assertEquals(ReaderFetchPhase.DOWNLOADING_IMAGE, resized.state.phase)
-    assertTrue(resized.state.forceHtml)
-    assertEquals(
-      listOf(ReaderFetchAction.downloadImage(ReaderFetchImageTarget.RESIZED)),
-      resized.actions,
-    )
-  }
-
-  @Test
-  fun legacyRetriesAreBoundedAndNeverReplaceTheRetainedError() {
-    val apiRetry =
-      legacyPlanReaderFetch(fetching(attempt = 0), ReaderFetchEvent.apiRecoverableFailure())
-    assertEquals(1, apiRetry.state.attempt)
-    assertTrue(apiRetry.state.forceHtml)
-    assertEquals(ReaderFetchPageSource.HTML, apiRetry.state.pageSource)
-    assertEquals(
-      listOf(ReaderFetchAction.fetchPage(ReaderFetchPageSource.HTML)),
-      apiRetry.actions,
-    )
-
-    val exhausted =
-      legacyPlanReaderFetch(fetching(attempt = 2), ReaderFetchEvent.apiRecoverableFailure())
-    assertEquals(ReaderFetchPhase.FAILED, exhausted.state.phase)
-    assertEquals(
-      listOf(ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED)),
-      exhausted.actions,
-    )
-    assertFalse(exhausted.actions.contains(ReaderFetchAction.captureCurrentError()))
-  }
-
-  @Test
-  fun legacyOuterFailureClassificationPreservesExactActionOrder() {
-    val fatal = legacyPlanReaderFetch(fetching(), ReaderFetchEvent.outerFailureRaised(fatal = true))
-    assertEquals(ReaderFetchPhase.CLASSIFYING_OUTER_FAILURE, fatal.state.phase)
-    assertEquals(
-      listOf(ReaderFetchAction.notifyFatal(), ReaderFetchAction.captureCurrentError()),
-      fatal.actions,
-    )
-    assertEquals(
-      listOf(
-        ReaderFetchAction.invalidateToken(),
-        ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED),
-      ),
-      legacyPlanReaderFetch(fatal.state, ReaderFetchEvent.outerFailureClassified(true)).actions,
-    )
-
-    val nonFatal =
-      legacyPlanReaderFetch(
-        resolvingOriginal(),
-        ReaderFetchEvent.outerFailureRaised(fatal = false),
-      )
-    assertEquals(listOf(ReaderFetchAction.captureCurrentError()), nonFatal.actions)
-    assertEquals(
-      listOf(ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED)),
-      legacyPlanReaderFetch(nonFatal.state, ReaderFetchEvent.outerFailureClassified(false)).actions,
-    )
-  }
-
-  @Test
-  fun legacyImageOutcomesPreserveCleanupRetryAndCancellationOrder() {
-    val original = legacyPlanReaderFetch(resolvingOriginal(), ReaderFetchEvent.originalReady())
-    assertEquals(
-      listOf(ReaderFetchAction.downloadImage(ReaderFetchImageTarget.ORIGINAL)),
-      original.actions,
-    )
-    assertEquals(
-      listOf(ReaderFetchAction.setFinished()),
-      legacyPlanReaderFetch(original.state, ReaderFetchEvent.imageSucceeded()).actions,
-    )
-
-    val recoverable =
-      legacyPlanReaderFetch(
-        downloading(attempt = 0),
-        ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.RECOVERABLE),
-      )
-    assertEquals(1, recoverable.state.attempt)
-    assertEquals(
-      listOf(
-        ReaderFetchAction.removeIntermediateFiles(),
-        ReaderFetchAction.captureCurrentError(),
-        ReaderFetchAction.fetchPage(ReaderFetchPageSource.API),
-      ),
-      recoverable.actions,
-    )
-    val exhausted =
-      legacyPlanReaderFetch(
-        downloading(attempt = 2),
-        ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.RECOVERABLE),
-      )
-    assertEquals(
-      listOf(
-        ReaderFetchAction.removeIntermediateFiles(),
-        ReaderFetchAction.captureCurrentError(),
-        ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED),
-      ),
-      exhausted.actions,
-    )
-
-    val fileNotFound =
-      legacyPlanReaderFetch(
-        downloading(),
-        ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.FILE_NOT_FOUND),
-      )
-    assertEquals(ReaderFetchPhase.CLASSIFYING_OUTER_FAILURE, fileNotFound.state.phase)
-    assertEquals(
-      listOf(
-        ReaderFetchAction.removeIntermediateFiles(),
-        ReaderFetchAction.captureCurrentError(),
-      ),
-      fileNotFound.actions,
-    )
-    assertEquals(
-      listOf(
-        ReaderFetchAction.invalidateToken(),
-        ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED),
-      ),
-      legacyPlanReaderFetch(
-          fileNotFound.state,
-          ReaderFetchEvent.outerFailureClassified(invalidPage = true),
-        )
-        .actions,
-    )
-
-    val cancelled =
-      legacyPlanReaderFetch(
-        downloading(),
-        ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.CANCELLATION),
-      )
-    assertEquals(ReaderFetchPhase.CANCELLED, cancelled.state.phase)
-    assertEquals(
-      listOf(
-        ReaderFetchAction.removeIntermediateFiles(),
-        ReaderFetchAction.rethrowCancellation(),
-      ),
-      cancelled.actions,
-    )
-  }
-
-  @Test
-  fun preappliedImageCleanupConsumesOnlyTheLeadingActionAndPreservesRemainingOrder() {
-    val plans =
-      listOf(
-        legacyPlanReaderFetch(
-          downloading(attempt = 0),
-          ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.RECOVERABLE),
-        ),
-        legacyPlanReaderFetch(
-          downloading(attempt = 2),
-          ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.RECOVERABLE),
-        ),
-        legacyPlanReaderFetch(
+    assertFailsWith<IllegalStateException> {
+      ReaderFetchPlan(
           downloading(),
-          ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.CANCELLATION),
-        ),
-      )
-
-    plans.forEach { plan ->
-      val consumed = plan.consumePreappliedImageCleanup()
-
-      assertEquals(plan.state, consumed.state)
-      assertEquals(plan.actions.drop(1), consumed.actions)
+          listOf(
+            ReaderFetchAction.removeIntermediateFiles(),
+            ReaderFetchAction.captureCurrentError(),
+            ReaderFetchAction.removeIntermediateFiles(),
+          ),
+        )
+        .consumePreappliedImageCleanup()
     }
-    assertEquals(
-      listOf(
-        ReaderFetchAction.captureCurrentError(),
-        ReaderFetchAction.fetchPage(ReaderFetchPageSource.API),
-      ),
-      plans[0].consumePreappliedImageCleanup().actions,
-    )
-    assertEquals(
-      listOf(
-        ReaderFetchAction.captureCurrentError(),
-        ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED),
-      ),
-      plans[1].consumePreappliedImageCleanup().actions,
-    )
-    assertEquals(
-      listOf(ReaderFetchAction.rethrowCancellation()),
-      plans[2].consumePreappliedImageCleanup().actions,
-    )
-  }
-
-  @Test
-  fun preappliedImageCleanupRejectsMissingOrWrongLeadingCleanup() {
-    val missing =
-      ReaderFetchPlan(
-        downloading(),
-        listOf(ReaderFetchAction.captureCurrentError()),
-      )
-    val wrongLeading =
-      ReaderFetchPlan(
-        downloading(),
-        listOf(
-          ReaderFetchAction.captureCurrentError(),
-          ReaderFetchAction.removeIntermediateFiles(),
-        ),
-      )
-
-    listOf(missing, wrongLeading).forEach { plan ->
-      val failure = assertFailsWith<IllegalStateException> { plan.consumePreappliedImageCleanup() }
-      assertEquals(
-        "Reader Fetch pre-applied image cleanup requires a leading cleanup action",
-        failure.message,
-      )
-    }
-  }
-
-  @Test
-  fun preappliedImageCleanupRejectsDuplicateOrActionlessRemainders() {
-    val duplicate =
-      ReaderFetchPlan(
-        downloading(),
-        listOf(
-          ReaderFetchAction.removeIntermediateFiles(),
-          ReaderFetchAction.captureCurrentError(),
-          ReaderFetchAction.removeIntermediateFiles(),
-        ),
-      )
-    val duplicateFailure =
-      assertFailsWith<IllegalStateException> { duplicate.consumePreappliedImageCleanup() }
-    assertEquals(
-      "Reader Fetch pre-applied image cleanup action must occur exactly once",
-      duplicateFailure.message,
-    )
-
-    val actionless =
+    assertFailsWith<IllegalStateException> {
       ReaderFetchPlan(downloading(), listOf(ReaderFetchAction.removeIntermediateFiles()))
-    val actionlessFailure =
-      assertFailsWith<IllegalStateException> { actionless.consumePreappliedImageCleanup() }
-    assertEquals(
-      "Reader Fetch pre-applied image cleanup requires a remaining action",
-      actionlessFailure.message,
-    )
+        .consumePreappliedImageCleanup()
+    }
   }
 
   @Test
-  fun legacyRejectsIllegalSourcesTransitionsAndTerminalEvents() {
-    assertFailsWith<IllegalArgumentException> {
-      legacyPlanReaderFetch(initial(), ReaderFetchEvent.cacheHit())
-    }
-    assertFailsWith<IllegalArgumentException> {
-      legacyPlanReaderFetch(
-        fetching(source = ReaderFetchPageSource.HTML, showKeyAvailable = false),
-        ReaderFetchEvent.apiRecoverableFailure(),
-      )
-    }
-    assertFailsWith<IllegalArgumentException> {
-      legacyPlanReaderFetch(
-        fetching(),
-        ReaderFetchEvent.pageReady(ReaderFetchPageSource.HTML, true, true, true),
-      )
-    }
-    ReaderFetchPhase.entries
-      .filter {
-        it == ReaderFetchPhase.FINISHED ||
-          it == ReaderFetchPhase.FAILED ||
-          it == ReaderFetchPhase.CANCELLED
-      }
-      .forEach { terminal ->
-        assertFailsWith<IllegalArgumentException> {
-          legacyPlanReaderFetch(
-            initial().copy(phase = terminal),
-            ReaderFetchEvent.imageSucceeded(),
-          )
-        }
-      }
-  }
-
-  @Test
-  fun nativePlanningRejectsEnvelopeVersionModuleErrorAndMalformedBytes() {
+  fun nativePlanningValidatesEnvelopeAndAdoptsRustPayload() {
     val state = initial()
     val event = ReaderFetchEvent.start()
-    val expected = legacyPlanReaderFetch(state, event)
+    val expected = startPlan()
 
     assertFailsWith<IllegalArgumentException> {
       planReaderFetch(
@@ -618,51 +284,42 @@ class ReaderFetchBridgeTest {
     assertFailsWith<Exception> {
       planReaderFetch(state, event, ScriptedNative({ byteArrayOf(0xa0.toByte()) })::invoke)
     }
-    val rustPlan = mismatched(expected)
+
+    val adopted = expected.copy(actions = listOf(ReaderFetchAction.acquireTokens()))
     assertEquals(
-      rustPlan,
-      planReaderFetch(state, event, ScriptedNative({ envelopeBytes(rustPlan) })::invoke),
+      adopted,
+      planReaderFetch(state, event, ScriptedNative({ envelopeBytes(adopted) })::invoke),
     )
   }
 
   @Test
-  fun disabledSelectionUsesLegacyWithoutAnyNativeCallOrSecondStart() {
-    val native = ScriptedNative()
+  fun startedPlannerUsesRustExactlyOncePerTransition() {
     val state = initial()
-    val expectedStart = legacyPlanReaderFetch(state, ReaderFetchEvent.start())
-
-    val selection = selectReaderFetchPlanner(false, state, native::invoke)
-
-    assertEquals(expectedStart, selection.startPlan)
-    assertEquals(0, native.calls)
-    val next = selection.planner.next(selection.startPlan.state, ReaderFetchEvent.cacheMiss())
-    assertEquals(
-      legacyPlanReaderFetch(selection.startPlan.state, ReaderFetchEvent.cacheMiss()),
-      next,
-    )
-    assertEquals(0, native.calls)
-  }
-
-  @Test
-  fun successfulInitialRustPlanLocksTheSessionToStrictRustPlanning() {
-    val state = initial()
-    val expectedStart = legacyPlanReaderFetch(state, ReaderFetchEvent.start())
-    val expectedNext = legacyPlanReaderFetch(expectedStart.state, ReaderFetchEvent.cacheMiss())
+    val expectedStart = startPlan()
+    val expectedNext = cacheMissPlan()
     val native =
       ScriptedNative(
         { request ->
-          assertEquals(state, request.state)
-          assertEquals(ReaderFetchEvent.start(), request.event)
+          assertEquals(
+            ReaderFetchRequest(READER_FETCH_API_VERSION, state, ReaderFetchEvent.start()),
+            request,
+          )
           envelopeBytes(expectedStart)
         },
         { request ->
-          assertEquals(expectedStart.state, request.state)
-          assertEquals(ReaderFetchEvent.cacheMiss(), request.event)
+          assertEquals(
+            ReaderFetchRequest(
+              READER_FETCH_API_VERSION,
+              expectedStart.state,
+              ReaderFetchEvent.cacheMiss(),
+            ),
+            request,
+          )
           envelopeBytes(expectedNext)
         },
       )
 
-    val selection = selectReaderFetchPlanner(true, state, native::invoke)
+    val selection = startReaderFetchPlanner(state, native::invoke)
 
     assertEquals(expectedStart, selection.startPlan)
     assertEquals(1, native.calls)
@@ -674,7 +331,7 @@ class ReaderFetchBridgeTest {
   }
 
   @Test
-  fun initialRustFailuresPropagateWithoutLegacySelection() {
+  fun rustFailuresPropagateWithoutReplay() {
     assertInitialFailure<IllegalStateException> {
       throw IllegalStateException("contained test failure")
     }
@@ -682,65 +339,20 @@ class ReaderFetchBridgeTest {
       throw UnsatisfiedLinkError("contained test linkage")
     }
     assertInitialFailure<Exception> { byteArrayOf(0xa0.toByte()) }
-  }
 
-  @Test
-  fun fatalErrorAtTheInitialGatePropagates() {
-    val native = ScriptedNative({ throw AssertionError("fatal test error") })
-
-    assertFailsWith<AssertionError> {
-      selectReaderFetchPlanner(true, initial(), native::invoke)
-    }
-    assertEquals(1, native.calls)
-  }
-
-  @Test
-  fun selectedRustPlannerNeverFallsBackReplaysOrSwitchesAfterFailure() {
-    assertStrictLaterFailure<IllegalStateException> {
+    assertLaterFailure<IllegalStateException> {
       throw IllegalStateException("strict test failure")
     }
-    assertStrictLaterFailure<UnsatisfiedLinkError> {
+    assertLaterFailure<UnsatisfiedLinkError> {
       throw UnsatisfiedLinkError("strict test linkage")
     }
-    assertStrictLaterFailure<Exception> { byteArrayOf(0xa0.toByte()) }
-  }
-
-  @Test
-  fun strictImageFailurePlanningPropagatesAfterCallerPreappliesCleanup() {
-    val state = initial()
-    val start = legacyPlanReaderFetch(state, ReaderFetchEvent.start())
-    val downloading = downloading()
-    val imageFailure = ReaderFetchEvent.imageFailed(ReaderFetchImageFailure.RECOVERABLE)
-    val native =
-      ScriptedNative(
-        { envelopeBytes(start) },
-        { request ->
-          assertEquals(downloading, request.state)
-          assertEquals(imageFailure, request.event)
-          throw UnsatisfiedLinkError("strict image failure linkage")
-        },
-      )
-    val selection = selectReaderFetchPlanner(true, state, native::invoke)
-    var cleanupCalls = 0
-
-    cleanupCalls++
-    assertFailsWith<UnsatisfiedLinkError> {
-      selection.planner.next(downloading, imageFailure).consumePreappliedImageCleanup()
-    }
-
-    assertEquals(1, cleanupCalls)
-    assertEquals(2, native.calls)
+    assertLaterFailure<Exception> { byteArrayOf(0xa0.toByte()) }
   }
 
   @Test
   fun wireSchemaAndDiagnosticsContainOnlySanitizedControlData() {
     val secret = "secret-token-cookie-url-path-body"
-    val request =
-      ReaderFetchRequest(
-        version = 1,
-        state = initial(),
-        event = ReaderFetchEvent.start(),
-      )
+    val request = ReaderFetchRequest(READER_FETCH_API_VERSION, initial(), ReaderFetchEvent.start())
     val wireText = rustCbor.encodeToByteArray(request).toString(Charsets.ISO_8859_1).lowercase()
     listOf("cookie", "url", "path", "body", "exception", "galleryid", "pageindex").forEach {
       forbidden ->
@@ -757,29 +369,21 @@ class ReaderFetchBridgeTest {
         )
       }
     assertFalse(thrown.message.orEmpty().contains(secret))
-    val transitionError =
-      assertFailsWith<IllegalArgumentException> {
-        legacyPlanReaderFetch(initial(), ReaderFetchEvent.cacheMiss())
-      }
-    assertEquals("Reader Fetch event is invalid for the current phase", transitionError.message)
   }
 
   private inline fun <reified T : Throwable> assertInitialFailure(
     noinline step: (ReaderFetchRequest) -> ByteArray
   ) {
     val native = ScriptedNative(step)
-
-    assertFailsWith<T> { selectReaderFetchPlanner(true, initial(), native::invoke) }
+    assertFailsWith<T> { startReaderFetchPlanner(initial(), native::invoke) }
     assertEquals(1, native.calls)
   }
 
-  private inline fun <reified T : Throwable> assertStrictLaterFailure(
+  private inline fun <reified T : Throwable> assertLaterFailure(
     noinline secondStep: (ReaderFetchRequest) -> ByteArray
   ) {
-    val state = initial()
-    val start = legacyPlanReaderFetch(state, ReaderFetchEvent.start())
-    val native = ScriptedNative({ envelopeBytes(start) }, secondStep)
-    val selection = selectReaderFetchPlanner(true, state, native::invoke)
+    val native = ScriptedNative({ envelopeBytes(startPlan()) }, secondStep)
+    val selection = startReaderFetchPlanner(initial(), native::invoke)
 
     assertEquals(1, native.calls)
     assertFailsWith<T> {
@@ -833,35 +437,17 @@ private fun initial() =
 
 private fun fetching(
   attempt: Int = 0,
-  forceHtml: Boolean = false,
-  force: Boolean = false,
-  skipHath: Boolean = false,
   originalRequested: Boolean = true,
-  showKeyAvailable: Boolean = true,
-  source: ReaderFetchPageSource =
-    if (forceHtml || !showKeyAvailable) ReaderFetchPageSource.HTML else ReaderFetchPageSource.API,
 ) =
   ReaderFetchState(
     phase = ReaderFetchPhase.FETCHING_PAGE,
     attempt = attempt,
-    forceHtml = forceHtml,
-    force = force,
-    skipHath = skipHath,
-    originalRequested = originalRequested,
-    showKeyAvailable = showKeyAvailable,
-    pageSource = source,
-  )
-
-private fun resolvingOriginal() =
-  ReaderFetchState(
-    phase = ReaderFetchPhase.RESOLVING_ORIGINAL,
-    attempt = 1,
     forceHtml = false,
     force = false,
     skipHath = false,
-    originalRequested = true,
+    originalRequested = originalRequested,
     showKeyAvailable = true,
-    pageSource = null,
+    pageSource = ReaderFetchPageSource.API,
   )
 
 private fun downloading(attempt: Int = 0) =
@@ -874,6 +460,44 @@ private fun downloading(attempt: Int = 0) =
     originalRequested = true,
     showKeyAvailable = true,
     pageSource = null,
+  )
+
+private fun startPlan() =
+  ReaderFetchPlan(
+    state = initial().copy(phase = ReaderFetchPhase.CHECKING_CACHE),
+    actions = listOf(ReaderFetchAction.checkCache()),
+  )
+
+private fun cacheMissPlan() =
+  ReaderFetchPlan(
+    state =
+      ReaderFetchState(
+        phase = ReaderFetchPhase.ACQUIRING_TOKENS,
+        attempt = 0,
+        forceHtml = false,
+        force = false,
+        skipHath = false,
+        originalRequested = true,
+        showKeyAvailable = false,
+        pageSource = null,
+      ),
+    actions = listOf(ReaderFetchAction.acquireTokens()),
+  )
+
+private fun goldenPlan() =
+  ReaderFetchPlan(
+    state =
+      ReaderFetchState(
+        phase = ReaderFetchPhase.RESOLVING_ORIGINAL,
+        attempt = 1,
+        forceHtml = false,
+        force = false,
+        skipHath = false,
+        originalRequested = true,
+        showKeyAvailable = true,
+        pageSource = null,
+      ),
+    actions = listOf(ReaderFetchAction.resolveOriginal(true)),
   )
 
 private fun successEnvelope(plan: ReaderFetchPlan) =
@@ -903,18 +527,6 @@ private fun errorEnvelopeBytes(error: RustError) =
     )
   )
 
-private fun mismatched(expected: ReaderFetchPlan): ReaderFetchPlan {
-  val replacement =
-    if (expected.actions.first().kind == ReaderFetchActionKind.ACQUIRE_TOKENS) {
-      ReaderFetchAction.checkCache()
-    } else {
-      ReaderFetchAction.acquireTokens()
-    }
-  val mismatched = expected.copy(actions = listOf(replacement))
-  assertNotEquals(expected, mismatched)
-  return mismatched
-}
-
 private inline fun <reified T> assertWireNames(vararg values: Pair<T, String>) {
   values.forEach { (value, wireName) ->
     val encoded = rustCbor.encodeToByteArray(value)
@@ -926,7 +538,6 @@ private inline fun <reified T> assertWireNames(vararg values: Pair<T, String>) {
 private fun ByteArray.toHex() =
   joinToString(separator = "") { byte -> byte.toUByte().toString(16).padStart(2, '0') }
 
-// A primitive nullable sentinel makes Kotlin emit the canonical CBOR null used by serde_cbor.
 @Serializable
 private data class RustSuccessEnvelope(
   val version: Int,

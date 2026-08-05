@@ -15,7 +15,6 @@
  */
 package com.hippo.ehviewer.client.parser
 
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.bridge.AccountProfile
 import com.hippo.ehviewer.bridge.ApiEnvelope
 import com.hippo.ehviewer.bridge.RustFailureException
@@ -28,32 +27,17 @@ import moe.tarsin.coroutines.runSuspendCatching
 object ProfileParser {
   fun parse(body: ByteBuffer) =
     parseOrThrow("Failed to parse profile") {
-      if (Settings.useRustCore.value) {
-        val profile =
-          unmarshalParsingAs<ApiEnvelope<AccountProfile>>(body, ::parseProfileV1)
-            .requireAuthPayload()
-        Result(profile.displayName, profile.avatar)
-      } else {
-        unmarshalParsingAs<Result>(body, ::parseProfile)
-      }
+      val profile =
+        unmarshalParsingAs<ApiEnvelope<AccountProfile>>(body, ::parseProfileV1).requireAuthPayload()
+      Result(profile.displayName, profile.avatar)
     }
 
   fun parseProfileUrl(body: ByteBuffer) =
     parseOrThrow("Failed to parse profile URL") {
-      if (Settings.useRustCore.value) {
-        unmarshalParsingAs<ApiEnvelope<String>>(body, ::parseProfileUrlV1).requireAuthPayload()
-      } else {
-        unmarshalParsingAs<String>(body, ::parseProfileUrl)
-      }
+      unmarshalParsingAs<ApiEnvelope<String>>(body, ::parseProfileUrlV1).requireAuthPayload()
     }
 
   @Serializable data class Result(val displayName: String, val avatar: String?)
-
-  /** Invokes the frozen legacy `ehviewer_rust::parser::profile` parser. */
-  private external fun parseProfile(body: ByteBuffer, size: Int = body.limit()): Int
-
-  /** Invokes the frozen legacy profile-URL parser. */
-  private external fun parseProfileUrl(body: ByteBuffer, size: Int = body.limit()): Int
 
   /** Invokes the V1 `eh_net::auth::profile` account parser. */
   private external fun parseProfileV1(body: ByteBuffer, size: Int = body.limit()): Int

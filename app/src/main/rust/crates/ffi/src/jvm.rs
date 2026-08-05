@@ -3,8 +3,11 @@
 mod archive;
 #[cfg(all(feature = "android", target_os = "android"))]
 mod bitmap;
+mod comic_info;
+mod gallery_network_policy;
 #[cfg(all(feature = "android-26", target_os = "android"))]
 mod hardware_buffer;
+mod hash;
 mod health;
 mod parser;
 mod plan;

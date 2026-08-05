@@ -113,16 +113,22 @@ impl Drop for ArchivePassword {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ArchiveReaderState {
+    Ready,
+    PasswordRequired,
+    Closed,
+}
+
 struct ArchiveReader {
     source: File,
     kind: ArchiveKind,
     sort_entries: bool,
     password: Option<ArchivePassword>,
-    needs_password: bool,
+    state: ArchiveReaderState,
     entries: Vec<ArchiveEntry>,
     metadata_entries: Vec<ArchiveEntry>,
     unsafe_path: bool,
-    closed: bool,
 }
 
 impl ArchiveReader {
@@ -147,17 +153,23 @@ impl ArchiveReader {
             kind,
             sort_entries,
             password: None,
-            needs_password,
+            state: if needs_password {
+                ArchiveReaderState::PasswordRequired
+            } else {
+                ArchiveReaderState::Ready
+            },
             entries,
             metadata_entries,
             unsafe_path,
-            closed: false,
         })
     }
 
     fn provide_password(&mut self, password: Vec<u8>) -> Result<bool> {
-        ensure!(!self.closed, "Rust archive reader is closed");
-        if !self.needs_password {
+        ensure!(
+            self.state != ArchiveReaderState::Closed,
+            "Rust archive reader is closed"
+        );
+        if self.state != ArchiveReaderState::PasswordRequired {
             return Ok(true);
         }
         let password = ArchivePassword::new(password)?;
@@ -169,14 +181,21 @@ impl ArchiveReader {
             true,
         )? {
             ScanOutcome::PasswordRequired => Ok(false),
-            ScanOutcome::Complete { entries, .. } => {
+            ScanOutcome::Complete {
+                entries,
+                metadata_entries,
+                unsafe_path,
+                ..
+            } => {
                 ensure!(
                     !entries.is_empty(),
                     "Rust archive reader found no playable image entries after password validation"
                 );
                 self.password = Some(password);
-                self.needs_password = false;
+                self.state = ArchiveReaderState::Ready;
                 self.entries = entries;
+                self.metadata_entries = metadata_entries;
+                self.unsafe_path = unsafe_path;
                 Ok(true)
             }
         }
@@ -245,9 +264,12 @@ impl ArchiveReader {
     }
 
     fn ensure_ready(&self) -> Result<()> {
-        ensure!(!self.closed, "Rust archive reader is closed");
         ensure!(
-            !self.needs_password,
+            self.state != ArchiveReaderState::Closed,
+            "Rust archive reader is closed"
+        );
+        ensure!(
+            self.state != ArchiveReaderState::PasswordRequired,
             "Rust archive reader requires a password"
         );
         Ok(())
@@ -282,7 +304,9 @@ impl ArchiveReaderRegistry {
     }
 
     pub(super) fn needs_password(&self, handle: i64) -> Result<bool> {
-        self.with_reader(handle, |reader| Ok(reader.needs_password))
+        self.with_reader(handle, |reader| {
+            Ok(reader.state == ArchiveReaderState::PasswordRequired)
+        })
     }
 
     pub(super) fn provide_password(&self, handle: i64, password: Vec<u8>) -> Result<bool> {
@@ -342,7 +366,7 @@ impl ArchiveReaderRegistry {
         let mut reader = reader
             .lock()
             .map_err(|_| anyhow!("Rust archive reader lock is poisoned"))?;
-        reader.closed = true;
+        reader.state = ArchiveReaderState::Closed;
         Ok(true)
     }
 
@@ -362,7 +386,10 @@ impl ArchiveReaderRegistry {
         let mut reader = reader
             .lock()
             .map_err(|_| anyhow!("Rust archive reader lock is poisoned"))?;
-        ensure!(!reader.closed, "Rust archive reader is closed");
+        ensure!(
+            reader.state != ArchiveReaderState::Closed,
+            "Rust archive reader is closed"
+        );
         operation(&mut reader)
     }
 }
@@ -1263,6 +1290,15 @@ mod tests {
         let handle = registry.open(fixture_file(fixture), false).unwrap();
         assert!(!registry.needs_password(handle).unwrap());
         assert_eq!(registry.entry_count(handle).unwrap(), count);
+        assert!(!registry.entry_name(handle, 0).unwrap().is_empty());
+        assert!(!registry.has_unsafe_path(handle).unwrap());
+        assert!(registry.verify_entry(handle, 0).unwrap());
+        assert!(
+            registry
+                .recovery_metadata(handle, RecoveryMetadataKind::SpiderInfo)
+                .unwrap()
+                .is_none()
+        );
         assert_eq!(registry.extension(handle, 0).unwrap(), "png");
         assert_eq!(
             registry.entry_size(handle, 0).unwrap(),

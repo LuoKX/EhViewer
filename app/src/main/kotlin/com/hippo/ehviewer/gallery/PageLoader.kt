@@ -9,8 +9,6 @@ import com.ehviewer.core.util.isAtLeastO
 import com.ehviewer.core.util.withNonCancellableContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.reader.ReaderPageState
 import com.hippo.ehviewer.bridge.reader.ReaderScheduleActionKind
 import com.hippo.ehviewer.bridge.reader.ReaderScheduleCommand
@@ -91,43 +89,24 @@ abstract class PageLoader(
   private val prefetchPageCount = Settings.preloadImage.value
 
   fun restart() {
-    when (CoreBackendSelector.snapshot()) {
-      CoreBackend.LEGACY -> restartLegacy()
-      CoreBackend.RUST ->
-        scheduleLock.withJavaLock {
-          applyReaderSchedulePlan(
-            planReaderSchedule(readerScheduleSnapshot(), ReaderScheduleCommand.restart())
-          )
-        }
+    scheduleLock.withJavaLock {
+      applyReaderSchedulePlan(
+        planReaderSchedule(readerScheduleSnapshot(), ReaderScheduleCommand.restart())
+      )
     }
-  }
-
-  private fun restartLegacy() {
-    lock.write { cache.evictAll() }
-    pages.forEach(Page::reset)
   }
 
   private val prevIndex = AtomicInt(-1)
 
   fun retryPage(index: Int, orgImg: Boolean = false) {
-    when (CoreBackendSelector.snapshot()) {
-      CoreBackend.LEGACY -> retryPageLegacy(index, orgImg)
-      CoreBackend.RUST ->
-        scheduleLock.withJavaLock {
-          applyReaderSchedulePlan(
-            planReaderSchedule(
-              readerScheduleSnapshot(),
-              ReaderScheduleCommand.retry(index, orgImg),
-            )
-          )
-        }
+    scheduleLock.withJavaLock {
+      applyReaderSchedulePlan(
+        planReaderSchedule(
+          readerScheduleSnapshot(),
+          ReaderScheduleCommand.retry(index, orgImg),
+        )
+      )
     }
-  }
-
-  private fun retryPageLegacy(index: Int, orgImg: Boolean) {
-    notifyPageWait(index)
-    lock.write { cache.remove(index) }
-    onRequest(index, true, orgImg)
   }
 
   protected abstract fun prefetchPages(pages: List<Int>, bounds: IntRange)
@@ -177,39 +156,7 @@ abstract class PageLoader(
     }
 
   fun request(index: Int) {
-    when (CoreBackendSelector.snapshot()) {
-      CoreBackend.LEGACY -> requestLegacy(index)
-      CoreBackend.RUST -> scheduleLock.withJavaLock { requestWithRust(index) }
-    }
-  }
-
-  private fun requestLegacy(index: Int) {
-    val prefetchRange =
-      if (index >= prevIndex.load()) {
-        index + 1..(index + prefetchPageCount).coerceAtMost(size - 1)
-      } else {
-        index - 1 downTo (index - prefetchPageCount).coerceAtLeast(0)
-      }
-    prevIndex.store(index)
-    val image = lock.read { cache[index] }
-    if (image != null) {
-      notifyPageSucceed(index, image, false)
-    } else {
-      notifyPageWait(index)
-      onRequest(index)
-    }
-
-    // Prefetch to disk
-    val pagesAbsent = prefetchRange.filter {
-      when (pages[it].status) {
-        PageStatus.Queued,
-        is PageStatus.Error -> true
-        else -> false
-      }
-    }
-    val start = if (prefetchRange.step > 0) prefetchRange.first else prefetchRange.last
-    val end = if (prefetchRange.step > 0) prefetchRange.last else prefetchRange.first
-    prefetchPages(pagesAbsent, start - 5..end + 5)
+    scheduleLock.withJavaLock { requestWithRust(index) }
   }
 
   private fun requestWithRust(index: Int) {

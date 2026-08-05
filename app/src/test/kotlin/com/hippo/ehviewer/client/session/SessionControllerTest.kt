@@ -1,6 +1,5 @@
 package com.hippo.ehviewer.client.session
 
-import com.hippo.ehviewer.bridge.CoreBackend
 import com.hippo.ehviewer.bridge.RustError
 import com.hippo.ehviewer.bridge.RustErrorKind
 import com.hippo.ehviewer.bridge.RustFailureException
@@ -92,7 +91,7 @@ class SessionControllerTest {
   @Test
   fun logoutSupersedesAuthenticationWhileFollowUpDataLoads() = runBlocking {
     val store = FakeSessionStore()
-    val controller = SessionController(store, backendSelector = { CoreBackend.LEGACY })
+    val controller = SessionController(store, planner = ::canonicalPlan)
     val attempt = controller.beginSignIn()
     store.hasAuthCookies = true
     val started = CompletableDeferred<Unit>()
@@ -122,7 +121,6 @@ class SessionControllerTest {
     val controller =
       SessionController(
         store = store,
-        backendSelector = { CoreBackend.RUST },
         planner = { snapshot, command ->
           if (command.kind == SessionLifecycleCommandKind.SIGN_OUT && ++signOutCalls == 2) {
             throw failure
@@ -173,7 +171,7 @@ class SessionControllerTest {
   @Test
   fun newerProfileRefreshWinsOverAnOlderResponse() = runBlocking {
     val store = authenticatedStore()
-    val controller = SessionController(store, backendSelector = { CoreBackend.LEGACY })
+    val controller = SessionController(store, planner = ::canonicalPlan)
     val firstStarted = CompletableDeferred<Unit>()
     val releaseFirst = CompletableDeferred<Unit>()
     val first = async {
@@ -206,7 +204,6 @@ class SessionControllerTest {
     val exceptionController =
       SessionController(
         store = exceptionStore,
-        backendSelector = { CoreBackend.RUST },
         planner = { _, _ -> throw exception },
       )
     val thrownException = runCatching { exceptionController.signOut() }.exceptionOrNull()
@@ -221,7 +218,6 @@ class SessionControllerTest {
     val linkageController =
       SessionController(
         store = linkageStore,
-        backendSelector = { CoreBackend.RUST },
         planner = { _, _ -> throw linkage },
       )
     val thrownLinkage = runCatching { linkageController.signOut() }.exceptionOrNull()
@@ -232,13 +228,12 @@ class SessionControllerTest {
   }
 
   @Test
-  fun typedRustFailureNeverFallsBackToLegacyAuthentication() = runBlocking {
+  fun typedRustFailurePropagatesBeforeAuthenticationMutation() = runBlocking {
     val store = authenticatedStore()
     val failure = RustFailureException(RustError(RustErrorKind.NEED_LOGIN))
     val controller =
       SessionController(
         store = store,
-        backendSelector = { CoreBackend.RUST },
         planner = { _, _ -> throw failure },
       )
 
@@ -249,34 +244,9 @@ class SessionControllerTest {
     assertTrue(store.storedSignedIn)
   }
 
-  @Test
-  fun rolloutDisabledPathRetainsLegacyMutationsWithAwaitedRemoval() = runBlocking {
-    val store = authenticatedStore()
-    val controller = SessionController(store, backendSelector = { CoreBackend.LEGACY })
-
-    controller.restore()
-    controller.enterGuest()
-
-    assertTrue(store.hasAuthCookies)
-    assertTrue(store.storedSignedIn)
-    assertFalse(store.signInRequired)
-    assertEquals("reader", store.displayName)
-    assertEquals("avatar", store.avatar)
-
-    controller.signOut()
-
-    assertFalse(store.hasAuthCookies)
-    assertFalse(store.storedSignedIn)
-    assertTrue(store.signInRequired)
-    assertNull(store.displayName)
-    // Legacy logout did not clear this field; the Rust plan does.
-    assertEquals("avatar", store.avatar)
-  }
-
   private fun rustController(store: FakeSessionStore) =
     SessionController(
       store = store,
-      backendSelector = { CoreBackend.RUST },
       planner = ::canonicalPlan,
     )
 

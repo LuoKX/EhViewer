@@ -8,38 +8,6 @@ import org.junit.Test
 
 class SettingsRuleBridgeTest {
   @Test
-  fun legacySettingsRepairPreservesExistingRules() {
-    val plan =
-      resolveSettingsRepair(
-        SettingsRepairRequest.create(
-          chineseLocale = true,
-          showTagTranslationsAbsent = true,
-          downloadFilterMode = 1,
-          recentDownloadLabel = null,
-          orientationMode = 99,
-          validOrientationModes = listOf(0, 1, 2),
-        ),
-        CoreBackend.LEGACY,
-      )
-
-    assertTrue(plan.enableTagTranslations)
-    assertTrue(plan.resetRecentDownloadLabel)
-    assertTrue(plan.removeOrientationMode)
-  }
-
-  @Test
-  fun legacyReadCacheSizeUsesExistingBounds() {
-    assertEquals(
-      320,
-      resolveReadCacheSize(ReadCacheSizeRequest.create(1), CoreBackend.LEGACY),
-    )
-    assertEquals(
-      5120,
-      resolveReadCacheSize(ReadCacheSizeRequest.create(9000), CoreBackend.LEGACY),
-    )
-  }
-
-  @Test
   fun rustSettingsRepairFailureDoesNotFallBack() {
     val expected = IllegalStateException("native failure")
     var invoked = false
@@ -54,8 +22,7 @@ class SettingsRuleBridgeTest {
             recentDownloadLabel = "label",
             orientationMode = 1,
             validOrientationModes = listOf(0, 1, 2),
-          ),
-          CoreBackend.RUST,
+          )
         ) {
           invoked = true
           throw expected
@@ -73,7 +40,7 @@ class SettingsRuleBridgeTest {
   fun rustReadCacheSizeReturnsRustPlanDirectly() {
     var invoked = false
     val size =
-      resolveReadCacheSize(ReadCacheSizeRequest.create(1), CoreBackend.RUST) {
+      resolveReadCacheSize(ReadCacheSizeRequest.create(1)) {
         invoked = true
         ReadCacheSizePlan(777)
       }

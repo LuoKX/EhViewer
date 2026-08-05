@@ -8,9 +8,9 @@ use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// Root metadata filename written by EhViewer download directories.
+/// Root metadata filename written by `EhViewer` download directories.
 pub const SPIDER_INFO_ENTRY_NAME: &str = ".ehviewer";
-/// Root metadata filename written by EhViewer and common comic tools.
+/// Root metadata filename written by `EhViewer` and common comic tools.
 pub const COMIC_INFO_ENTRY_NAME: &str = "ComicInfo.xml";
 
 const IMAGE_EXTENSIONS: [&str; 11] = [
@@ -170,7 +170,7 @@ pub enum RecoveryArchiveError {
 /// overflow. Untrusted archive problems are returned as structured issues.
 pub fn inspect_recovery_entries(
     format: RecoveryArchiveFormat,
-    entries: Vec<RecoveryArchiveEntry>,
+    entries: &[RecoveryArchiveEntry],
     limits: RecoveryArchiveLimits,
 ) -> Result<RecoveryArchiveInspection, RecoveryArchiveError> {
     if limits.maximum_entries == 0

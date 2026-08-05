@@ -44,8 +44,6 @@ import com.ehviewer.core.util.logcat
 import com.ehviewer.core.util.mapNotNull
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.download.DownloadProgressCommand
 import com.hippo.ehviewer.bridge.download.DownloadProgressRequest
 import com.hippo.ehviewer.bridge.download.DownloadQueueCommand
@@ -56,10 +54,8 @@ import com.hippo.ehviewer.bridge.download.buildDownloadQueueRecoveryEntries
 import com.hippo.ehviewer.bridge.download.buildDownloadQueueSnapshot
 import com.hippo.ehviewer.bridge.download.isExpectedDownloadProgressTask
 import com.hippo.ehviewer.bridge.download.planDownloadProgress
-import com.hippo.ehviewer.bridge.download.planLegacyDownloadProgress
 import com.hippo.ehviewer.bridge.download.recoverDownloadQueue
 import com.hippo.ehviewer.bridge.download.reduceDownloadQueue
-import com.hippo.ehviewer.bridge.download.selectDownloadProgressPlan
 import com.hippo.ehviewer.bridge.download.sortDownloadCatalog
 import com.hippo.ehviewer.bridge.download.toAndroidDownloadState
 import com.hippo.ehviewer.bridge.download.toDownloadProgressSnapshot
@@ -113,7 +109,6 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   private var mDownloadListener: DownloadListener? = null
   private var mCurrentTask: DownloadInfo? = null
   private var mCurrentSpider: SpiderQueen? = null
-  private var mCurrentBackend: CoreBackend? = null
 
   private val mutableNotifyFlow = MutableSharedFlow<DownloadInfo>(extraBufferCapacity = 1)
   val notifyFlow = mutableNotifyFlow.asSharedFlow()
@@ -129,13 +124,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   init {
     launch {
-      val backend = CoreBackendSelector.snapshot()
-      if (backend == CoreBackend.RUST) {
-        recoverRustDownloadQueue()
-      }
+      recoverRustDownloadQueue()
       val mode = sortMode
       if (mode != SortMode.Default) {
-        sortMutex.withLock { sortDownloadsLocked(mode, backend) }
+        sortMutex.withLock { sortDownloadsLocked(mode) }
       }
       isInitialized = true
     }
@@ -161,128 +153,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     mDownloadListener = listener
   }
 
-  private suspend fun ensureDownload(backend: CoreBackend) {
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.activateNext())
-      return
-    }
-    mutex.withLock {
-      if (mCurrentTask != null) {
-        // Only one download
-        return
-      }
-
-      // Get download from wait list
-      if (!mWaitList.isEmpty()) {
-        val info = mWaitList.removeFirst()
-        mCurrentTask = info
-        mCurrentBackend = CoreBackend.LEGACY
-        with(info) {
-          archiveFile?.let {
-            return onFinish(pages, pages, pages, failed = false)
-          }
-          state = DownloadInfo.STATE_DOWNLOAD
-          speed = -1
-          remaining = -1
-          total = -1
-          finished = 0
-          downloaded = 0
-          legacy = -1
-        }
-        val spider = SpiderQueen.obtainSpiderQueen(info, SpiderQueen.MODE_DOWNLOAD)
-        mCurrentSpider = spider
-        spider.addOnSpiderListener(this)
-        // Update in DB
-        EhDB.putDownloadInfo(info)
-        // Start speed count
-        mSpeedReminder.start()
-        // Notify start downloading
-        mDownloadListener?.onStart(info)
-        // Notify state update
-        mutableNotifyFlow.emit(info)
-      }
-    }
-  }
-
   suspend fun startDownload(galleryInfo: BaseGalleryInfo, label: String?) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      startRustDownload(galleryInfo, label)
-      return
-    }
-    if (mCurrentTask?.gid == galleryInfo.gid) {
-      // It is current task
-      return
-    }
-
-    // Check in download list
-    var info = mAllInfoMap[galleryInfo.gid]
-    if (info != null) { // Get it in download list
-      if (info.state != DownloadInfo.STATE_WAIT) {
-        // Set state DownloadInfo.STATE_WAIT
-        info.state = DownloadInfo.STATE_WAIT
-        // Add to wait list
-        mWaitList.add(info)
-        // Update in DB
-        EhDB.putDownloadInfo(info)
-        // Notify state update
-        mutableNotifyFlow.emit(info)
-        // Make sure download is running
-        ensureDownload(backend)
-      }
-    } else {
-      // It is new download info
-      info = DownloadInfo(galleryInfo.asEntity(), galleryInfo.downloadDirname())
-      info.label = label
-      info.state = DownloadInfo.STATE_WAIT
-      // Add to all download list and map
-      sortMutex.withLock {
-        insertDownloadInfoLocked(info, sortMode, backend)
-      }
-      mAllInfoMap[galleryInfo.gid] = info
-
-      // Add to wait list
-      mWaitList.add(info)
-
-      // Save to
-      EhDB.putDownloadInfo(info)
-
-      // Notify
-      mutableNotifyFlow.emit(info)
-      // Make sure download is running
-      ensureDownload(backend)
-
-      // Add it to history
-      EhDB.putHistoryInfo(info)
-    }
+    startRustDownload(galleryInfo, label)
   }
 
   suspend fun startRangeDownload(gidList: LongArray) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.startRange(gidList.toList()))
-      return
-    }
-    val updateList =
-      gidList
-        .mapNotNull { mAllInfoMap[it] }
-        .filter {
-          when (it.state) {
-            DownloadInfo.STATE_NONE,
-            DownloadInfo.STATE_FAILED,
-            DownloadInfo.STATE_FINISH -> true
-            else -> false
-          }
-        }
-    if (updateList.isNotEmpty()) {
-      updateList.onEach {
-        it.state = DownloadInfo.STATE_WAIT
-        EhDB.putDownloadInfo(it)
-        mutableNotifyFlow.emit(it)
-      }
-      mWaitList.addAll(updateList)
-      ensureDownload(backend)
-    }
+    runRustDownloadQueueCommand(DownloadQueueCommand.startRange(gidList.toList()))
   }
 
   @Stable
@@ -311,33 +187,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     .value
 
   suspend fun startAllDownload() {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.startAll())
-      return
-    }
-    val updateList = sortMutex.withLock {
-      allInfoList.filter {
-        when (it.state) {
-          DownloadInfo.STATE_NONE,
-          DownloadInfo.STATE_FAILED -> true
-          else -> false
-        }
-      }
-    }
-    if (updateList.isNotEmpty()) {
-      updateList.onEach {
-        it.state = DownloadInfo.STATE_WAIT
-        EhDB.putDownloadInfo(it)
-        mutableNotifyFlow.emit(it)
-      }
-      mWaitList.addAll(updateList)
-      ensureDownload(backend)
-    }
+    runRustDownloadQueueCommand(DownloadQueueCommand.startAll())
   }
 
   suspend fun addDownload(downloadInfoList: List<DownloadInfo>) {
-    val backend = CoreBackendSelector.snapshot()
     sortMutex.withLock {
       val additions =
         downloadInfoList
@@ -351,7 +204,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
             }
           }
       if (additions.isEmpty()) return@withLock
-      val ordered = orderDownloadInfos(allInfoList + additions, sortMode, backend)
+      val ordered = orderDownloadInfos(allInfoList + additions, sortMode)
       additions.forEach { info ->
         mAllInfoMap[info.gid] = info
         EhDB.putDownloadInfo(info)
@@ -373,13 +226,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   suspend fun restoreDownload(galleryInfo: BaseGalleryInfo, dirname: String) {
-    val backend = CoreBackendSelector.snapshot()
     val info = DownloadInfo(galleryInfo.asEntity(), dirname)
     info.state = DownloadInfo.STATE_NONE
 
     // Add to all download list and map
     sortMutex.withLock {
-      insertDownloadInfoLocked(info, sortMode, backend)
+      insertDownloadInfoLocked(info, sortMode)
     }
     mAllInfoMap[galleryInfo.gid] = info
 
@@ -396,20 +248,20 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
    * This method never writes Room and never turns an unresolved source into a queue item.
    */
   suspend fun reconcileVerifiedRecovery(gid: Long) {
-    val restored = requireNotNull(EhDB.getDownloadInfo(gid)) {
-      "Promoted recovery is missing from Room"
-    }
+    val restored =
+      requireNotNull(EhDB.getDownloadInfo(gid)) {
+        "Promoted recovery is missing from Room"
+      }
     require(restored.state == DownloadInfo.STATE_FINISH) {
       "Promoted recovery is not marked finished"
     }
-    val backend = CoreBackendSelector.snapshot()
     sortMutex.withLock {
       mutex.withLock {
         require(mCurrentTask?.gid != gid && mWaitList.none { it.gid == gid }) {
           "An active download cannot be reconciled as recovered"
         }
         mAllInfoMap.remove(gid)?.let(allInfoList::remove)
-        insertDownloadInfoLocked(restored, sortMode, backend)
+        insertDownloadInfoLocked(restored, sortMode)
         mAllInfoMap[gid] = restored
       }
     }
@@ -417,122 +269,28 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   suspend fun stopDownload(gid: Long) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.stopOne(gid))
-      return
-    }
-    val info = stopDownloadInternal(gid)
-    if (info != null) {
-      // Update listener
-      mutableNotifyFlow.emit(info)
-      // Ensure download
-      ensureDownload(backend)
-    }
+    runRustDownloadQueueCommand(DownloadQueueCommand.stopOne(gid))
   }
 
   suspend fun stopRangeDownload(gidList: LongArray) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.stopRange(gidList.toList()))
-      return
-    }
-    stopRangeDownloadInternal(gidList)
-
-    // Update listener
-    gidList
-      .mapNotNull { mAllInfoMap[it] }
-      .forEach {
-        mutableNotifyFlow.emit(it)
-      }
-
-    // Ensure download
-    ensureDownload(backend)
+    runRustDownloadQueueCommand(DownloadQueueCommand.stopRange(gidList.toList()))
   }
 
-  suspend fun stopAllDownload() = stopAllDownload(CoreBackendSelector.snapshot())
-
-  private suspend fun stopAllDownload(backend: CoreBackend) {
-    if (backend == CoreBackend.RUST) {
-      runRustDownloadQueueCommand(DownloadQueueCommand.stopAll())
-      return
-    }
-    mutex.withLock {
-      // Stop all in wait list
-      for (info in mWaitList) {
-        info.state = DownloadInfo.STATE_NONE
-        // Update in DB
-        EhDB.putDownloadInfo(info)
-
-        // Notify
-        mutableNotifyFlow.emit(info)
-      }
-      mWaitList.clear()
-
-      // Stop current
-      val info = stopCurrentDownloadInternal()
-      info?.let { mutableNotifyFlow.emit(it) }
-    }
-  }
+  suspend fun stopAllDownload() = runRustDownloadQueueCommand(DownloadQueueCommand.stopAll())
 
   suspend fun deleteDownload(gid: Long, deleteFiles: Boolean = false) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      val info = deleteRustDownload(gid)
-      if (deleteFiles && info != null) {
-        deleteDownloadFiles(info)
-      }
-      return
-    }
-    stopDownloadInternal(gid)
-    val info = mAllInfoMap[gid]
-    if (info != null) {
-      // Remove from DB
-      EhDB.removeDownloadInfo(info)
-
-      // Remove all list and map
-      sortMutex.withLock {
-        allInfoList.remove(info)
-      }
-      mAllInfoMap.remove(info.gid)
-
-      // Update listener
-      mutableNotifyFlow.emit(info)
-
-      // Ensure download
-      ensureDownload(backend)
-
-      if (deleteFiles) {
-        deleteDownloadFiles(info)
-      }
+    val info = deleteRustDownload(gid)
+    if (deleteFiles && info != null) {
+      deleteDownloadFiles(info)
     }
   }
 
   suspend fun deleteRangeDownload(gidList: LongArray) {
-    val backend = CoreBackendSelector.snapshot()
-    if (backend == CoreBackend.RUST) {
-      deleteRustDownloads(gidList)
-      return
-    }
-    stopRangeDownloadInternal(gidList)
-    val list = gidList.mapNotNull { gid ->
-      mAllInfoMap.remove(gid)
-    }
-    EhDB.removeDownloadInfo(list)
-    sortMutex.withLock {
-      allInfoList.removeAll(list.toSet())
-    }
-
-    // Update listener
-    list.forEach { mutableNotifyFlow.emit(it) }
-
-    // Ensure download
-    ensureDownload(backend)
+    deleteRustDownloads(gidList)
   }
 
   suspend fun sortDownloads(mode: SortMode) {
-    val backend = CoreBackendSelector.snapshot()
-    sortMutex.withLock { sortDownloadsLocked(mode, backend) }
+    sortMutex.withLock { sortDownloadsLocked(mode) }
   }
 
   suspend fun resetAllReadingProgress() = runCatching {
@@ -551,7 +309,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
           info = DownloadInfo(galleryInfo.asEntity(), galleryInfo.downloadDirname())
           info.label = label
           info.state = DownloadInfo.STATE_NONE
-          insertDownloadInfoLocked(info, sortMode, CoreBackend.RUST)
+          insertDownloadInfoLocked(info, sortMode)
           mAllInfoMap[info.gid] = info
         }
 
@@ -615,10 +373,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   ) {
     sortMutex.withLock {
       mutex.withLock {
-        if (
-          completion != null &&
-            (mCurrentTask !== completion.expectedTask || mCurrentBackend != completion.backend)
-        ) {
+        if (completion != null && mCurrentTask !== completion.expectedTask) {
           logcat(TAG, LogPriority.WARN) { "Ignoring stale download callback" }
         } else {
           recoverRustDownloadQueueIfNeededLocked()
@@ -631,15 +386,14 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   private fun insertDownloadInfoLocked(
     info: DownloadInfo,
     mode: SortMode,
-    backend: CoreBackend,
   ) {
-    val ordered = orderDownloadInfos(allInfoList + info, mode, backend)
+    val ordered = orderDownloadInfos(allInfoList + info, mode)
     allInfoList.clear()
     allInfoList.addAll(ordered)
   }
 
-  private fun sortDownloadsLocked(mode: SortMode, backend: CoreBackend) {
-    val ordered = orderDownloadInfos(allInfoList, mode, backend)
+  private fun sortDownloadsLocked(mode: SortMode) {
+    val ordered = orderDownloadInfos(allInfoList, mode)
     allInfoList.clear()
     allInfoList.addAll(ordered)
   }
@@ -647,18 +401,13 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   private fun orderDownloadInfos(
     source: List<DownloadInfo>,
     mode: SortMode,
-    backend: CoreBackend,
-  ): List<DownloadInfo> =
-    when (backend) {
-      CoreBackend.LEGACY -> source.sortedWith(mode.comparator())
-      CoreBackend.RUST -> {
-        val request = DownloadSortRequest.from(source, mode, Settings.showJpnTitle.value)
-        val byGalleryId = source.associateBy { it.gid }
-        sortDownloadCatalog(request).galleryIds.map { galleryId ->
-          checkNotNull(byGalleryId[galleryId]) { "Rust sorted an unknown download" }
-        }
-      }
+  ): List<DownloadInfo> {
+    val request = DownloadSortRequest.from(source, mode, Settings.showJpnTitle.value)
+    val byGalleryId = source.associateBy { it.gid }
+    return sortDownloadCatalog(request).galleryIds.map { galleryId ->
+      checkNotNull(byGalleryId[galleryId]) { "Rust sorted an unknown download" }
     }
+  }
 
   /** Recovers volatile persisted states without activating a worker. */
   private suspend fun recoverRustDownloadQueue() {
@@ -706,16 +455,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     require(completion == null || plan.cancelGalleryId == null) {
       "A completed Download Queue task cannot also be cancelled"
     }
-    require(completion == null || completion.backend == CoreBackend.RUST) {
-      "A Rust Download Queue completion must belong to a Rust task"
-    }
     val cancelledInfo =
       plan.cancelGalleryId?.let { galleryId ->
         checkNotNull(detachCurrentWorkerLocked(galleryId))
       }
     val completedInfo = completion?.let { result ->
       val progressPlan = mCurrentTask?.let { info ->
-        check(mCurrentBackend == CoreBackend.RUST) { "Active download backend changed" }
         val command =
           DownloadProgressCommand.finish(
             result.finished,
@@ -757,13 +502,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     }
     val finalCurrentInfo = plan.snapshot.current?.let { checkNotNull(mAllInfoMap[it]) }
     mCurrentTask = finalCurrentInfo.takeIf { plan.startGalleryId == null }
-    mCurrentBackend = mCurrentTask?.let { CoreBackend.RUST }
 
     val changedInfos =
       plan.changes.map { change ->
         val info = checkNotNull(mAllInfoMap[change.galleryId])
         if (change.current == DownloadState.DOWNLOADING) {
-          applyDownloadProgress(info, DownloadProgressCommand.reset(), CoreBackend.RUST)
+          applyDownloadProgress(info, DownloadProgressCommand.reset())
         }
         info.state = change.current.toAndroidDownloadState()
         EhDB.putDownloadInfo(info)
@@ -787,7 +531,6 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
         "Download Queue start effect does not match final current"
       }
       mCurrentTask = info
-      mCurrentBackend = CoreBackend.RUST
       if (info.archiveFile != null) {
         mutableNotifyFlow.emit(info)
         onFinish(info.pages, info.pages, info.pages, failed = false)
@@ -806,18 +549,9 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   private fun applyDownloadProgress(
     info: DownloadInfo,
     command: DownloadProgressCommand,
-    backend: CoreBackend,
   ) {
     val current = info.toDownloadProgressSnapshot()
-    val selected =
-      selectDownloadProgressPlan(
-        backend = backend,
-        legacyPlanner = { planLegacyDownloadProgress(current, command) },
-        rustPlanner = {
-          planDownloadProgress(DownloadProgressRequest(1, current, command))
-        },
-      )
-    val snapshot = selected.snapshot
+    val snapshot = planDownloadProgress(DownloadProgressRequest(1, current, command)).snapshot
     info.speed = snapshot.speedBytesPerSecond
     info.remaining = snapshot.remainingMilliseconds
     info.finished = snapshot.finished
@@ -827,23 +561,18 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     info.state = snapshot.state.toAndroidDownloadState()
   }
 
-  /** Applies a callback only while both the captured task and its backend are still current. */
+  /** Applies a callback only while the captured task is still current. */
   private suspend fun withExpectedDownloadProgressTask(
     expected: DownloadInfo?,
-    expectedBackend: CoreBackend?,
-    action: suspend (DownloadInfo, CoreBackend) -> Unit,
+    action: suspend (DownloadInfo) -> Unit,
   ) {
     sortMutex.withLock sortLock@{
       mutex.withLock mainLock@{
-        if (
-          !isExpectedDownloadProgressTask(mCurrentTask, expected) ||
-            expectedBackend == null ||
-            mCurrentBackend != expectedBackend
-        ) {
+        if (!isExpectedDownloadProgressTask(mCurrentTask, expected)) {
           logcat(TAG, LogPriority.WARN) { "Ignoring stale download callback" }
           return@mainLock
         }
-        action(checkNotNull(expected), expectedBackend)
+        action(checkNotNull(expected))
       }
     }
   }
@@ -862,82 +591,8 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     }
     mCurrentTask = null
     mCurrentSpider = null
-    mCurrentBackend = null
     mSpeedReminder.stop()
     return info
-  }
-
-  // Update in DB
-  // Update listener
-  // No ensureDownload
-  private suspend fun stopDownloadInternal(gid: Long): DownloadInfo? {
-    // Check current task
-    if (mCurrentTask?.gid == gid) {
-      // Stop current
-      return stopCurrentDownloadInternal()
-    }
-    val iterator = mWaitList.iterator()
-    while (iterator.hasNext()) {
-      val info = iterator.next()
-      if (info.gid == gid) {
-        // Remove from wait list
-        iterator.remove()
-        // Update state
-        info.state = DownloadInfo.STATE_NONE
-        // Update in DB
-        EhDB.putDownloadInfo(info)
-        return info
-      }
-    }
-    return null
-  }
-
-  // Update in DB
-  // Update mDownloadListener
-  private suspend fun stopCurrentDownloadInternal(): DownloadInfo? {
-    val info = detachCurrentWorkerLocked()
-    if (info == null) {
-      return null
-    }
-
-    // Update state
-    info.state = DownloadInfo.STATE_NONE
-    // Update in DB
-    EhDB.putDownloadInfo(info)
-    // Listener
-    mDownloadListener?.onCancel(info)
-    return info
-  }
-
-  // Update in DB
-  // Update mDownloadListener
-  private suspend fun stopRangeDownloadInternal(gidList: LongArray) {
-    // Two way
-    if (gidList.size < mWaitList.size) {
-      for (element in gidList) {
-        stopDownloadInternal(element)
-      }
-    } else {
-      // Check current task
-      if (mCurrentTask != null && gidList.contains(mCurrentTask!!.gid)) {
-        // Stop current
-        stopCurrentDownloadInternal()
-      }
-
-      // Check all in wait list
-      val iterator = mWaitList.iterator()
-      while (iterator.hasNext()) {
-        val info = iterator.next()
-        if (gidList.contains(info.gid)) {
-          // Remove from wait list
-          iterator.remove()
-          // Update state
-          info.state = DownloadInfo.STATE_NONE
-          // Update in DB
-          EhDB.putDownloadInfo(info)
-        }
-      }
-    }
   }
 
   /** @param label Not allow new label */
@@ -1069,20 +724,18 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   override fun onGetPages(pages: Int) {
     val expected = mCurrentTask
-    val backend = mCurrentBackend
     launch {
-      withExpectedDownloadProgressTask(expected, backend) { info, selectedBackend ->
-        applyDownloadProgress(info, DownloadProgressCommand.setPages(pages), selectedBackend)
+      withExpectedDownloadProgressTask(expected) { info ->
+        applyDownloadProgress(info, DownloadProgressCommand.setPages(pages))
         mutableNotifyFlow.emit(info)
       }
     }
   }
 
   override fun onFatal(error: FatalException) {
-    val backend = mCurrentBackend ?: CoreBackendSelector.snapshot()
     launch {
       mDownloadListener?.onFatal(error)
-      stopAllDownload(backend)
+      stopAllDownload()
     }
   }
 
@@ -1093,9 +746,8 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     bytesRead: Int,
   ) {
     val expected = mCurrentTask
-    val backend = mCurrentBackend
     launch {
-      withExpectedDownloadProgressTask(expected, backend) { _, _ ->
+      withExpectedDownloadProgressTask(expected) {
         mSpeedReminder.onDownload(index, contentLength, receivedSize, bytesRead)
       }
     }
@@ -1103,14 +755,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) {
     val expected = mCurrentTask
-    val backend = mCurrentBackend
     launch {
-      withExpectedDownloadProgressTask(expected, backend) { info, selectedBackend ->
+      withExpectedDownloadProgressTask(expected) { info ->
         mSpeedReminder.onDone(index)
         applyDownloadProgress(
           info,
           DownloadProgressCommand.setPageResult(finished, downloaded, total),
-          selectedBackend,
         )
         mDownloadListener?.onDownload(info)
         mutableNotifyFlow.emit(info)
@@ -1126,14 +776,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     total: Int,
   ) {
     val expected = mCurrentTask
-    val backend = mCurrentBackend
     launch {
-      withExpectedDownloadProgressTask(expected, backend) { info, selectedBackend ->
+      withExpectedDownloadProgressTask(expected) { info ->
         mSpeedReminder.onDone(index)
         applyDownloadProgress(
           info,
           DownloadProgressCommand.setPageResult(finished, downloaded, total),
-          selectedBackend,
         )
         mutableNotifyFlow.emit(info)
       }
@@ -1142,63 +790,20 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   override fun onFinish(finished: Int, downloaded: Int, total: Int, failed: Boolean) {
     val expected = mCurrentTask
-    val backend = mCurrentBackend
     launch {
-      when (backend) {
-        CoreBackend.RUST ->
-          if (expected == null) {
-            logcat(TAG, LogPriority.ERROR) { "Current task is null, but it should not be" }
-          } else {
-            runRustDownloadQueueCommand(
-              DownloadQueueCommand.finish(expected.gid, failed),
-              DownloadCompletion(expected, backend, finished, downloaded, total, failed),
-            )
-          }
-        CoreBackend.LEGACY ->
-          if (expected == null) {
-            logcat(TAG, LogPriority.ERROR) { "Current task is null, but it should not be" }
-          } else if (
-            finishLegacyDownload(
-              DownloadCompletion(expected, backend, finished, downloaded, total, failed)
-            )
-          ) {
-            ensureDownload(backend)
-          }
-        null -> logcat(TAG, LogPriority.ERROR) { "Current task backend is null" }
+      if (expected == null) {
+        logcat(TAG, LogPriority.ERROR) { "Current task is null, but it should not be" }
+      } else {
+        runRustDownloadQueueCommand(
+          DownloadQueueCommand.finish(expected.gid, failed),
+          DownloadCompletion(expected, finished, downloaded, total, failed),
+        )
       }
     }
   }
 
-  private suspend fun finishLegacyDownload(completion: DownloadCompletion): Boolean =
-    sortMutex.withLock {
-      mutex.withLock {
-        if (mCurrentTask !== completion.expectedTask || mCurrentBackend != completion.backend) {
-          logcat(TAG, LogPriority.WARN) { "Ignoring stale download callback" }
-          false
-        } else {
-          mSpeedReminder.onFinish()
-          val info = checkNotNull(detachCurrentWorkerLocked(completion.galleryId))
-          applyDownloadProgress(
-            info,
-            DownloadProgressCommand.finish(
-              completion.finished,
-              completion.downloaded,
-              completion.total,
-              completion.failed,
-            ),
-            completion.backend,
-          )
-          EhDB.putDownloadInfo(info)
-          mDownloadListener?.onFinish(info)
-          mutableNotifyFlow.emit(info)
-          true
-        }
-      }
-    }
-
   private data class DownloadCompletion(
     val expectedTask: DownloadInfo,
-    val backend: CoreBackend,
     val finished: Int,
     val downloaded: Int,
     val total: Int,
@@ -1275,13 +880,11 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
       private suspend fun updateSpeed(speed: Long) {
         val expected = mCurrentTask
-        val backend = mCurrentBackend
-        withExpectedDownloadProgressTask(expected, backend) { info, selectedBackend ->
+        withExpectedDownloadProgressTask(expected) { info ->
           val transfers = snapshotTransfers()
           applyDownloadProgress(
             info,
             DownloadProgressCommand.estimate(speed, transfers),
-            selectedBackend,
           )
           mDownloadListener?.onDownload(info)
           mutableNotifyFlow.emit(info)

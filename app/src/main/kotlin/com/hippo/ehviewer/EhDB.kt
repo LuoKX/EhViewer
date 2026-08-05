@@ -38,9 +38,9 @@ import com.ehviewer.core.database.roomDb
 import com.ehviewer.core.files.delete
 import com.ehviewer.core.files.sendTo
 import com.ehviewer.core.model.GalleryInfo
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.DatabaseSearchQueryRequest
 import com.hippo.ehviewer.bridge.resolveDatabaseSearchQuery
+import com.hippo.ehviewer.bridge.resolveQuickSearchImport
 import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.flow.Flow
 import okio.Path
@@ -125,7 +125,8 @@ object EhDB {
     artists: List<String>,
     promotedAt: Long,
   ) =
-    db.downloadRecoveryDao()
+    db
+      .downloadRecoveryDao()
       .promoteVerified(
         candidateId,
         expectedSourceKey,
@@ -275,12 +276,7 @@ object EhDB {
   fun searchHistory(keyword: String) =
     db
       .historyDao()
-      .joinListLazy(
-        resolveDatabaseSearchQuery(
-          DatabaseSearchQueryRequest.create(keyword),
-          CoreBackendSelector.snapshot(),
-        )
-      )
+      .joinListLazy(resolveDatabaseSearchQuery(DatabaseSearchQueryRequest.create(keyword)))
 
   val localFavLazyList
     get() = db.localFavoritesDao().joinListLazy()
@@ -291,12 +287,7 @@ object EhDB {
   fun searchLocalFav(keyword: String) =
     db
       .localFavoritesDao()
-      .joinListLazy(
-        resolveDatabaseSearchQuery(
-          DatabaseSearchQueryRequest.create(keyword),
-          CoreBackendSelector.snapshot(),
-        )
-      )
+      .joinListLazy(resolveDatabaseSearchQuery(DatabaseSearchQueryRequest.create(keyword)))
 
   suspend fun putHistoryInfo(galleryInfo: GalleryInfo) {
     putGalleryInfo(galleryInfo.asEntity())
@@ -395,16 +386,7 @@ object EhDB {
 
     val quickSearchList = oldDB.quickSearchDao().list()
     val currentQuickSearchList = db.quickSearchDao().list()
-    val offset = currentQuickSearchList.size
-    val importList =
-      quickSearchList
-        .filter { newQS ->
-          currentQuickSearchList.none { it.name == newQS.name }
-        }
-        .onEachIndexed { index, q ->
-          q.id = null
-          q.position = index + offset
-        }
+    val importList = resolveQuickSearchImport(currentQuickSearchList, quickSearchList)
     importQuickSearch(importList)
 
     oldDB.localFavoritesDao().list().let {

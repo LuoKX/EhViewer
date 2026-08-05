@@ -23,13 +23,10 @@ import com.ehviewer.core.util.logcat
 import com.ehviewer.core.util.withIOContext
 import com.hippo.ehviewer.R
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.DAILY_CHECK_API_VERSION
 import com.hippo.ehviewer.bridge.DailyCheckPlan
 import com.hippo.ehviewer.bridge.DailyCheckRequest
 import com.hippo.ehviewer.bridge.planDailyCheck
-import com.hippo.ehviewer.bridge.planLegacyDailyCheck
-import com.hippo.ehviewer.bridge.selectDailyCheckPlan
 import com.hippo.ehviewer.client.EhEngine
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -110,11 +107,7 @@ private fun planCurrentDailyCheck(signedIn: Boolean, lastDawnDays: Int): DailyCh
       lastDawnDays = lastDawnDays,
       nowEpochSeconds = Clock.System.now().epochSeconds,
     )
-  return selectDailyCheckPlan(
-    backend = CoreBackendSelector.snapshot(),
-    legacyPlanner = { planLegacyDailyCheck(request) },
-    rustPlanner = { planDailyCheck(request) },
-  )
+  return planDailyCheck(request)
 }
 
 @SuppressLint("MissingPermission")

@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package com.hippo.ehviewer.bridge.download
 
 import com.hippo.ehviewer.bridge.ApiEnvelope
@@ -7,6 +9,7 @@ import com.hippo.ehviewer.bridge.rustCbor
 import java.nio.ByteBuffer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.cbor.ByteString
 import kotlinx.serialization.encodeToByteArray
 
 internal const val DOWNLOAD_RECOVERY_API_VERSION = 1
@@ -30,7 +33,7 @@ internal data class RecoverySourceKeyInput(
 internal data class RecoveryFingerprintInput(
   val size: Long? = null,
   @SerialName("modifiedAtMillis") val modifiedAtMillis: Long? = null,
-  @SerialName("contentDigest") val contentDigest: ByteArray? = null,
+  @ByteString @SerialName("contentDigest") val contentDigest: ByteArray? = null,
 )
 
 @Serializable
@@ -46,9 +49,7 @@ internal data class RecoveryEntryInput(
 internal data class RecoveryArchiveInput(
   val format: String,
   val complete: Boolean,
-  val encrypted: Boolean,
-  @SerialName("unsafePath") val unsafePath: Boolean,
-  @SerialName("limitExceeded") val limitExceeded: Boolean,
+  val issues: List<RecoveryIssue> = emptyList(),
 )
 
 @Serializable
@@ -57,8 +58,8 @@ internal data class RecoveryCandidateRequest(
   val source: RecoverySourceKeyInput,
   val fingerprint: RecoveryFingerprintInput,
   @SerialName("displayName") val displayName: String,
-  @SerialName("spiderInfo") val spiderInfo: ByteArray? = null,
-  @SerialName("comicInfo") val comicInfo: ByteArray? = null,
+  @ByteString @SerialName("spiderInfo") val spiderInfo: ByteArray? = null,
+  @ByteString @SerialName("comicInfo") val comicInfo: ByteArray? = null,
   val entries: List<RecoveryEntryInput> = emptyList(),
   val archive: RecoveryArchiveInput? = null,
 )
@@ -116,6 +117,7 @@ internal enum class RecoveryStatus {
 @Serializable
 internal enum class RecoveryPersistenceAction {
   @SerialName("promoteFinished") PROMOTE_FINISHED,
+  @SerialName("keepExisting") KEEP_EXISTING,
   @SerialName("stage") STAGE,
 }
 

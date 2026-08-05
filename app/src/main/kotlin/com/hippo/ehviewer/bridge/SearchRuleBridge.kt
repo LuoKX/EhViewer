@@ -52,25 +52,6 @@ internal data class SearchRuleRequest(
 /** Complete pure value returned for one search rule. */
 @Serializable internal data class SearchRulePlan(val kind: SearchRuleKind, val value: String)
 
-/** Preserves the legacy pure rule when the owning operation selected Kotlin. */
-internal fun planLegacySearchRule(request: SearchRuleRequest): SearchRulePlan {
-  val value =
-    when (request.kind) {
-      SearchRuleKind.NORMALIZE_QUERY -> request.input.trim().replace(LEGACY_WHITESPACE_REGEX, " ")
-      SearchRuleKind.WRAP_TAG_KEYWORD -> {
-        val tag = request.input.substringAfter(':')
-        val prefix = request.input.dropLast(tag.length + 1)
-        when {
-          request.translatedPrefix != null ->
-            "${request.translatedPrefix}：${requireNotNull(request.translatedTag)}"
-          request.input.contains(' ') -> "$prefix:\"$tag$\""
-          else -> "${request.input}$"
-        }
-      }
-    }
-  return SearchRulePlan(request.kind, value)
-}
-
 /** Calls Rust once and validates the versioned response envelope. */
 internal fun planSearchRule(
   request: SearchRuleRequest,
@@ -94,12 +75,8 @@ internal fun planSearchRule(
   return plan
 }
 
-/** Applies exactly one implementation for the backend captured by the caller. */
-internal fun resolveSearchRule(request: SearchRuleRequest, backend: CoreBackend): String =
-  when (backend) {
-    CoreBackend.LEGACY -> planLegacySearchRule(request).value
-    CoreBackend.RUST -> planSearchRule(request).value
-  }
+/** Applies the Rust-owned search rule. */
+internal fun resolveSearchRule(request: SearchRuleRequest): String = planSearchRule(request).value
 
 private external fun nativePlanSearchRuleV1(
   request: ByteBuffer,
@@ -109,4 +86,3 @@ private external fun nativePlanSearchRuleV1(
 
 internal const val SEARCH_RULE_API_VERSION = 1
 internal const val SEARCH_RULE_MODULE = "searchRule"
-private val LEGACY_WHITESPACE_REGEX = Regex("\\s+")

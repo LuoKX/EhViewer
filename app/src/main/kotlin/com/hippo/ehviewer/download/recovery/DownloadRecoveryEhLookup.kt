@@ -6,8 +6,6 @@ import com.ehviewer.core.database.model.DownloadRecoveryCandidate
 import com.ehviewer.core.database.model.DownloadRecoveryStatus
 import com.ehviewer.core.model.BaseGalleryInfo
 import com.hippo.ehviewer.EhDB
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.exception.NoHitsFoundException
@@ -15,8 +13,6 @@ import com.hippo.ehviewer.download.DownloadManager
 import kotlinx.coroutines.CancellationException
 
 internal sealed interface RecoveryLookupResult {
-  data class Exact(val gallery: BaseGalleryInfo) : RecoveryLookupResult
-
   data class Choices(val galleries: List<BaseGalleryInfo>) : RecoveryLookupResult
 
   data object NotFound : RecoveryLookupResult
@@ -24,12 +20,9 @@ internal sealed interface RecoveryLookupResult {
 
 internal object DownloadRecoveryEhLookup {
   suspend fun lookup(candidate: DownloadRecoveryCandidate): RecoveryLookupResult {
-    require(CoreBackendSelector.snapshot() == CoreBackend.RUST) {
-      "EH recovery requires the Rust core"
-    }
     val hints = candidate.lookupHints()
     val direct = lookupByKnownIdentity(candidate, hints.gid)
-    if (direct != null) return RecoveryLookupResult.Exact(direct)
+    if (direct != null) return RecoveryLookupResult.Choices(listOf(direct))
 
     val title = hints.title
     if (title.isNotBlank()) {
@@ -67,8 +60,9 @@ internal object DownloadRecoveryEhLookup {
     require(gallery.gid > 0 && TOKEN.matches(gallery.token)) { "EH returned an invalid identity" }
     val resolvedGallery = hydrate(gallery)
     val existingIssues = candidate.issues.split(',').filter(String::isNotBlank)
-    val unresolvedLocalIssues =
-      existingIssues.filterNot { it in IDENTITY_RESOLVED_ISSUES || it in LOOKUP_RESULT_ISSUES }
+    val unresolvedLocalIssues = existingIssues.filterNot {
+      it in IDENTITY_RESOLVED_ISSUES || it in LOOKUP_RESULT_ISSUES
+    }
     val complete =
       unresolvedLocalIssues.isEmpty() &&
         candidate.localPageCount > 0 &&
@@ -81,14 +75,13 @@ internal object DownloadRecoveryEhLookup {
         path == null -> DownloadRecoveryStatus.PATH_CONFLICT
         else -> DownloadRecoveryStatus.READY
       }
-    val issues =
-      buildList {
-          addAll(unresolvedLocalIssues)
-          if (resolvedGallery.pages != candidate.localPageCount) add("PAGE_COUNT_CONFLICT")
-          if (path == null) add("ANDROID_PATH_CONFLICT")
-        }
-        .distinct()
-        .joinToString(",")
+    val issues = buildList {
+      addAll(unresolvedLocalIssues)
+      if (resolvedGallery.pages != candidate.localPageCount) add("PAGE_COUNT_CONFLICT")
+      if (path == null) add("ANDROID_PATH_CONFLICT")
+    }
+      .distinct()
+      .joinToString(",")
     val updated =
       candidate.copy(
         gid = resolvedGallery.gid,
@@ -145,10 +138,9 @@ internal object DownloadRecoveryEhLookup {
         current.copy(
           status = resolvedFailure.status,
           issues =
-            (current.issues
-                .split(',')
-                .filter(String::isNotBlank)
-                .filterNot { it in LOOKUP_RESULT_ISSUES } + resolvedFailure.issue)
+            (current.issues.split(',').filter(String::isNotBlank).filterNot {
+                it in LOOKUP_RESULT_ISSUES
+              } + resolvedFailure.issue)
               .distinct()
               .joinToString(","),
           updatedAt = System.currentTimeMillis(),
@@ -168,10 +160,9 @@ internal object DownloadRecoveryEhLookup {
       candidate.copy(
         status = DownloadRecoveryStatus.QUERY_FAILED,
         issues =
-          (candidate.issues
-              .split(',')
-              .filter(String::isNotBlank)
-              .filterNot { it in LOOKUP_RESULT_ISSUES } + issue)
+          (candidate.issues.split(',').filter(String::isNotBlank).filterNot {
+              it in LOOKUP_RESULT_ISSUES
+            } + issue)
             .distinct()
             .joinToString(","),
         updatedAt = System.currentTimeMillis(),
@@ -192,7 +183,7 @@ internal object DownloadRecoveryEhLookup {
               listOf(
                 BaseGalleryInfo(
                   gid = gid,
-                  token = EhEngine.getGalleryToken(gid, pageToken, page, useRust = true),
+                  token = EhEngine.getGalleryToken(gid, pageToken, page),
                 )
               )
             }
@@ -200,7 +191,7 @@ internal object DownloadRecoveryEhLookup {
             ?.takeIf { TOKEN.matches(it.token) }
         } catch (cancelled: CancellationException) {
           throw cancelled
-        } catch (_: Throwable) {
+        } catch (_: Exception) {
           null
         }
       if (resolved != null) return resolved
@@ -218,7 +209,8 @@ internal object DownloadRecoveryEhLookup {
     val storedTitle = title?.trim().orEmpty()
     val titleWithoutGeneratedPrefix = gid?.let { storedTitle.removePrefix("$it-").trim() }.orEmpty()
     val generatedTitle = sourceMatch?.groups?.get(2)?.value?.trim().orEmpty()
-    val resolvedTitle = titleWithoutGeneratedPrefix.ifBlank { generatedTitle }.ifBlank { storedTitle }
+    val resolvedTitle =
+      titleWithoutGeneratedPrefix.ifBlank { generatedTitle }.ifBlank { storedTitle }
     return RecoveryLookupHints(gid = gid, title = resolvedTitle)
   }
 
@@ -228,8 +220,8 @@ internal object DownloadRecoveryEhLookup {
     select: (List<BaseGalleryInfo>) -> List<BaseGalleryInfo>,
   ): List<BaseGalleryInfo> =
     RecoverySearchScheduler.execute(normalizedKey) {
-      val url = ListUrlBuilder(keyword = query).build(CoreBackend.RUST)
-      select(EhEngine.getRecoveryGalleryList(url, useRust = true).galleryInfoList)
+      val url = ListUrlBuilder(keyword = query).build()
+      select(EhEngine.getRecoveryGalleryList(url).galleryInfoList)
         .filter { it.gid > 0 && TOKEN.matches(it.token) }
         .distinctBy { it.gid to it.token }
         .take(25)
@@ -238,17 +230,13 @@ internal object DownloadRecoveryEhLookup {
   private suspend fun hydrate(gallery: BaseGalleryInfo): BaseGalleryInfo =
     RecoverySearchScheduler.execute("gdata:${gallery.gid}") {
         listOf(BaseGalleryInfo(gid = gallery.gid, token = gallery.token)).also { galleries ->
-          EhEngine.fillGalleryListByApi(galleries, useRust = true)
+          EhEngine.fillGalleryListByApi(galleries)
         }
       }
       .single()
 
   private fun List<BaseGalleryInfo>.toLookupResult(): RecoveryLookupResult =
-    when (size) {
-      0 -> RecoveryLookupResult.NotFound
-      1 -> RecoveryLookupResult.Exact(single())
-      else -> RecoveryLookupResult.Choices(this)
-    }
+    if (isEmpty()) RecoveryLookupResult.NotFound else RecoveryLookupResult.Choices(this)
 
   private fun normalizeTitle(title: String?): String =
     title.orEmpty().lowercase().replace(WHITESPACE, " ").trim()

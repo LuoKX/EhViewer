@@ -1,6 +1,5 @@
 package com.hippo.ehviewer.client.parser
 
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.bridge.ApiEnvelope
 import com.hippo.ehviewer.bridge.TorrentListPage
 import com.hippo.ehviewer.bridge.torrent.toLegacyTorrents
@@ -10,29 +9,10 @@ import kotlinx.serialization.Serializable
 
 object TorrentParser {
   fun parse(body: ByteBuffer) = runCatching {
-    parseWithAdapters(
-      body = body,
-      useRust = Settings.useRustCore.value,
-      legacyParser = { unmarshalParsingAs<TorrentResult>(it, ::parseTorrent) },
-      rustParser = {
-        unmarshalParsingAs<ApiEnvelope<TorrentListPage>>(it, ::parseTorrentV1)
-      },
-    )
+    unmarshalParsingAs<ApiEnvelope<TorrentListPage>>(body, ::parseTorrentV1).toLegacyTorrents()
   }
     .getOrElse {
       throw ParseException("Can't parse torrent list", it)
-    }
-
-  internal fun parseWithAdapters(
-    body: ByteBuffer,
-    useRust: Boolean,
-    legacyParser: (ByteBuffer) -> TorrentResult,
-    rustParser: (ByteBuffer) -> ApiEnvelope<TorrentListPage>,
-  ): TorrentResult =
-    if (useRust) {
-      rustParser(body).toLegacyTorrents()
-    } else {
-      legacyParser(body)
     }
 }
 
@@ -52,12 +32,11 @@ data class Torrent(
 
 fun Torrent.format() = "↑$seeds ↓$peers ✓$downloads"
 
-/** Returns the V1 validated hash, or the frozen legacy URL-derived value. */
-internal fun Torrent.infoHashForMagnet() = infoHash ?: url.dropLast(8).takeLast(40)
+/** Returns the validated hash supplied by the Rust parser. */
+internal fun Torrent.infoHashForMagnet() =
+  requireNotNull(infoHash) { "Torrent info hash is missing" }
 
 typealias TorrentResult = List<Torrent>
-
-private external fun parseTorrent(body: ByteBuffer, size: Int = body.limit()): Int
 
 /** Invokes the V1 `eh_net::torrent` parser without exposing its source URL. */
 private external fun parseTorrentV1(body: ByteBuffer, size: Int = body.limit()): Int

@@ -44,22 +44,8 @@ data class SettingsRepairPlan(
 
 internal fun resolveSettingsRepair(
   request: SettingsRepairRequest,
-  backend: CoreBackend,
   rustPlan: (SettingsRepairRequest) -> SettingsRepairPlan = ::planSettingsRepairWithRust,
-): SettingsRepairPlan =
-  when (backend) {
-    CoreBackend.LEGACY -> planSettingsRepairLegacy(request)
-    CoreBackend.RUST -> rustPlan(request)
-  }
-
-private fun planSettingsRepairLegacy(request: SettingsRepairRequest) =
-  SettingsRepairPlan(
-    enableTagTranslations = request.chineseLocale && request.showTagTranslationsAbsent,
-    resetRecentDownloadLabel =
-      request.downloadFilterMode == DOWNLOAD_FILTER_MODE_ARTIST &&
-        request.recentDownloadLabel == null,
-    removeOrientationMode = request.orientationMode !in request.validOrientationModes,
-  )
+): SettingsRepairPlan = rustPlan(request)
 
 private fun planSettingsRepairWithRust(request: SettingsRepairRequest) =
   invokeSettingsRule<SettingsRepairPlan>(
@@ -79,14 +65,8 @@ data class ReadCacheSizeRequest(val version: Int, val configuredMib: Int) {
 
 internal fun resolveReadCacheSize(
   request: ReadCacheSizeRequest,
-  backend: CoreBackend,
   rustPlan: (ReadCacheSizeRequest) -> ReadCacheSizePlan = ::planReadCacheSizeWithRust,
-): Int =
-  when (backend) {
-    CoreBackend.LEGACY ->
-      request.configuredMib.coerceIn(READ_CACHE_SIZE_MIN_MIB, READ_CACHE_SIZE_MAX_MIB)
-    CoreBackend.RUST -> rustPlan(request).sizeMib
-  }
+): Int = rustPlan(request).sizeMib
 
 private fun planReadCacheSizeWithRust(request: ReadCacheSizeRequest) =
   invokeSettingsRule<ReadCacheSizePlan>(
@@ -130,6 +110,3 @@ private external fun nativePlanReadCacheSizeV1(
 
 private const val SETTINGS_RULE_API_VERSION = 1
 private const val SETTINGS_RULE_MODULE = "settingsRule"
-private const val DOWNLOAD_FILTER_MODE_ARTIST = 1
-private const val READ_CACHE_SIZE_MIN_MIB = 320
-private const val READ_CACHE_SIZE_MAX_MIB = 5120

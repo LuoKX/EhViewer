@@ -1,8 +1,10 @@
 //! Pure rules around Android-owned library persistence.
 //!
 //! Android retains Room, Paging, mutable URL builders, dialogs, HTTP, and model
-//! mutation. This module owns FTS query shaping, `QuickSearch` equality, and local
-//! favorite action planning over sanitized snapshots.
+//! mutation. This module owns FTS query shaping, `QuickSearch` equality and import
+//! planning, and local favorite action planning over sanitized snapshots.
+
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
@@ -89,6 +91,60 @@ pub fn plan_quick_search_match(request: &QuickSearchMatchRequest) -> QuickSearch
     QuickSearchMatchPlan {
         matches: request.saved.as_ref() == Some(&request.current),
     }
+}
+
+/// Versioned names and row count needed to plan one `QuickSearch` import.
+///
+/// Names are user-authored values and must never be included in errors or logs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickSearchImportRequest {
+    /// Protocol version; callers must use [`LIBRARY_RULE_API_VERSION`].
+    pub version: u8,
+    /// Exact names already present in the Android-owned current database.
+    pub current_names: Vec<String>,
+    /// Exact names read from the imported database in source order.
+    pub imported_names: Vec<String>,
+    /// Current Android row count represented with JVM signed-`Int` semantics.
+    pub current_count: i32,
+}
+
+/// Source-aligned decisions for one Android-owned `QuickSearch` import.
+///
+/// Each entry corresponds to the imported name at the same index. `None` skips
+/// that row. `Some(position)` tells Android to clear the source Room ID and insert
+/// the row at `position`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickSearchImportPlan {
+    /// Optional destination positions aligned with imported source order.
+    pub positions: Vec<Option<i32>>,
+}
+
+/// Plans exact-name deduplication and contiguous reindexing for one import.
+///
+/// Only names present in `current_names` are excluded. Accepted imported names
+/// are deliberately not added to that set, so duplicates within the imported
+/// source remain present and retain source order. Position increments use signed
+/// 32-bit wrapping arithmetic to match JVM `Int` overflow behavior exactly.
+#[must_use]
+pub fn plan_quick_search_import(request: &QuickSearchImportRequest) -> QuickSearchImportPlan {
+    let current_names: HashSet<&str> = request.current_names.iter().map(String::as_str).collect();
+    let mut next_position = request.current_count;
+    let positions = request
+        .imported_names
+        .iter()
+        .map(|name| {
+            if current_names.contains(name.as_str()) {
+                None
+            } else {
+                let position = next_position;
+                next_position = next_position.wrapping_add(1);
+                Some(position)
+            }
+        })
+        .collect();
+    QuickSearchImportPlan { positions }
 }
 
 /// Versioned facts needed to plan one favorite-state transition.
@@ -188,11 +244,20 @@ pub fn plan_local_favorite_mutation(
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
+    use crate::contracts::ApiEnvelope;
+
     use super::{
-        DatabaseSearchQueryRequest, LIBRARY_RULE_API_VERSION, LocalFavoriteAction,
-        LocalFavoriteMutationRequest, QuickSearchMatchRequest, QuickSearchSnapshot,
-        plan_database_search_query, plan_local_favorite_mutation, plan_quick_search_match,
+        DatabaseSearchQueryRequest, LIBRARY_RULE_API_VERSION, LIBRARY_RULE_MODULE,
+        LocalFavoriteAction, LocalFavoriteMutationRequest, QuickSearchImportPlan,
+        QuickSearchImportRequest, QuickSearchMatchRequest, QuickSearchSnapshot,
+        plan_database_search_query, plan_local_favorite_mutation, plan_quick_search_import,
+        plan_quick_search_match,
     };
+
+    const QUICK_SEARCH_IMPORT_REQUEST_GOLDEN: &str = "a46776657273696f6e016c63757272656e744e616d6573816473616d656d696d706f727465644e616d6573836473616d65636e6577636e65776c63757272656e74436f756e7401";
+    const QUICK_SEARCH_IMPORT_RESPONSE_GOLDEN: &str = "a46776657273696f6e01666d6f64756c656b6c69627261727952756c65677061796c6f6164a169706f736974696f6e7383f60102656572726f72f6";
 
     #[test]
     fn shapes_history_and_local_favorite_fts_queries() {
@@ -219,15 +284,117 @@ mod tests {
     }
 
     #[test]
+    fn quick_search_import_compares_only_exact_current_names() {
+        let plan = plan_quick_search_import(&QuickSearchImportRequest {
+            version: LIBRARY_RULE_API_VERSION,
+            current_names: vec!["same".to_owned(), "Case".to_owned(), String::new()],
+            imported_names: vec![
+                "same".to_owned(),
+                "SAME".to_owned(),
+                "new".to_owned(),
+                "new".to_owned(),
+                String::new(),
+                "Case".to_owned(),
+            ],
+            current_count: 3,
+        });
+
+        assert_eq!(
+            plan.positions,
+            vec![None, Some(3), Some(4), Some(5), None, None]
+        );
+    }
+
+    #[test]
+    fn quick_search_import_positions_wrap_like_jvm_ints() {
+        let plan = plan_quick_search_import(&QuickSearchImportRequest {
+            version: LIBRARY_RULE_API_VERSION,
+            current_names: Vec::new(),
+            imported_names: vec!["one".to_owned(), "two".to_owned(), "three".to_owned()],
+            current_count: i32::MAX,
+        });
+
+        assert_eq!(
+            plan.positions,
+            vec![Some(i32::MAX), Some(i32::MIN), Some(i32::MIN + 1)]
+        );
+    }
+
+    #[test]
+    fn quick_search_import_wire_is_versioned_and_source_aligned() {
+        let request = QuickSearchImportRequest {
+            version: LIBRARY_RULE_API_VERSION,
+            current_names: vec!["same".to_owned()],
+            imported_names: vec!["same".to_owned(), "new".to_owned(), "new".to_owned()],
+            current_count: 1,
+        };
+        assert_eq!(
+            serde_json::to_value(&request).expect("request should serialize"),
+            serde_json::json!({
+                "version": 1,
+                "currentNames": ["same"],
+                "importedNames": ["same", "new", "new"],
+                "currentCount": 1,
+            })
+        );
+
+        let encoded = serde_cbor::to_vec(&request).expect("request should encode");
+        let response = serde_cbor::to_vec(&ApiEnvelope::ok(
+            LIBRARY_RULE_API_VERSION,
+            LIBRARY_RULE_MODULE,
+            plan_quick_search_import(&request),
+        ))
+        .expect("response should encode");
+        let to_hex = |bytes: &[u8]| {
+            bytes.iter().fold(String::new(), |mut output, byte| {
+                write!(output, "{byte:02x}").expect("writing to a String should succeed");
+                output
+            })
+        };
+        assert_eq!(to_hex(&encoded), QUICK_SEARCH_IMPORT_REQUEST_GOLDEN);
+        assert_eq!(to_hex(&response), QUICK_SEARCH_IMPORT_RESPONSE_GOLDEN);
+        assert_eq!(
+            serde_cbor::from_slice::<QuickSearchImportRequest>(&encoded)
+                .expect("request should decode"),
+            request
+        );
+        assert_eq!(
+            serde_cbor::from_slice::<ApiEnvelope<QuickSearchImportPlan>>(&response)
+                .expect("response should decode")
+                .payload,
+            Some(plan_quick_search_import(&request))
+        );
+        assert_eq!(
+            plan_quick_search_import(&request).positions,
+            vec![None, Some(1), Some(2)]
+        );
+    }
+
+    #[test]
     fn plans_local_cloud_add_remove_and_toggle_transitions() {
         let remove_cloud = plan(-2, 3, true);
         assert_eq!(remove_cloud.action, LocalFavoriteAction::RemoveCloud);
         assert_eq!(remove_cloud.next_favorite_slot, -1);
 
+        let remove_cloud_without_local = plan(-2, 3, false);
+        assert_eq!(
+            remove_cloud_without_local.action,
+            LocalFavoriteAction::RemoveCloud
+        );
+        assert_eq!(remove_cloud_without_local.next_favorite_slot, -2);
+
+        let remove_absent_local = plan(-2, -2, false);
+        assert_eq!(remove_absent_local.action, LocalFavoriteAction::RemoveLocal);
+        assert_eq!(remove_absent_local.next_favorite_slot, -2);
+
         let remove_local = plan(-1, -1, true);
         assert_eq!(remove_local.action, LocalFavoriteAction::RemoveLocal);
         assert_eq!(remove_local.next_favorite_slot, -2);
         assert!(!remove_local.added);
+
+        let add_only_local = plan(-1, -2, false);
+        assert_eq!(add_only_local.action, LocalFavoriteAction::AddLocal);
+        assert_eq!(add_only_local.next_favorite_slot, -1);
 
         let add_local_beside_cloud = plan(-1, 4, false);
         assert_eq!(add_local_beside_cloud.action, LocalFavoriteAction::AddLocal);

@@ -17,15 +17,19 @@ internal object RecoverySearchScheduler {
   ): List<BaseGalleryInfo> {
     mutex.lock()
     return try {
-      cache[normalizedKey]?.let { return it }
+      cache[normalizedKey]?.let {
+        return it
+      }
       val elapsed = SystemClock.elapsedRealtime() - lastRequestAt
       if (elapsed < MIN_REQUEST_INTERVAL_MILLIS) {
         delay(MIN_REQUEST_INTERVAL_MILLIS - elapsed)
       }
       lastRequestAt = SystemClock.elapsedRealtime()
       val result = request()
-      cache[normalizedKey] = result
-      while (cache.size > 128) cache.remove(cache.keys.first())
+      if (result.isNotEmpty()) {
+        cache[normalizedKey] = result
+        while (cache.size > 128) cache.remove(cache.keys.first())
+      }
       result
     } finally {
       mutex.unlock()

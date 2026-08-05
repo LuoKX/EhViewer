@@ -81,7 +81,8 @@ pub fn parse(input: &str) -> Result<GalleryMetadataBatch, RustError> {
         let Some(posted) = legacy_i64(&raw.posted) else {
             return Err(invalid_response());
         };
-        let Some(page_count) = legacy_i64(&raw.filecount).and_then(|count| i32::try_from(count).ok())
+        let Some(page_count) =
+            legacy_i64(&raw.filecount).and_then(|count| i32::try_from(count).ok())
         else {
             return Err(invalid_response());
         };
@@ -316,7 +317,6 @@ mod tests {
             r#"{"gmetadata":[{}]}"#.to_owned(),
             wrap(valid.replace(r#""gid":1"#, r#""gid":9223372036854775808"#)),
             wrap(valid.replace(r#""filecount":1"#, r#""filecount":2147483648"#)),
-            wrap(valid.replace(r#""rating":4.5"#, r#""rating":"4.5""#)),
             wrap(valid.replace(r#""rating":4.5"#, r#""rating":1e39"#)),
             wrap(valid.replace(r#""tags":[]"#, r#""tags":[1]"#)),
             wrap(valid.replace(r#""uploader":null"#, r#""uploader":1"#)),
@@ -327,6 +327,19 @@ mod tests {
             assert_eq!(error, RustError::Error(INVALID_RESPONSE.to_owned()));
             assert!(!error.to_string().contains(secret));
         }
+    }
+
+    #[test]
+    fn accepts_legacy_quoted_numeric_ratings() {
+        let input = format!(
+            r#"{{"gmetadata":[{}]}}"#,
+            raw_item(1, "title", "misc", "thumb", "null", r#""4.5""#, 1),
+        );
+        let item = parse(&input)
+            .expect("quoted API numeric ratings should parse")
+            .items
+            .remove(0);
+        assert_eq!(item.rating.to_bits(), 4.5_f32.to_bits());
     }
 
     #[test]

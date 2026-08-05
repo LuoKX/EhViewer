@@ -9,9 +9,9 @@ Each feature moves through the same sequence:
 3. Implement pure Rust behavior with good/base/bad unit tests.
 4. Pass format, Clippy, rustdoc, and package-level 95% coverage gates.
 5. Add the FFI adapter and Rust/Kotlin golden contract tests.
-6. Route the slice through the one operation-scoped global backend snapshot.
-7. Prove global-off Rust zero-calls and global-on legacy zero-calls on the host.
-8. Remove production parity and automatic fallback before marking the slice complete.
+6. Route the production call site directly through the Rust boundary.
+7. Prove the Kotlin adapter validates the complete Rust result before platform effects.
+8. Remove production parity, selectors, and automatic fallback before marking the slice complete.
 
 ## Slice Exit Criteria
 
@@ -20,23 +20,22 @@ Each feature moves through the same sequence:
 - No live network appears in unit tests.
 - JNI/CBOR round-trip and malformed-input tests pass.
 - Android host build, JNI/CBOR, ABI, and instrumentation-source evidence exists.
-- Global-off recovery preserves schema and data; real-device execution remains a
-  separately tracked deferred gate.
+- Schema/data compatibility is preserved, and device execution is recorded separately
+  from host-only evidence.
 
 ## Favorite Mutation Planning Slice
 
-Rust plans one single or bulk request with ordered form repetition. Global-off uses
-only the frozen legacy plan. Global-on invokes and validates only Rust before HTTP;
-mismatch, exception, or linkage failure is surfaced. Legacy equivalence is asserted
-offline. Device execution remains deferred.
+Rust plans one single or bulk request with ordered form repetition. Production invokes
+and validates Rust before HTTP; mismatch, exception, or linkage failure is surfaced.
+Legacy equivalence is asserted only in offline characterization fixtures.
 
 ## Gallery Archive Request Planning Slice
 
 `eh_net::gallery::archive_request` now plans the archive-list GET target and archive
 download POST target, referer, optional origin, and ordered direct/H@H form fields.
 Android still owns funds lookup, HTTP, the direct-download retry delay, response parsing,
-file download, and UI effects. Global-off builds only legacy. Global-on builds and validates
-only the Rust plan before the first HTTP call; failures surface without fallback. Rust and Kotlin share exact list/download request and response CBOR
+file download, and UI effects. Production builds and validates only the Rust plan
+before the first HTTP call; failures surface without fallback. Rust and Kotlin share exact list/download request and response CBOR
 goldens. The isolated Rust gate is 100% line (237/237) and function (11/11), focused JVM
 coverage is 8/8, and the exact V1 manifest is 41/41. The real-JNI list/download device
 test compiles but has not run in the current non-KVM environment.
@@ -49,20 +48,20 @@ test compiles but has not run in the current non-KVM environment.
 4. Download/archive state machine.
 5. Secondary features and legacy removal.
 
-## Current Slice Status
+## Current Mainline Status
 
-C0-C6 implementation is complete. The only production selector is the strict,
-default-off `Settings.useRustCore`; the always-available Rust Core health boundary
-remains outside business selection. C7 non-device acceptance has not run. Android
-device execution is deferred, so host evidence is not device acceptance.
+As of 2026-08-05, production has no Rust runtime selector. Portable parser, planner,
+reducer, reader, download, archive, session, search, favorite, settings, and daily-check
+rules invoke Rust directly. Android-only platform ownership remains Kotlin by design.
+Rust Core health is a required diagnostic, not a selectable feature.
 
-### Selection Semantics After C6
+### Mainline Semantics
 
-Each operation captures the global backend once. Global off executes only legacy;
-global on executes only Rust, without shadow calculation, parity, automatic fallback,
-or replay. The 32 old key names remain only in atomic upgrade migration and its tests.
-Later module status sections preserve historical implementation facts and test counts;
-their former per-module switches do not describe the current runtime.
+Each operation uses one Rust implementation without shadow calculation, parity,
+automatic fallback, or replay. The retired master/module key names remain only in
+startup cleanup and never decide behavior. Later module status sections preserve
+historical implementation facts and test counts; their former switches and rollback
+language do not describe the current runtime.
 
 The gallery-list parser was the first migrated behavior slice. Its implementation
 now lives in `eh_net::gallery::list`, uses checked-in offline fixtures, and
@@ -77,8 +76,8 @@ success/error CBOR contract.
   inherit the new crates' `missing_docs`/`unsafe_code` workspace lints. It still
   runs rustfmt and Android-target Clippy with warnings denied. No new business
   behavior may be added there.
-- The 32 former module-key names are compatibility data for one atomic upgrade
-  migration and its tests only; they are not selectable production state.
+- The former master/module key names are compatibility data for startup deletion
+  only; they are not read as selectable production state.
 - Rust and Kotlin share checked-in hexadecimal CBOR golden fixtures. Kotlin request
   bridges use one definite-length `rustCbor` configuration matching `serde_cbor`,
   and `eh_ffi::codec` tests protect atomic output on undersized buffers. Android host and
@@ -87,9 +86,8 @@ success/error CBOR contract.
   restarted before APK installation, so the connected task executed zero tests.
   The xTS CPU profile requires KVM; successful device execution therefore remains
   with the KVM-enabled CI/device gate.
-- Device integration/E2E evidence remains deferred. Host mutual-exclusion evidence
-  is required before exposing the global setting; legacy remains reachable only
-  through global-off mode.
+- Device integration/E2E evidence is tracked independently from host evidence. No
+  backend setting is exposed and no legacy production mode remains.
 
 The structural FFI migration owns the checked versioned business symbols, unified
 archive V2 reader symbols, archive writer/validator symbols, Rust Core health, the
@@ -100,11 +98,17 @@ legacy parsers and `JNI_OnLoad`, while CMake's `Java_*` retention rule preserves
 dependency-crate exports.
 
 The former per-module rollout is recorded by superseded
-[ADR 0004](adr/0004-coordinated-mvp-rollout.md). The active target is
-[ADR 0007](adr/0007-single-rust-core-selection.md): one persisted default-off setting,
-one operation snapshot, strict Rust when enabled, and no production parity or fallback.
-The old API-35 21-setting chain remains historical native-boundary evidence only. It
-does not prove the single-switch contract or any deferred device gate.
+[ADR 0004](adr/0004-coordinated-mvp-rollout.md). The active decision is
+[ADR 0007](adr/0007-single-rust-core-selection.md): Rust is the sole portable
+production core, with no runtime setting, parity, or fallback. The old API-35
+21-setting chain remains historical native-boundary evidence only.
+
+## Historical Slice Record
+
+The sections below record how individual slices were introduced. Any `default-off`,
+`useRustCore*`, global off/on, parity, fallback, rollback-switch, or deferred-device
+wording is historical and superseded by the current mainline status above. Ownership,
+wire contracts, fixtures, and measured results remain useful evidence.
 
 ## Rust Core Health Foundation
 

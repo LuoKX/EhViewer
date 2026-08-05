@@ -2,30 +2,21 @@ package com.hippo.ehviewer.bridge.news
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.client.parser.EventPaneParser
 import java.nio.ByteBuffer
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Real-JNI device contract for the independent News event-pane rollout. */
+/** Real-JNI device contract for the News event-pane parser. */
 @RunWith(AndroidJUnit4::class)
 class NewsDeviceTest {
   @Test
-  fun parsesTheCanonicalFixtureThroughTheVersionedNativeBoundary() = runBlocking {
-    val previous = Settings.useRustCore.value
-    try {
-      Settings.withMutableSnapshot { snapshot -> snapshot[Settings.useRustCore] = true }
-
-      assertEquals(
-        "<strong>Event &amp; reward</strong>",
-        EventPaneParser.parse(assetBuffer("news.html")),
-      )
-    } finally {
-      Settings.withMutableSnapshot { snapshot -> snapshot[Settings.useRustCore] = previous }
-    }
+  fun parsesTheCanonicalFixtureThroughTheVersionedNativeBoundary() {
+    assertEquals(
+      "<strong>Event &amp; reward</strong>",
+      EventPaneParser.parse(assetBuffer("news.html")),
+    )
   }
 
   private fun assetBuffer(name: String): ByteBuffer {

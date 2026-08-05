@@ -18,8 +18,6 @@ package com.hippo.ehviewer.client.data
 import com.ehviewer.core.database.model.QuickSearch
 import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.LIBRARY_RULE_API_VERSION
 import com.hippo.ehviewer.bridge.QuickSearchMatchRequest
 import com.hippo.ehviewer.bridge.QuickSearchSnapshot
@@ -32,9 +30,6 @@ import com.hippo.ehviewer.bridge.gallery.buildGalleryListUrl
 import com.hippo.ehviewer.bridge.resolveQuickSearchMatch
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.client.addQueryParameter
-import com.hippo.ehviewer.client.addQueryParameterIfNotBlank
-import com.hippo.ehviewer.client.ehUrl
 import com.hippo.ehviewer.ui.main.AdvanceTable
 import io.ktor.http.Parameters
 import kotlinx.serialization.Serializable
@@ -122,7 +117,7 @@ data class ListUrlBuilder(
           ),
         saved = q?.let(QuickSearchSnapshot::from),
       )
-    return resolveQuickSearchMatch(request, CoreBackendSelector.snapshot())
+    return resolveQuickSearchMatch(request)
   }
 
   constructor(
@@ -176,14 +171,7 @@ data class ListUrlBuilder(
       pageTo = pageTo,
     )
 
-  fun build(): String = build(CoreBackendSelector.snapshot())
-
-  internal fun build(backend: CoreBackend): String {
-    return when (backend) {
-      CoreBackend.LEGACY -> buildLegacy()
-      CoreBackend.RUST -> buildGalleryListUrl(rustUrlRequest())
-    }
-  }
+  fun build(): String = buildGalleryListUrl(rustUrlRequest())
 
   private fun rustUrlRequest() =
     GalleryListUrlRequest(
@@ -216,96 +204,6 @@ data class ListUrlBuilder(
       pageFrom = pageFrom,
       pageTo = pageTo,
     )
-
-  private fun buildLegacy(): String =
-    when (mode) {
-      MODE_NORMAL,
-      MODE_SUBSCRIPTION ->
-        ehUrl(EhUrl.WATCHED_PATH.takeIf { mode == MODE_SUBSCRIPTION }) {
-            val category =
-              if (!Settings.hasSignedIn.value && category <= 0) EhUtils.NON_H else category
-            if (category > 0) {
-              addQueryParameter("f_cats", "${EhUtils.invCategory(category)}")
-            }
-            val query = keyword?.let { keyword ->
-              if (
-                language == -1 || "gid:" in keyword || "l:" in keyword || "language:" in keyword
-              ) {
-                keyword
-              } else {
-                val tag = GalleryInfo.S_LANG_TAGS[language]
-                if (keyword.isNotEmpty()) {
-                  "$tag $keyword"
-                } else {
-                  tag
-                }
-              }
-            }
-            addQueryParameterIfNotBlank("f_search", query)
-            addQueryParameterIfNotBlank("prev", prev)
-            addQueryParameterIfNotBlank("next", next)
-            addQueryParameterIfNotBlank("seek", jumpTo)
-            addQueryParameterIfNotBlank("range", range.takeIf { it > 0 }?.toString())
-            // Advance search
-            if (advanceSearch > 0 || minRating > 0 || pageFrom > 0 || pageTo > 0) {
-              addQueryParameter("advsearch", "1")
-              if (advanceSearch and AdvanceTable.SH != 0) {
-                addQueryParameter("f_sh", "on")
-              }
-              if (advanceSearch and AdvanceTable.STO != 0) {
-                addQueryParameter("f_sto", "on")
-              }
-              if (advanceSearch and AdvanceTable.SFL != 0) {
-                addQueryParameter("f_sfl", "on")
-              }
-              if (advanceSearch and AdvanceTable.SFU != 0) {
-                addQueryParameter("f_sfu", "on")
-              }
-              if (advanceSearch and AdvanceTable.SFT != 0) {
-                addQueryParameter("f_sft", "on")
-              }
-              // Set min star
-              if (minRating > 0) {
-                addQueryParameter("f_srdd", "$minRating")
-              }
-              // Pages
-              if (pageFrom > 0 || pageTo > 0) {
-                addQueryParameterIfNotBlank(
-                  "f_spf",
-                  pageFrom.takeIf { it > 0 }?.toString(),
-                )
-                addQueryParameterIfNotBlank(
-                  "f_spt",
-                  pageTo.takeIf { it > 0 }?.toString(),
-                )
-              }
-            }
-          }
-          .buildString()
-      MODE_UPLOADER,
-      MODE_TAG -> {
-        val path = if (mode == MODE_UPLOADER) "uploader" else "tag"
-        ehUrl(listOf(path, requireNotNull(keyword))) {
-            addQueryParameterIfNotBlank("prev", prev)
-            addQueryParameterIfNotBlank("next", next)
-            addQueryParameterIfNotBlank("seek", jumpTo)
-            addQueryParameterIfNotBlank("range", range.takeIf { it > 0 }?.toString())
-          }
-          .buildString()
-      }
-      MODE_WHATS_HOT -> EhUrl.popularUrl
-      MODE_IMAGE_SEARCH -> ehUrl {
-          addQueryParameter("f_shash", requireNotNull(hash))
-        }
-          .buildString()
-      MODE_TOPLIST ->
-        ehUrl("toplist.php", EhUrl.DOMAIN_E) {
-            addQueryParameter("tl", requireNotNull(keyword))
-            addQueryParameterIfNotBlank("p", jumpTo)
-          }
-          .buildString()
-      else -> throw IllegalStateException("Unexpected value: $mode")
-    }
 
   companion object {
     const val MODE_NORMAL = 0x0

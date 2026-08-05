@@ -95,6 +95,11 @@ jobs:
             > target/jvm-v1-symbols.txt
           diff -u crates/ffi/jvm-v1-symbols.txt target/jvm-v1-symbols.txt
           nm -g --defined-only target/debug/libehviewer_rust.a \
+            | awk '$2 == "T" && $3 == "Java_com_hippo_ehviewer_jni_HashKt_sha1" { print $3 }' \
+            | sort -u \
+            > target/jvm-compat-symbols.txt
+          diff -u crates/ffi/jvm-compat-symbols.txt target/jvm-compat-symbols.txt
+          nm -g --defined-only target/debug/libehviewer_rust.a \
             | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_/ { print $3 }' \
             | sort -u \
             > target/jvm-webp-symbols.txt

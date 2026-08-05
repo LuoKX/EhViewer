@@ -11,7 +11,6 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.ehviewer.core.util.logcat
-import com.hippo.ehviewer.Settings
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 
@@ -20,7 +19,6 @@ internal class DownloadRecoveryWork(
   workerParameters: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParameters) {
   override suspend fun doWork(): Result {
-    if (!inputData.getBoolean(KEY_RUST_BACKEND, false)) return Result.failure()
     val rootUri = inputData.getString(KEY_ROOT_URI)?.let(Uri::parse) ?: return Result.failure()
     val runId = inputData.getString(KEY_RUN_ID) ?: return Result.failure()
     val limits =
@@ -28,10 +26,8 @@ internal class DownloadRecoveryWork(
         maxDepth = inputData.getInt(KEY_MAX_DEPTH, DEFAULT_MAX_DEPTH),
         maxNodes = inputData.getInt(KEY_MAX_NODES, DEFAULT_MAX_NODES),
         maxCandidates = inputData.getInt(KEY_MAX_CANDIDATES, DEFAULT_MAX_CANDIDATES),
-        maxArchiveEntries =
-          inputData.getInt(KEY_MAX_ARCHIVE_ENTRIES, DEFAULT_MAX_ARCHIVE_ENTRIES),
-        maxDurationMillis =
-          inputData.getLong(KEY_MAX_DURATION_MILLIS, DEFAULT_MAX_DURATION_MILLIS),
+        maxArchiveEntries = inputData.getInt(KEY_MAX_ARCHIVE_ENTRIES, DEFAULT_MAX_ARCHIVE_ENTRIES),
+        maxDurationMillis = inputData.getLong(KEY_MAX_DURATION_MILLIS, DEFAULT_MAX_DURATION_MILLIS),
       )
     var latest = RecoveryScanProgress()
     var lastPublishedAt = 0L
@@ -56,22 +52,20 @@ internal class DownloadRecoveryWork(
           .take(MAX_DIAGNOSTIC_CAUSES)
           .joinToString("<-") { it.javaClass.name }
       val failureFrames =
-        failure.stackTrace
-          .take(MAX_DIAGNOSTIC_FRAMES)
-          .joinToString(";") { "${it.className}.${it.methodName}:${it.lineNumber}" }
+        failure.stackTrace.take(MAX_DIAGNOSTIC_FRAMES).joinToString(";") {
+          "${it.className}.${it.methodName}:${it.lineNumber}"
+        }
       val safeBoundaryMessage =
         failure
           .takeIf {
-            it.stackTrace.firstOrNull()?.methodName ==
-              DOWNLOAD_RECOVERY_CONFLICT_NATIVE_METHOD
+            it.stackTrace.firstOrNull()?.methodName in DOWNLOAD_RECOVERY_NATIVE_METHODS
           }
           ?.message
           ?.take(MAX_DIAGNOSTIC_MESSAGE_CHARS)
           .orEmpty()
       val failureDiagnostic =
         "scan_failed types=$failureTypes message=$safeBoundaryMessage stack=$failureFrames"
-      val diagnostic =
-        IllegalStateException(failureDiagnostic)
+      val diagnostic = IllegalStateException(failureDiagnostic)
       diagnostic.stackTrace = failure.stackTrace
       logcat(DIAGNOSTIC_TAG, diagnostic)
       Result.failure(
@@ -86,9 +80,7 @@ internal class DownloadRecoveryWork(
 
   private suspend fun publishProgress(progress: RecoveryScanProgress) {
     setProgress(progress.toData(limitExceeded = false))
-    setForeground(
-      DownloadRecoveryNotifications.foregroundInfo(applicationContext, id, progress)
-    )
+    setForeground(DownloadRecoveryNotifications.foregroundInfo(applicationContext, id, progress))
   }
 
   private fun RecoveryScanProgress.toData(
@@ -120,7 +112,6 @@ internal class DownloadRecoveryWork(
 
     private const val KEY_ROOT_URI = "root_uri"
     private const val KEY_RUN_ID = "run_id"
-    private const val KEY_RUST_BACKEND = "rust_backend"
     private const val KEY_MAX_DEPTH = "max_depth"
     private const val KEY_MAX_NODES = "max_nodes"
     private const val KEY_MAX_CANDIDATES = "max_candidates"
@@ -136,11 +127,13 @@ internal class DownloadRecoveryWork(
     private const val MAX_DIAGNOSTIC_CAUSES = 8
     private const val MAX_DIAGNOSTIC_FRAMES = 12
     private const val MAX_DIAGNOSTIC_MESSAGE_CHARS = 512
-    private const val DOWNLOAD_RECOVERY_CONFLICT_NATIVE_METHOD =
-      "nativePlanDownloadRecoveryConflictsV1"
+    private val DOWNLOAD_RECOVERY_NATIVE_METHODS =
+      setOf(
+        "nativeInspectDownloadRecoveryCandidateV1",
+        "nativePlanDownloadRecoveryConflictsV1",
+      )
 
     fun enqueue(context: Context, rootUri: Uri): UUID {
-      require(Settings.useRustCore.value) { "Download recovery requires the Rust core" }
       val runId = UUID.randomUUID().toString()
       val request =
         OneTimeWorkRequestBuilder<DownloadRecoveryWork>()
@@ -148,7 +141,6 @@ internal class DownloadRecoveryWork(
             workDataOf(
               KEY_ROOT_URI to rootUri.toString(),
               KEY_RUN_ID to runId,
-              KEY_RUST_BACKEND to true,
               KEY_MAX_DEPTH to DEFAULT_MAX_DEPTH,
               KEY_MAX_NODES to DEFAULT_MAX_NODES,
               KEY_MAX_CANDIDATES to DEFAULT_MAX_CANDIDATES,

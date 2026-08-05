@@ -16,11 +16,11 @@ Compose UI and Android services
 
 The arrows point toward dependencies: `ffi` may depend on `net`, `image`,
 `archive`, `domain`, and `store`; those crates never depend on `ffi` or Android.
-The legacy `ehviewer_rust` static library remains the native entry point during
-migration and links new crates one feature at a time. Versioned domain/network and
-archive-descriptor adapters, the Rust Core health boundary, and Android Bitmap,
-HardwareBuffer, and animated WebP JNI now compile from `eh_ffi`. The root facade retains frozen legacy parsers and
-`JNI_OnLoad`, but no longer owns an image or WebP module.
+The `ehviewer_rust` static library is the Android packaging/link facade and retains
+`JNI_OnLoad`; portable production behavior is owned by the workspace crates.
+Versioned domain/network and archive-descriptor adapters, the Rust Core health
+boundary, and Android Bitmap, HardwareBuffer, and animated WebP JNI compile from
+`eh_ffi`. The root facade is not an alternate production business backend.
 
 All Kotlin request DTOs crossing this boundary use the shared definite-length
 `rustCbor` configuration. Rust `serde_cbor` output and checked-in golden fixtures
@@ -106,34 +106,31 @@ This boundary is deliberately not called from startup, `EhApplication`, or
 rollout decision. File-level rollback removes the health owner, JNI adapter, Kotlin
 bridge/tests, CI gate, and one manifest line, restoring the prior 42-symbol ABI.
 
-## Single Rust Core Selection Boundary
+## Rust Mainline Boundary
 
-`Settings.useRustCore` is the only persisted and user-visible business-backend
-selection. It defaults off. The one-time DataStore migration preserves an existing
-master value; otherwise it enables only when all 32 old module keys are present and
-true, then deletes those keys atomically. `RustCoreMvpRollout`, module settings, and
-their production UI are removed; old key names remain only in migration code and tests.
+Rust is the sole production core for portable behavior. Android persists and exposes
+no backend setting, and production contains no module selector, master selector,
+legacy shadow computation, parity comparison, exception/linkage fallback, effect
+replay, or mid-operation backend switch. Retired preference names exist only in
+startup cleanup that deletes stale upgrade data without consulting their values.
 
-Every complete operation captures `Legacy` or `Rust` before work begins. Global off
-executes only legacy and skips the corresponding Rust business entry. Global on
-executes only Rust: no legacy shadow computation, parity comparison, exception or
-linkage fallback, side-effect replay, or mid-operation backend switch is allowed.
-Boundary and domain failures remain observable through the existing typed error
-surface. Runtime recovery is disabling the master and starting a new operation.
+Every complete operation creates one Rust state machine, request plan, parser call,
+or native handle and retains it for the operation lifetime. Boundary and domain
+failures remain observable through the existing typed error surface. Operational
+recovery retries or reports the operation; backend rollback requires a complete
+application-version rollback.
 
 Room, DataStore, Paging, WorkManager, notifications, Compose, SAF, platform HTTP,
 and CookieManager remain Android-owned. Rust owns portable parsing, planning,
-validation, filtering/sorting and state transitions. Runtime parity moves to frozen
-legacy characterization and shared Kotlin/Rust fixtures.
+validation, filtering/sorting and state transitions. Runtime parity lives only in
+frozen characterization and shared Kotlin/Rust fixtures.
 
-The previous 21-setting API-35 contract remains historical build/native evidence;
-it is not acceptance for the single-switch contract. C1-C6 implementation is
-complete and C7 non-device acceptance is pending. Real-device execution remains
-deferred to the parent rewrite task. See [ADR 0007](adr/0007-single-rust-core-selection.md).
+The former 32-module and single-master rollout contracts are historical evidence,
+not current architecture. See [ADR 0007](adr/0007-single-rust-core-selection.md).
 
-Any later architecture paragraph that still names an independent `useRustCore*`
-flag, legacy-first parity, or pre-effect fallback is historical slice evidence only.
-The production implementation follows the global snapshot contract above.
+Any later architecture paragraph that names `useRustCore*`, `default-off`, global
+off/on, legacy-first parity, or pre-effect fallback records a pre-mainline slice only.
+The production implementation follows the direct Rust contract above.
 
 ## Session Failure Policy Boundary
 
@@ -148,9 +145,9 @@ must never cross this boundary.
 Android remains the sole owner of Ktor/Cronet/OkHttp, `CookieManager`, WebView
 login, credential persistence, localized strings, parse-error files, and the
 existing exception hierarchy. Coroutine cancellation never enters JNI. The
-default-off `useRustCoreSessionPolicy` switch invokes Rust before any exception or
-parse-file side effect. JNI/CBOR/plan validation failure may run the unchanged
-legacy mapper; once a validated decision is applied, it is never replayed.
+Android invokes the Rust classifier before any exception or parse-file side effect.
+JNI/CBOR/plan validation failure surfaces without running a second business mapper;
+a validated decision is applied exactly once.
 
 ## Session Lifecycle Boundary
 
@@ -172,9 +169,9 @@ Android owns one `SessionController` with a coroutine mutex and generation token
 Cookie removal is suspending and completes before a login request or state publication.
 An older password/WebView/profile result cannot finish after a newer logout or login
 attempt. `postLogin` uses structured concurrency, the WebView handoff is one-shot,
-and startup restore completes before the splash gate releases. The default-off
-`useRustCoreSessionLifecycle` switch may use legacy state mutations only before any
-new plan is applied; typed business errors and partial application are never replayed.
+and startup restore completes before the splash gate releases. Rust lifecycle plans
+are validated before application; typed business errors and partial application are
+never replayed through another implementation.
 See [ADR 0003](adr/0003-session-lifecycle.md) for the complete transition table.
 
 ## Gallery Catalog URL Boundaries

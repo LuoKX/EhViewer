@@ -34,6 +34,7 @@
 //! assert!(response.is_ok());
 //! ```
 
+pub mod comic_info;
 pub mod contracts;
 pub mod daily;
 pub mod download;

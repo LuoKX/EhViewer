@@ -1,18 +1,18 @@
 //! Pure download-directory recovery contracts and deterministic planning.
 //!
-//! Android owns traversal, SAF handles, Room transactions, WorkManager, and all
+//! Android owns traversal, SAF handles, Room transactions, `WorkManager`, and all
 //! network access. This module receives bounded bytes and entry facts, reconciles
 //! local evidence, proves page completeness, and returns one persistence intent.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
-use std::io::Cursor;
 
-use quick_xml::Reader;
-use quick_xml::events::Event;
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use sha2::{Digest, Sha256};
 
+pub use crate::comic_info::MAX_COMIC_INFO_BYTES;
+use crate::comic_info::decode_xml as decode_comic_info_xml;
 use crate::contracts::{ApiEnvelope, RustError};
 
 /// Version of the download-recovery CBOR contract.
@@ -21,8 +21,6 @@ pub const DOWNLOAD_RECOVERY_API_VERSION: u8 = 1;
 pub const DOWNLOAD_RECOVERY_MODULE: &str = "downloadRecovery";
 /// Maximum accepted `.ehviewer` metadata length.
 pub const MAX_SPIDER_INFO_BYTES: usize = 512 * 1024;
-/// Maximum accepted root `ComicInfo.xml` length.
-pub const MAX_COMIC_INFO_BYTES: usize = 512 * 1024;
 /// Maximum number of local entry facts accepted for one candidate.
 pub const MAX_LOCAL_ENTRIES: usize = 100_000;
 
@@ -62,7 +60,7 @@ pub struct RecoveryFingerprintInput {
     pub modified_at_millis: Option<i64>,
     /// Optional caller-computed content digest bytes.
     #[serde(default)]
-    pub content_digest: Option<Vec<u8>>,
+    pub content_digest: Option<ByteBuf>,
 }
 
 /// One bounded directory or archive entry observation supplied by an Android adapter.
@@ -91,12 +89,9 @@ pub struct RecoveryArchiveInput {
     pub format: String,
     /// Whether archive enumeration completed inside all budgets.
     pub complete: bool,
-    /// Whether any archive entry is encrypted.
-    pub encrypted: bool,
-    /// Whether any unsafe absolute or parent-traversal path was observed.
-    pub unsafe_path: bool,
-    /// Whether a resource budget was exhausted.
-    pub limit_exceeded: bool,
+    /// Closed archive issues observed by the Android descriptor adapter.
+    #[serde(default)]
+    pub issues: Vec<RecoveryIssue>,
 }
 
 /// Versioned request for one local recovery candidate.
@@ -113,10 +108,10 @@ pub struct RecoveryCandidateRequest {
     pub display_name: String,
     /// Optional bounded `.ehviewer` bytes.
     #[serde(default)]
-    pub spider_info: Option<Vec<u8>>,
+    pub spider_info: Option<ByteBuf>,
     /// Optional bounded root `ComicInfo.xml` bytes.
     #[serde(default)]
-    pub comic_info: Option<Vec<u8>>,
+    pub comic_info: Option<ByteBuf>,
     /// Bounded entry metadata; image bodies never cross this boundary.
     #[serde(default)]
     pub entries: Vec<RecoveryEntryInput>,
@@ -223,6 +218,8 @@ pub enum RecoveryStatus {
 pub enum RecoveryPersistenceAction {
     /// Promote into the formal gallery/download tables as finished.
     PromoteFinished,
+    /// Preserve an already complete mapping and discard redundant staging state.
+    KeepExisting,
     /// Upsert into the isolated recovery-candidate table.
     Stage,
 }
@@ -299,42 +296,16 @@ pub fn parse_spider_info(bytes: &[u8]) -> Result<RecoveryEvidence, RustError> {
 ///
 /// Returns a fixed, source-free error for malformed or oversized XML.
 pub fn parse_comic_info(bytes: &[u8]) -> Result<RecoveryEvidence, RustError> {
-    if bytes.is_empty() || bytes.len() > MAX_COMIC_INFO_BYTES {
-        return Err(invalid_metadata());
-    }
-    let mut reader = Reader::from_reader(Cursor::new(bytes));
-    reader.config_mut().trim_text(false);
-    let mut buffer = Vec::new();
-    let mut current = None::<Vec<u8>>;
-    let mut series = None;
-    let mut web = None;
-    let mut pages = None;
-    loop {
-        match reader.read_event_into(&mut buffer) {
-            Ok(Event::Start(start)) => current = Some(start.name().as_ref().to_vec()),
-            Ok(Event::Text(text)) => {
-                let value = text.decode().map_err(|_| invalid_metadata())?.into_owned();
-                match current.as_deref() {
-                    Some(b"Series") => series = nonblank(value),
-                    Some(b"Web") => web = nonblank(value),
-                    Some(b"PageCount") => pages = value.parse::<u32>().ok().filter(|v| *v > 0),
-                    _ => {}
-                }
-            }
-            Ok(Event::End(_)) => current = None,
-            Ok(Event::Eof) => break,
-            Ok(_) => {}
-            Err(_) => return Err(invalid_metadata()),
-        }
-        buffer.clear();
-    }
-    let (gid, token) = web.as_deref().and_then(parse_gallery_url).unzip();
+    let info = decode_comic_info_xml(bytes).map_err(|_| invalid_metadata())?;
+    let (gid, token) = info.web.as_deref().and_then(parse_gallery_url).unzip();
     Ok(RecoveryEvidence {
         kind: RecoveryEvidenceKind::ComicInfo,
         gid,
         token,
-        title: series,
-        declared_pages: pages,
+        title: info.series,
+        declared_pages: u32::try_from(info.page_count)
+            .ok()
+            .filter(|pages| *pages > 0),
         observed_pages: None,
     })
 }
@@ -347,15 +318,7 @@ pub fn parse_comic_info(bytes: &[u8]) -> Result<RecoveryEvidence, RustError> {
 pub fn inspect_recovery_candidate(
     request: RecoveryCandidateRequest,
 ) -> Result<RecoveryCandidatePlan, RustError> {
-    if request.version != DOWNLOAD_RECOVERY_API_VERSION
-        || request.source.root_id.is_empty()
-        || request.source.source_id.is_empty()
-        || request.entries.len() > MAX_LOCAL_ENTRIES
-    {
-        return Err(RustError::Error(
-            "invalid download recovery candidate request".to_owned(),
-        ));
-    }
+    validate_candidate_request(&request)?;
     let source_key = source_key(&request.source);
     let fingerprint = fingerprint(&request.fingerprint);
     let mut evidence = Vec::new();
@@ -392,29 +355,15 @@ pub fn inspect_recovery_candidate(
         observed_pages: Some(page_summary.valid_count),
     });
     if let Some(archive) = request.archive.as_ref() {
-        if archive.encrypted {
-            issues.insert(RecoveryIssue::EncryptedArchive);
-        }
+        issues.extend(archive.issues.iter().copied());
         if !archive.complete {
             issues.insert(RecoveryIssue::UnreadableArchive);
         }
-        if archive.unsafe_path {
-            issues.insert(RecoveryIssue::UnsafeArchivePath);
-        }
-        if archive.limit_exceeded {
-            issues.insert(RecoveryIssue::LimitExceeded);
-        }
-    } else if request.source.source_kind == RecoverySourceKind::Archive {
-        issues.insert(RecoveryIssue::UnreadableArchive);
     }
 
     let gid = reconcile(&evidence, |item| item.gid, &mut issues);
     let token = reconcile_owned(&evidence, |item| item.token.as_ref(), &mut issues);
-    let declared_pages = reconcile_page_counts(
-        &evidence,
-        |item| item.declared_pages,
-        &mut issues,
-    );
+    let declared_pages = reconcile_page_counts(&evidence, |item| item.declared_pages, &mut issues);
     let title = evidence.iter().find_map(|item| item.title.clone());
     if gid.is_none() {
         issues.insert(RecoveryIssue::MissingGid);
@@ -456,13 +405,46 @@ pub fn inspect_recovery_candidate(
     })
 }
 
+fn validate_candidate_request(request: &RecoveryCandidateRequest) -> Result<(), RustError> {
+    let invalid_archive = request.archive.as_ref().is_some_and(|archive| {
+        archive.format.is_empty()
+            || archive.issues.iter().any(|issue| {
+                !matches!(
+                    issue,
+                    RecoveryIssue::EncryptedArchive
+                        | RecoveryIssue::UnsafeArchivePath
+                        | RecoveryIssue::LimitExceeded
+                )
+            })
+    });
+    if request.version != DOWNLOAD_RECOVERY_API_VERSION
+        || request.source.root_id.is_empty()
+        || request.source.source_id.is_empty()
+        || request.entries.len() > MAX_LOCAL_ENTRIES
+        || invalid_archive
+        || matches!(
+            (request.source.source_kind, request.archive.is_some()),
+            (RecoverySourceKind::Directory, true) | (RecoverySourceKind::Archive, false)
+        )
+    {
+        return Err(RustError::Error(
+            "invalid download recovery candidate request".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 /// Builds a versioned success or sanitized error envelope for one candidate.
 #[must_use]
 pub fn inspect_recovery_candidate_envelope(
     request: RecoveryCandidateRequest,
 ) -> ApiEnvelope<RecoveryCandidatePlan> {
     match inspect_recovery_candidate(request) {
-        Ok(plan) => ApiEnvelope::ok(DOWNLOAD_RECOVERY_API_VERSION, DOWNLOAD_RECOVERY_MODULE, plan),
+        Ok(plan) => ApiEnvelope::ok(
+            DOWNLOAD_RECOVERY_API_VERSION,
+            DOWNLOAD_RECOVERY_MODULE,
+            plan,
+        ),
         Err(error) => ApiEnvelope::err(
             DOWNLOAD_RECOVERY_API_VERSION,
             DOWNLOAD_RECOVERY_MODULE,
@@ -533,7 +515,9 @@ pub fn plan_recovery_conflicts(
             "invalid download recovery conflict request".to_owned(),
         ));
     }
-    request.candidates.sort_by(|a, b| a.source_key.cmp(&b.source_key));
+    request
+        .candidates
+        .sort_by(|a, b| a.source_key.cmp(&b.source_key));
     if request
         .candidates
         .windows(2)
@@ -551,10 +535,13 @@ pub fn plan_recovery_conflicts(
         .collect::<BTreeMap<_, _>>();
     let mut by_gid = BTreeMap::<i64, Vec<String>>::new();
     for candidate in &request.candidates {
-        if candidate.status == RecoveryStatus::Ready {
-            if let Some(gid) = candidate.gid {
-                by_gid.entry(gid).or_default().push(candidate.source_key.clone());
-            }
+        if candidate.status == RecoveryStatus::Ready
+            && let Some(gid) = candidate.gid
+        {
+            by_gid
+                .entry(gid)
+                .or_default()
+                .push(candidate.source_key.clone());
         }
     }
     let decisions = request
@@ -564,19 +551,24 @@ pub fn plan_recovery_conflicts(
             let mut status = candidate.status;
             let mut action = candidate.action;
             let mut issue = None;
-            if status == RecoveryStatus::Ready {
-                if let Some(gid) = candidate.gid {
-                    if let Some(mapped) = existing.get(&gid) {
-                        if mapped != &candidate.source_key {
-                            status = RecoveryStatus::Conflict;
-                            action = RecoveryPersistenceAction::Stage;
-                            issue = Some(RecoveryIssue::ExistingMappingConflict);
-                        }
-                    } else if by_gid.get(&gid).is_some_and(|sources| sources.len() > 1) {
+            if status == RecoveryStatus::Ready
+                && let Some(gid) = candidate.gid
+            {
+                match existing.get(&gid) {
+                    Some(mapped) if mapped == &candidate.source_key => {
+                        action = RecoveryPersistenceAction::KeepExisting;
+                    }
+                    Some(_) => {
+                        status = RecoveryStatus::Conflict;
+                        action = RecoveryPersistenceAction::Stage;
+                        issue = Some(RecoveryIssue::ExistingMappingConflict);
+                    }
+                    None if by_gid.get(&gid).is_some_and(|sources| sources.len() > 1) => {
                         status = RecoveryStatus::Conflict;
                         action = RecoveryPersistenceAction::Stage;
                         issue = Some(RecoveryIssue::DuplicateSource);
                     }
+                    _ => {}
                 }
             }
             RecoveryConflictDecision {
@@ -596,7 +588,11 @@ pub fn plan_recovery_conflicts_envelope(
     request: RecoveryConflictRequest,
 ) -> ApiEnvelope<RecoveryConflictPlan> {
     match plan_recovery_conflicts(request) {
-        Ok(plan) => ApiEnvelope::ok(DOWNLOAD_RECOVERY_API_VERSION, DOWNLOAD_RECOVERY_MODULE, plan),
+        Ok(plan) => ApiEnvelope::ok(
+            DOWNLOAD_RECOVERY_API_VERSION,
+            DOWNLOAD_RECOVERY_MODULE,
+            plan,
+        ),
         Err(error) => ApiEnvelope::err(
             DOWNLOAD_RECOVERY_API_VERSION,
             DOWNLOAD_RECOVERY_MODULE,
@@ -607,7 +603,10 @@ pub fn plan_recovery_conflicts_envelope(
 
 /// Returns whether two typed fingerprint inputs describe the same source revision.
 #[must_use]
-pub fn fingerprint_matches(left: &RecoveryFingerprintInput, right: &RecoveryFingerprintInput) -> bool {
+pub fn fingerprint_matches(
+    left: &RecoveryFingerprintInput,
+    right: &RecoveryFingerprintInput,
+) -> bool {
     fingerprint(left) == fingerprint(right)
 }
 
@@ -615,14 +614,16 @@ pub fn fingerprint_matches(left: &RecoveryFingerprintInput, right: &RecoveryFing
 struct PageSummary {
     valid_count: u32,
     ordinals: BTreeMap<u32, u32>,
+    requires_exact_ordinals: bool,
     issues: BTreeSet<RecoveryIssue>,
 }
 
 impl PageSummary {
     fn is_exact(&self, expected: u32) -> bool {
         self.valid_count == expected
-            && self.ordinals.len() == usize::try_from(expected).unwrap_or(usize::MAX)
-            && (1..=expected).all(|page| self.ordinals.get(&page) == Some(&1))
+            && (!self.requires_exact_ordinals
+                || (self.ordinals.len() == usize::try_from(expected).unwrap_or(usize::MAX)
+                    && (1..=expected).all(|page| self.ordinals.get(&page) == Some(&1))))
             && !self.issues.iter().any(|issue| {
                 matches!(
                     issue,
@@ -647,9 +648,12 @@ fn summarize_candidate_pages(request: &RecoveryCandidateRequest) -> PageSummary 
 }
 
 fn summarize_numbered_pages(entries: &[RecoveryEntryInput]) -> PageSummary {
-    let mut summary = PageSummary::default();
+    let mut summary = PageSummary {
+        requires_exact_ordinals: true,
+        ..PageSummary::default()
+    };
     for entry in entries {
-        if entry.name.ends_with(".tmp") {
+        if temporary_file(&entry.name) {
             summary.issues.insert(RecoveryIssue::TemporaryFile);
             continue;
         }
@@ -673,7 +677,7 @@ fn summarize_numbered_pages(entries: &[RecoveryEntryInput]) -> PageSummary {
 fn summarize_archive_images(entries: &[RecoveryEntryInput]) -> PageSummary {
     let mut summary = PageSummary::default();
     for entry in entries {
-        if entry.name.ends_with(".tmp") {
+        if temporary_file(&entry.name) {
             summary.issues.insert(RecoveryIssue::TemporaryFile);
             continue;
         }
@@ -708,6 +712,12 @@ fn playable_image_extension(name: &str) -> Option<&str> {
     IMAGE_EXTENSIONS.contains(&extension).then_some(extension)
 }
 
+fn temporary_file(name: &str) -> bool {
+    std::path::Path::new(name)
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("tmp"))
+}
+
 fn parse_legacy_spider_info(bytes: &[u8]) -> Option<SpiderInfoWire> {
     let text = std::str::from_utf8(bytes).ok()?;
     let mut lines = text.lines();
@@ -732,7 +742,11 @@ fn parse_gallery_url(value: &str) -> Option<(i64, String)> {
     .into_iter()
     .find_map(|prefix| value.strip_prefix(prefix))?;
     let mut segments = rest.split('/');
-    let gid = segments.next()?.parse::<i64>().ok().filter(|gid| *gid > 0)?;
+    let gid = segments
+        .next()?
+        .parse::<i64>()
+        .ok()
+        .filter(|gid| *gid > 0)?;
     let token = segments.next()?;
     if !valid_token(token) {
         return None;
@@ -745,10 +759,6 @@ fn valid_token(token: &str) -> bool {
         && token
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-fn nonblank(value: String) -> Option<String> {
-    (!value.trim().is_empty()).then_some(value)
 }
 
 fn reconcile<T: Copy + Eq + Ord>(
@@ -810,13 +820,16 @@ fn source_key(input: &RecoverySourceKeyInput) -> String {
 }
 
 fn fingerprint(input: &RecoveryFingerprintInput) -> String {
-    let size = input.size.map(|value| value.to_be_bytes());
-    let modified = input.modified_at_millis.map(|value| value.to_be_bytes());
+    let size = input.size.map(u64::to_be_bytes);
+    let modified = input.modified_at_millis.map(i64::to_be_bytes);
     digest_parts(&[
         b"fingerprint-v1",
         size.as_ref().map_or(&[][..], <[u8; 8]>::as_slice),
         modified.as_ref().map_or(&[][..], <[u8; 8]>::as_slice),
-        input.content_digest.as_deref().unwrap_or_default(),
+        input
+            .content_digest
+            .as_ref()
+            .map_or(&[][..], |digest| digest.as_slice()),
     ])
 }
 
@@ -870,4 +883,609 @@ fn status_for(issues: &[RecoveryIssue]) -> RecoveryStatus {
 
 fn invalid_metadata() -> RustError {
     RustError::Error("invalid local recovery metadata".to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_kotlin_byte_string_request_golden() {
+        let request: RecoveryCandidateRequest =
+            serde_cbor::from_slice(&decode_hex(KOTLIN_BYTE_STRING_REQUEST_CBOR_HEX)).unwrap();
+
+        let bytes = ByteBuf::from(vec![0, 128, 255]);
+        assert_eq!(request.fingerprint.content_digest, Some(bytes.clone()));
+        assert_eq!(request.spider_info, Some(bytes.clone()));
+        assert_eq!(request.comic_info, Some(bytes));
+        assert!(request.entries.is_empty());
+        assert_eq!(request.archive, None);
+    }
+
+    #[test]
+    fn verified_archive_pages_are_complete_by_declared_count() {
+        let entries = vec![entry("chapter/page-a.jpg"), entry("page-b.png")];
+
+        let summary = summarize_archive_images(&entries);
+
+        assert!(summary.is_exact(2));
+        assert!(!summary.is_exact(1));
+    }
+
+    #[test]
+    fn loose_pages_still_require_contiguous_one_based_names() {
+        let entries = vec![entry("00000001.jpg"), entry("00000003.jpg")];
+
+        let summary = summarize_numbered_pages(&entries);
+
+        assert!(!summary.is_exact(2));
+    }
+
+    #[test]
+    fn conflict_planner_keeps_only_the_same_complete_mapping() {
+        let source_key = "source-a".to_owned();
+        let same = plan_recovery_conflicts(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![ready_candidate(&source_key, 7)],
+            existing: vec![ExistingRecoveryMapping {
+                gid: 7,
+                source_key: source_key.clone(),
+                complete: true,
+            }],
+        })
+        .unwrap();
+        assert_eq!(
+            same.decisions[0].action,
+            RecoveryPersistenceAction::KeepExisting
+        );
+        assert_eq!(same.decisions[0].status, RecoveryStatus::Ready);
+        assert_eq!(same.decisions[0].issue, None);
+
+        let conflict = plan_recovery_conflicts(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![ready_candidate(&source_key, 7)],
+            existing: vec![ExistingRecoveryMapping {
+                gid: 7,
+                source_key: "other-source".to_owned(),
+                complete: true,
+            }],
+        })
+        .unwrap();
+        assert_eq!(
+            conflict.decisions[0].action,
+            RecoveryPersistenceAction::Stage
+        );
+        assert_eq!(conflict.decisions[0].status, RecoveryStatus::Conflict);
+        assert_eq!(
+            conflict.decisions[0].issue,
+            Some(RecoveryIssue::ExistingMappingConflict)
+        );
+    }
+
+    #[test]
+    fn parses_current_legacy_comic_info_and_rejects_invalid_metadata() {
+        let current = parse_spider_info(&spider_bytes(7, "0123456789", 2)).unwrap();
+        assert_eq!(current.gid, Some(7));
+        assert_eq!(current.token.as_deref(), Some("0123456789"));
+        assert_eq!(current.declared_pages, Some(2));
+
+        let legacy = b"header\nreserved\n8\nabcdef0123\nunused\nunused\n0\n3\n";
+        let legacy = parse_spider_info(legacy).unwrap();
+        assert_eq!(legacy.gid, Some(8));
+        assert_eq!(legacy.token.as_deref(), Some("abcdef0123"));
+        assert_eq!(legacy.declared_pages, Some(3));
+
+        for bytes in [
+            Vec::new(),
+            vec![b'x'; MAX_SPIDER_INFO_BYTES + 1],
+            b"malformed".to_vec(),
+            spider_bytes(0, "0123456789", 1),
+            spider_bytes(1, "012345678G", 1),
+            spider_bytes(1, "0123456789", 0),
+        ] {
+            assert_eq!(parse_spider_info(&bytes), Err(invalid_metadata()));
+        }
+
+        let comic = parse_comic_info(&comic_bytes(9, "abcdef0123", 4, "Local title")).unwrap();
+        assert_eq!(comic.gid, Some(9));
+        assert_eq!(comic.token.as_deref(), Some("abcdef0123"));
+        assert_eq!(comic.title.as_deref(), Some("Local title"));
+        assert_eq!(comic.declared_pages, Some(4));
+        let no_identity = parse_comic_info(b"<ComicInfo><PageCount>-1</PageCount></ComicInfo>")
+            .expect("identity is optional");
+        assert_eq!(no_identity.gid, None);
+        assert_eq!(no_identity.token, None);
+        assert_eq!(no_identity.declared_pages, None);
+        assert_eq!(parse_comic_info(b"invalid"), Err(invalid_metadata()));
+
+        for prefix in [
+            "https://e-hentai.org/g/",
+            "https://exhentai.org/g/",
+            "https://e-hentai.org/mpv/",
+            "https://exhentai.org/mpv/",
+        ] {
+            assert_eq!(
+                parse_gallery_url(&format!("{prefix}7/0123456789/")),
+                Some((7, "0123456789".to_owned()))
+            );
+        }
+        for value in [
+            "http://e-hentai.org/g/7/0123456789/",
+            "https://e-hentai.org/g/0/0123456789/",
+            "https://e-hentai.org/g/x/0123456789/",
+            "https://e-hentai.org/g/7/short/",
+            "https://e-hentai.org/g/7/012345678G/",
+        ] {
+            assert_eq!(parse_gallery_url(value), None);
+        }
+    }
+
+    #[test]
+    fn candidate_inspection_covers_ready_conflict_missing_and_archive_states() {
+        let mut ready = candidate_request(RecoverySourceKind::Directory);
+        ready.spider_info = Some(ByteBuf::from(spider_bytes(7, "0123456789", 2)));
+        ready.entries = vec![entry("00000001.jpg"), entry("00000002.png")];
+        let ready = inspect_recovery_candidate(ready).unwrap();
+        assert_eq!(ready.status, RecoveryStatus::Ready);
+        assert_eq!(ready.action, RecoveryPersistenceAction::PromoteFinished);
+        assert_eq!(ready.local_page_count, 2);
+        assert_eq!(ready.evidence.len(), 2);
+        assert!(ready.issues.is_empty());
+
+        let mut conflict = candidate_request(RecoverySourceKind::Directory);
+        conflict.spider_info = Some(ByteBuf::from(spider_bytes(7, "0123456789", 2)));
+        conflict.comic_info = Some(ByteBuf::from(comic_bytes(8, "abcdef0123", 3, "Title")));
+        conflict.entries = vec![entry("00000001.jpg"), entry("00000002.jpg")];
+        let conflict = inspect_recovery_candidate(conflict).unwrap();
+        assert_eq!(conflict.status, RecoveryStatus::Conflict);
+        assert_eq!(conflict.gid, None);
+        assert_eq!(conflict.token, None);
+        assert_eq!(conflict.declared_pages, None);
+        assert!(conflict.issues.contains(&RecoveryIssue::IdentityConflict));
+        assert!(conflict.issues.contains(&RecoveryIssue::PageCountConflict));
+
+        let mut invalid = candidate_request(RecoverySourceKind::Directory);
+        invalid.spider_info = Some(ByteBuf::from(b"bad".to_vec()));
+        invalid.comic_info = Some(ByteBuf::from(b"bad".to_vec()));
+        let invalid = inspect_recovery_candidate(invalid).unwrap();
+        assert_eq!(invalid.status, RecoveryStatus::MissingIdentity);
+        assert!(invalid.issues.contains(&RecoveryIssue::InvalidMetadata));
+        assert!(invalid.issues.contains(&RecoveryIssue::MissingGid));
+        assert!(invalid.issues.contains(&RecoveryIssue::MissingToken));
+        assert!(invalid.issues.contains(&RecoveryIssue::UnknownPageCount));
+
+        let mut unreadable = candidate_request(RecoverySourceKind::Archive);
+        unreadable.spider_info = Some(ByteBuf::from(spider_bytes(7, "0123456789", 1)));
+        unreadable.entries = vec![entry("page.jpg")];
+        let archive = unreadable.archive.as_mut().expect("archive facts");
+        archive.complete = false;
+        archive.issues = vec![
+            RecoveryIssue::EncryptedArchive,
+            RecoveryIssue::UnsafeArchivePath,
+        ];
+        let unreadable = inspect_recovery_candidate(unreadable).unwrap();
+        assert_eq!(unreadable.status, RecoveryStatus::Unreadable);
+        assert!(
+            unreadable
+                .issues
+                .contains(&RecoveryIssue::UnreadableArchive)
+        );
+
+        let mut limited = candidate_request(RecoverySourceKind::Archive);
+        limited.archive.as_mut().expect("archive facts").issues =
+            vec![RecoveryIssue::LimitExceeded];
+        let limited = inspect_recovery_candidate(limited).unwrap();
+        assert_eq!(limited.status, RecoveryStatus::LimitExceeded);
+
+        let mut generated = candidate_request(RecoverySourceKind::Archive);
+        generated.spider_info = Some(ByteBuf::from(spider_bytes(7, "0123456789", 1)));
+        generated.archive.as_mut().expect("archive facts").format = "generatedCbz".to_owned();
+        generated.entries = vec![entry("00000001.webp")];
+        assert_eq!(
+            inspect_recovery_candidate(generated).unwrap().status,
+            RecoveryStatus::Ready
+        );
+    }
+
+    #[test]
+    fn candidate_validation_and_envelopes_cover_every_request_shape() {
+        let valid = candidate_request(RecoverySourceKind::Directory);
+        assert_eq!(validate_candidate_request(&valid), Ok(()));
+        let success = inspect_recovery_candidate_envelope(valid.clone());
+        assert_eq!(success.version, DOWNLOAD_RECOVERY_API_VERSION);
+        assert_eq!(success.module, DOWNLOAD_RECOVERY_MODULE);
+        assert!(success.payload.is_some());
+        assert_eq!(success.error, None);
+
+        let mut invalid = Vec::new();
+        let mut value = valid.clone();
+        value.version = 2;
+        invalid.push(value);
+        let mut value = valid.clone();
+        value.source.root_id.clear();
+        invalid.push(value);
+        let mut value = valid.clone();
+        value.source.source_id.clear();
+        invalid.push(value);
+        let mut value = valid.clone();
+        value.archive = Some(archive_input());
+        invalid.push(value);
+        let mut value = candidate_request(RecoverySourceKind::Archive);
+        value.archive = None;
+        invalid.push(value);
+        let mut value = candidate_request(RecoverySourceKind::Archive);
+        value.archive.as_mut().expect("archive").format.clear();
+        invalid.push(value);
+        let mut value = candidate_request(RecoverySourceKind::Archive);
+        value.archive.as_mut().expect("archive").issues = vec![RecoveryIssue::InvalidMetadata];
+        invalid.push(value);
+        let mut value = valid;
+        value.entries = vec![entry("00000001.jpg"); MAX_LOCAL_ENTRIES + 1];
+        invalid.push(value);
+
+        for request in invalid {
+            assert_eq!(
+                validate_candidate_request(&request),
+                Err(RustError::Error(
+                    "invalid download recovery candidate request".to_owned()
+                ))
+            );
+        }
+        let mut wrong_version = candidate_request(RecoverySourceKind::Directory);
+        wrong_version.version = 2;
+        let failure = inspect_recovery_candidate_envelope(wrong_version);
+        assert!(failure.payload.is_none());
+        assert_eq!(
+            failure.error,
+            Some(RustError::Error(
+                "invalid download recovery candidate request".to_owned()
+            ))
+        );
+    }
+
+    #[test]
+    fn conflict_planner_covers_duplicate_sources_invalid_inputs_and_envelopes() {
+        let duplicate_gid = plan_recovery_conflicts(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![ready_candidate("b", 7), ready_candidate("a", 7)],
+            existing: Vec::new(),
+        })
+        .unwrap();
+        assert_eq!(
+            duplicate_gid
+                .decisions
+                .iter()
+                .map(|decision| decision.source_key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a", "b"]
+        );
+        assert!(duplicate_gid.decisions.iter().all(|decision| {
+            decision.status == RecoveryStatus::Conflict
+                && decision.action == RecoveryPersistenceAction::Stage
+                && decision.issue == Some(RecoveryIssue::DuplicateSource)
+        }));
+
+        let ignored_incomplete = plan_recovery_conflicts(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![ready_candidate("current", 8)],
+            existing: vec![ExistingRecoveryMapping {
+                gid: 8,
+                source_key: "other".to_owned(),
+                complete: false,
+            }],
+        })
+        .unwrap();
+        assert_eq!(
+            ignored_incomplete.decisions[0].action,
+            RecoveryPersistenceAction::PromoteFinished
+        );
+
+        let mut staged = ready_candidate("staged", 9);
+        staged.status = RecoveryStatus::Incomplete;
+        staged.action = RecoveryPersistenceAction::Stage;
+        let staged = plan_recovery_conflicts(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![staged],
+            existing: Vec::new(),
+        })
+        .unwrap();
+        assert_eq!(staged.decisions[0].status, RecoveryStatus::Incomplete);
+        assert_eq!(staged.decisions[0].issue, None);
+
+        let invalid_version = RecoveryConflictRequest {
+            version: 2,
+            candidates: Vec::new(),
+            existing: Vec::new(),
+        };
+        assert!(plan_recovery_conflicts(invalid_version.clone()).is_err());
+        let invalid_gid = RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: Vec::new(),
+            existing: vec![ExistingRecoveryMapping {
+                gid: 0,
+                source_key: "source".to_owned(),
+                complete: true,
+            }],
+        };
+        assert!(plan_recovery_conflicts(invalid_gid).is_err());
+        let duplicate_source = RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: vec![ready_candidate("same", 1), ready_candidate("same", 2)],
+            existing: Vec::new(),
+        };
+        assert_eq!(
+            plan_recovery_conflicts(duplicate_source),
+            Err(RustError::Error(
+                "duplicate download recovery source key".to_owned()
+            ))
+        );
+
+        let failure = plan_recovery_conflicts_envelope(invalid_version);
+        assert!(failure.payload.is_none());
+        assert!(failure.error.is_some());
+        let success = plan_recovery_conflicts_envelope(RecoveryConflictRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            candidates: Vec::new(),
+            existing: Vec::new(),
+        });
+        assert!(success.payload.is_some());
+        assert_eq!(success.error, None);
+    }
+
+    #[test]
+    fn fingerprints_reconciliation_and_status_precedence_are_deterministic() {
+        let base = RecoveryFingerprintInput {
+            size: Some(1),
+            modified_at_millis: Some(-2),
+            content_digest: Some(ByteBuf::from(vec![0, 1, 2])),
+        };
+        assert!(fingerprint_matches(&base, &base));
+        let mut changed = base.clone();
+        changed.size = Some(2);
+        assert!(!fingerprint_matches(&base, &changed));
+        changed = base.clone();
+        changed.modified_at_millis = None;
+        changed.content_digest = None;
+        assert!(!fingerprint_matches(&base, &changed));
+
+        let directory = RecoverySourceKeyInput {
+            root_id: "root".to_owned(),
+            source_id: "source".to_owned(),
+            source_kind: RecoverySourceKind::Directory,
+        };
+        let mut archive = directory.clone();
+        archive.source_kind = RecoverySourceKind::Archive;
+        assert_ne!(source_key(&directory), source_key(&archive));
+        assert_eq!(source_key(&directory).len(), 64);
+
+        let evidence = vec![
+            normalized_evidence(Some(1), Some("0123456789"), Some(2)),
+            normalized_evidence(Some(1), Some("0123456789"), Some(2)),
+        ];
+        let mut issues = BTreeSet::new();
+        assert_eq!(reconcile(&evidence, |item| item.gid, &mut issues), Some(1));
+        assert_eq!(
+            reconcile_owned(&evidence, |item| item.token.as_ref(), &mut issues).as_deref(),
+            Some("0123456789")
+        );
+        assert_eq!(
+            reconcile_page_counts(&evidence, |item| item.declared_pages, &mut issues),
+            Some(2)
+        );
+        assert!(issues.is_empty());
+        let conflicts = vec![
+            normalized_evidence(Some(1), Some("0123456789"), Some(2)),
+            normalized_evidence(Some(2), Some("abcdef0123"), Some(3)),
+        ];
+        assert_eq!(reconcile(&conflicts, |item| item.gid, &mut issues), None);
+        assert_eq!(
+            reconcile_owned(&conflicts, |item| item.token.as_ref(), &mut issues),
+            None
+        );
+        assert_eq!(
+            reconcile_page_counts(&conflicts, |item| item.declared_pages, &mut issues),
+            None
+        );
+        assert!(issues.contains(&RecoveryIssue::IdentityConflict));
+        assert!(issues.contains(&RecoveryIssue::PageCountConflict));
+        let empty = Vec::<RecoveryEvidence>::new();
+        assert_eq!(reconcile(&empty, |item| item.gid, &mut issues), None);
+
+        let cases = [
+            (vec![], RecoveryStatus::Ready),
+            (
+                vec![RecoveryIssue::InvalidMetadata],
+                RecoveryStatus::Incomplete,
+            ),
+            (
+                vec![RecoveryIssue::MissingGid],
+                RecoveryStatus::MissingIdentity,
+            ),
+            (
+                vec![RecoveryIssue::IdentityConflict],
+                RecoveryStatus::Conflict,
+            ),
+            (
+                vec![RecoveryIssue::UnreadableArchive],
+                RecoveryStatus::Unreadable,
+            ),
+            (
+                vec![RecoveryIssue::LimitExceeded],
+                RecoveryStatus::LimitExceeded,
+            ),
+            (
+                vec![RecoveryIssue::SourceMissing],
+                RecoveryStatus::SourceMissing,
+            ),
+            (
+                vec![RecoveryIssue::SourceMissing, RecoveryIssue::LimitExceeded],
+                RecoveryStatus::SourceMissing,
+            ),
+        ];
+        for (issues, expected) in cases {
+            assert_eq!(status_for(&issues), expected);
+        }
+    }
+
+    #[test]
+    fn page_and_legacy_helpers_cover_invalid_duplicate_and_temporary_inputs() {
+        let mut invalid = entry("00000002.jpg");
+        invalid.regular = false;
+        let mut encrypted = entry("00000003.jpg");
+        encrypted.encrypted = true;
+        let numbered = summarize_numbered_pages(&[
+            entry("00000001.jpg"),
+            entry("00000001.jpg"),
+            entry("leftover.TMP"),
+            invalid,
+            encrypted,
+            entry("not-a-page.jpg"),
+            entry("00000004.txt"),
+        ]);
+        assert!(numbered.issues.contains(&RecoveryIssue::DuplicatePage));
+        assert!(numbered.issues.contains(&RecoveryIssue::TemporaryFile));
+        assert!(numbered.issues.contains(&RecoveryIssue::InvalidImage));
+        assert!(!numbered.is_exact(2));
+
+        let mut unreadable = entry("page.png");
+        unreadable.readable = false;
+        let archive = summarize_archive_images(&[
+            entry("chapter/page.jpg"),
+            entry("notes.txt"),
+            entry("leftover.tmp"),
+            unreadable,
+        ]);
+        assert_eq!(archive.valid_count, 1);
+        assert!(archive.issues.contains(&RecoveryIssue::TemporaryFile));
+        assert!(archive.issues.contains(&RecoveryIssue::InvalidImage));
+
+        assert_eq!(strict_page_number("00000001.jpg"), Some(1));
+        for name in [
+            "folder/00000001.jpg",
+            "folder\\00000001.jpg",
+            "00000001",
+            "0000001.jpg",
+            "0000000x.jpg",
+            "00000001.JPG",
+            "00000000.jpg",
+        ] {
+            assert_eq!(strict_page_number(name), None, "{name}");
+        }
+        assert_eq!(playable_image_extension("page.avif"), Some("avif"));
+        assert_eq!(playable_image_extension("page.txt"), None);
+        assert_eq!(playable_image_extension("page"), None);
+        assert!(temporary_file("leftover.TmP"));
+        assert!(!temporary_file("page.jpg"));
+
+        assert!(parse_legacy_spider_info(&[0xff]).is_none());
+        assert!(parse_legacy_spider_info(b"too\nshort\n").is_none());
+        assert!(parse_legacy_spider_info(b"h\nr\nnot-a-gid\ntoken\na\nb\n0\n1\n").is_none());
+        assert!(!valid_token("short"));
+        assert!(!valid_token("012345678G"));
+        assert!(valid_token("abcdef0123"));
+    }
+
+    fn spider_bytes(gid: i64, token: &str, pages: i32) -> Vec<u8> {
+        #[derive(serde::Serialize)]
+        struct SpiderFixture<'a> {
+            gid: i64,
+            token: &'a str,
+            pages: i32,
+        }
+        serde_cbor::to_vec(&SpiderFixture { gid, token, pages }).unwrap()
+    }
+
+    fn comic_bytes(gid: i64, token: &str, pages: i32, title: &str) -> Vec<u8> {
+        format!(
+            "<ComicInfo><Series>{title}</Series><Web>https://e-hentai.org/g/{gid}/{token}/</Web><PageCount>{pages}</PageCount></ComicInfo>"
+        )
+        .into_bytes()
+    }
+
+    fn archive_input() -> RecoveryArchiveInput {
+        RecoveryArchiveInput {
+            format: "zip".to_owned(),
+            complete: true,
+            issues: Vec::new(),
+        }
+    }
+
+    fn candidate_request(source_kind: RecoverySourceKind) -> RecoveryCandidateRequest {
+        RecoveryCandidateRequest {
+            version: DOWNLOAD_RECOVERY_API_VERSION,
+            source: RecoverySourceKeyInput {
+                root_id: "root".to_owned(),
+                source_id: "source".to_owned(),
+                source_kind,
+            },
+            fingerprint: RecoveryFingerprintInput {
+                size: Some(1),
+                modified_at_millis: Some(2),
+                content_digest: None,
+            },
+            display_name: "candidate".to_owned(),
+            spider_info: None,
+            comic_info: None,
+            entries: Vec::new(),
+            archive: (source_kind == RecoverySourceKind::Archive).then(archive_input),
+        }
+    }
+
+    fn normalized_evidence(
+        gid: Option<i64>,
+        token: Option<&str>,
+        declared_pages: Option<u32>,
+    ) -> RecoveryEvidence {
+        RecoveryEvidence {
+            kind: RecoveryEvidenceKind::SpiderInfo,
+            gid,
+            token: token.map(ToOwned::to_owned),
+            title: None,
+            declared_pages,
+            observed_pages: None,
+        }
+    }
+
+    fn entry(name: &str) -> RecoveryEntryInput {
+        RecoveryEntryInput {
+            name: name.to_owned(),
+            size: 1,
+            regular: true,
+            encrypted: false,
+            readable: true,
+        }
+    }
+
+    fn ready_candidate(source_key: &str, gid: i64) -> RecoveryCandidatePlan {
+        RecoveryCandidatePlan {
+            source_key: source_key.to_owned(),
+            fingerprint: "fingerprint".to_owned(),
+            source_kind: RecoverySourceKind::Archive,
+            display_name: "candidate.cbz".to_owned(),
+            gid: Some(gid),
+            token: Some("0123456789".to_owned()),
+            title: None,
+            declared_pages: Some(1),
+            local_page_count: 1,
+            evidence: Vec::new(),
+            issues: Vec::new(),
+            status: RecoveryStatus::Ready,
+            action: RecoveryPersistenceAction::PromoteFinished,
+        }
+    }
+
+    fn decode_hex(input: &str) -> Vec<u8> {
+        input
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect()
+    }
+
+    const KOTLIN_BYTE_STRING_REQUEST_CBOR_HEX: &str = concat!(
+        "a66776657273696f6e0166736f75726365a366726f6f744964617268736f7572636549646173",
+        "6a736f757263654b696e64696469726563746f72796b66696e6765727072696e74a16d636f6e",
+        "74656e74446967657374430080ff6b646973706c61794e616d6561646a737069646572496e66",
+        "6f430080ff69636f6d6963496e666f430080ff"
+    );
 }

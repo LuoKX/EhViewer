@@ -29,8 +29,6 @@ import com.ehviewer.core.network.EhCookieStore
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
-import com.hippo.ehviewer.bridge.CoreBackend
-import com.hippo.ehviewer.bridge.CoreBackendSelector
 import com.hippo.ehviewer.bridge.RustFailureException
 import com.hippo.ehviewer.bridge.auth.SessionFailureDecisionKind
 import com.hippo.ehviewer.bridge.auth.SessionFailurePlan
@@ -39,23 +37,21 @@ import com.hippo.ehviewer.bridge.auth.SessionFailureSource
 import com.hippo.ehviewer.bridge.auth.SessionGallerySite
 import com.hippo.ehviewer.bridge.auth.classifySessionFailure
 import com.hippo.ehviewer.bridge.gallery.FavoriteMutationBulk
-import com.hippo.ehviewer.bridge.gallery.FavoriteMutationField
-import com.hippo.ehviewer.bridge.gallery.FavoriteMutationKind
-import com.hippo.ehviewer.bridge.gallery.FavoriteMutationPlan
 import com.hippo.ehviewer.bridge.gallery.FavoriteMutationRequest
 import com.hippo.ehviewer.bridge.gallery.FavoriteMutationSingle
+import com.hippo.ehviewer.bridge.gallery.GALLERY_ARCHIVE_UNAVAILABLE_MESSAGE
+import com.hippo.ehviewer.bridge.gallery.GalleryArchiveNullOutcome
+import com.hippo.ehviewer.bridge.gallery.GalleryArchiveParsedOutcome
 import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequestKind
-import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequestPlan
-import com.hippo.ehviewer.bridge.gallery.GalleryFormField
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
 import com.hippo.ehviewer.bridge.gallery.planFavoriteMutation
+import com.hippo.ehviewer.bridge.gallery.planGalleryArchiveDownloadPolicy
 import com.hippo.ehviewer.bridge.gallery.planGalleryArchiveRequest
-import com.hippo.ehviewer.bridge.gallery.selectFavoriteMutationPlan
-import com.hippo.ehviewer.bridge.gallery.selectGalleryArchiveRequestPlan
+import com.hippo.ehviewer.bridge.gallery.planGalleryMetadataPolicy
+import com.hippo.ehviewer.bridge.gallery.toRequestWaves
 import com.hippo.ehviewer.bridge.toLegacyError
 import com.hippo.ehviewer.bridge.toRustError
-import com.hippo.ehviewer.client.data.FavListUrlBuilder
 import com.hippo.ehviewer.client.data.fillInfo
 import com.hippo.ehviewer.client.data.filterComments
 import com.hippo.ehviewer.client.exception.CloudflareBypassException
@@ -122,11 +118,6 @@ import okio.buffer
 import okio.sink
 import splitties.init.appCtx
 
-// https://ehwiki.org/wiki/API#Basics
-private const val MAX_REQUEST_SIZE = 25
-private const val MAX_SEQUENTIAL_REQUESTS = 5
-private const val REQUEST_INTERVAL = 5000L
-
 private val Url.isLogin
   get() = segments.firstOrNull() == "bounce_login.php"
 
@@ -150,11 +141,8 @@ private fun rethrowExactly(
   // Cancellation is a coroutine control signal and never enters a native policy.
   if (e is CancellationException) throw e
 
-  if (CoreBackendSelector.snapshot() == CoreBackend.RUST) {
-    val plan = classifySessionFailure(buildSessionFailureSnapshot(response, body, e))
-    applySessionFailurePlan(plan, response, body, e)
-  }
-  rethrowExactlyLegacy(response, body, e)
+  val plan = classifySessionFailure(buildSessionFailureSnapshot(response, body, e))
+  applySessionFailurePlan(plan, response, body, e)
 }
 
 private fun buildSessionFailureSnapshot(
@@ -241,73 +229,6 @@ private fun throwLegacyDomainError(error: EhError): Nothing =
     is EhError.Error -> throw EhException(error.message)
   }
 
-private fun rethrowExactlyLegacy(
-  response: HttpResponse,
-  body: Either<String, ByteBuffer>,
-  e: Throwable,
-): Nothing {
-  // Don't translate coroutine cancellation
-  if (e is CancellationException) throw e
-
-  if (response.headers["cf-mitigated"] == "challenge") throw CloudflareBypassException()
-
-  // Check sad panda (without panda)
-  val empty =
-    body.fold(
-      { it.isEmpty() },
-      { !it.hasRemaining() },
-    )
-  if (empty) {
-    val message =
-      if (response.request.url.host == EhUrl.DOMAIN_EX) {
-        "Sad Panda\n(without panda)"
-      } else {
-        appCtx.getString(R.string.error_ip_banned)
-      }
-    throw IpBannedException(message)
-  }
-
-  // Prefer the versioned Rust error carried by the bridge. During rollout the
-  // legacy parser still overwrites the response buffer with its tuple-shaped
-  // EhError, so retain that decoder as the fallback.
-  val error =
-    (e as? RustFailureException)?.failure?.toLegacyError()
-      ?: body
-        .getOrNull()
-        ?.runCatching {
-          val array = moveToByteArray()
-          rewind()
-          Cbor.decodeFromByteArray<EhError>(array)
-        }
-        ?.getOrNull()
-
-  // Check Gallery Not Available - 404
-  if (error is EhError.GalleryUnavailable) throw EhException(error.message)
-
-  // Check bad response code
-  response.status.ensureSuccess()
-
-  when (error) {
-    EhError.NoHits -> throw NoHitsFoundException()
-    EhError.NoWatched -> throw EhException(R.string.gallery_list_empty_hit_subscription)
-    EhError.NeedLogin -> throw NotLoggedInException()
-    EhError.NoHathClient -> throw NoHathClientException()
-    EhError.InsufficientFunds -> throw InsufficientFundsException()
-    is EhError.IpBanned -> throw IpBannedException(error.message)
-    is EhError.Error -> throw EhException(error.message)
-    else -> Unit
-  }
-
-  if (e is ParseException || e is SerializationException) {
-    body.onLeft { if ("<" !in it) throw IpBannedException(it) }
-    if (Settings.saveParseErrorBody.value) body.saveParseError(e)
-    throw EhException(appCtx.getString(R.string.error_parse_error), e)
-  }
-
-  // We can't translate it, rethrow it anyway
-  throw e
-}
-
 private val httpContentPool = DirectByteBufferPool(8, 0x80000)
 
 private suspend inline fun <T> HttpStatement.fetchUsingAsText(
@@ -357,11 +278,7 @@ object EhEngine {
 
   suspend fun getPTokenListFromMpv(gid: Long, token: String): List<String> {
     val request = ehRequest(EhUrl.getGalleryMultiPageViewerUrl(gid, token), EhUrl.referer)
-    return GalleryMultiPageViewerPTokenParser.parseWithAdapters(
-      useRust = Settings.useRustCore.value,
-      legacyParser = { request.fetchUsingAsText(GalleryMultiPageViewerPTokenParser::parse) },
-      rustParser = { request.fetchUsingAsByteBuffer(GalleryMultiPageViewerPTokenParser::parseV1) },
-    )
+    return request.fetchUsingAsByteBuffer(GalleryMultiPageViewerPTokenParser::parseV1)
   }
 
   suspend fun getTorrentList(gid: Long, token: String): TorrentResult {
@@ -372,29 +289,15 @@ object EhEngine {
 
   suspend fun getTorrentKey() =
     EhCookieStore.getUserId()?.let { id ->
-      val key = ehRequest(EhUrl.URL_HOME).fetchUsingAsText(HomeParser::parseTorrentKey)
+      val key = ehRequest(EhUrl.URL_HOME).fetchUsingAsByteBuffer(HomeParser::parseTorrentKey)
       "${id}x$key"
     }
 
   suspend fun getArchiveList(gid: Long, token: String): ArchiveParser.Result {
     val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
     val plan =
-      selectGalleryArchiveRequestPlan(
-        legacyPlanner = {
-          GalleryArchiveRequestPlan(
-            GalleryArchiveRequestKind.LIST,
-            EhUrl.getArchiveUrl(gid, token),
-            EhUrl.getGalleryDetailUrl(gid, token),
-            null,
-            emptyList(),
-          )
-        },
-        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
-        rustPlanner = {
-          planGalleryArchiveRequest(
-            GalleryArchiveRequest(1, site, GalleryArchiveRequestKind.LIST, gid, token)
-          )
-        },
+      planGalleryArchiveRequest(
+        GalleryArchiveRequest(1, site, GalleryArchiveRequestKind.LIST, gid, token)
       )
     val url = plan.url
     val funds = if (EhUtils.isExHentai) getFunds() else null
@@ -410,7 +313,7 @@ object EhEngine {
     )
 
   private suspend fun getFunds() =
-    ehRequest(EhUrl.URL_FUNDS).fetchUsingAsText(HomeParser::parseFunds)
+    ehRequest(EhUrl.URL_FUNDS).fetchUsingAsByteBuffer(HomeParser::parseFunds)
 
   suspend fun getNews(parse: Boolean) =
     ehRequest(EhUrl.URL_NEWS, EhUrl.REFERER_E).fetchUsingAsByteBuffer {
@@ -441,11 +344,7 @@ object EhEngine {
   suspend fun getGalleryPage(url: String, gid: Long, token: String): GalleryPageParser.Result {
     val referer = EhUrl.getGalleryDetailUrl(gid, token)
     val request = ehRequest(url, referer)
-    return if (Settings.useRustCore.value) {
-      request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
-    } else {
-      request.fetchUsingAsText(GalleryPageParser::parse)
-    }
+    return request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
   }
 
   suspend fun getGalleryList(url: String) =
@@ -455,10 +354,10 @@ object EhEngine {
       .takeUnless { it.galleryInfoList.isEmpty() } ?: GalleryListParser.emptyResult
 
   /** Recovery-only neutral list request: no browsing filters, favorites, or implicit gdata. */
-  internal suspend fun getRecoveryGalleryList(url: String, useRust: Boolean) =
-    ehRequest(url, EhUrl.referer)
-      .fetchUsingAsByteBuffer { GalleryListParser.parse(this, useRust) }
-      .takeUnless { it.galleryInfoList.isEmpty() } ?: GalleryListParser.emptyResult
+  internal suspend fun getRecoveryGalleryList(url: String) =
+    ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryListParser::parse).takeUnless {
+      it.galleryInfoList.isEmpty()
+    } ?: GalleryListParser.emptyResult
 
   suspend fun getGalleryDetail(url: String) =
     ehRequest(url, EhUrl.referer).fetchUsingAsByteBuffer(GalleryDetailParser::parse).run {
@@ -496,11 +395,7 @@ object EhEngine {
           append("CookieDate", "1")
         }
       }
-    return if (Settings.useRustCore.value) {
-      request.fetchUsingAsByteBuffer(SignInParser::parseV1)
-    } else {
-      request.fetchUsingAsText(SignInParser::parse)
-    }
+    return request.fetchUsingAsByteBuffer(SignInParser::parseV1)
   }
 
   suspend fun commentGallery(url: String, comment: String, id: Long = -1) =
@@ -524,34 +419,13 @@ object EhEngine {
   suspend fun modifyFavorites(gid: Long, token: String, dstCat: Int = -1, note: String = "") {
     if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
     val selectedPlan =
-      selectFavoriteMutationPlan(
-        legacyPlanner = {
-          val catStr = if (dstCat == -1) "favdel" else dstCat.toString()
-          val url = EhUrl.getAddFavorites(gid, token)
-          FavoriteMutationPlan(
-            FavoriteMutationKind.SINGLE,
-            url,
-            url,
-            EhUrl.origin,
-            listOf(
-              FavoriteMutationField("favcat", catStr),
-              FavoriteMutationField("favnote", note),
-              FavoriteMutationField("apply", "Apply Changes"),
-              FavoriteMutationField("update", "1"),
-            ),
-          )
-        },
-        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
-        rustPlanner = {
-          planFavoriteMutation(
-            FavoriteMutationRequest(
-              1,
-              if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
-              single = FavoriteMutationSingle(gid, token, dstCat, note),
-              bulk = null,
-            )
-          )
-        },
+      planFavoriteMutation(
+        FavoriteMutationRequest(
+          1,
+          if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
+          single = FavoriteMutationSingle(gid, token, dstCat, note),
+          bulk = null,
+        )
       )
     ehRequest(selectedPlan.url, selectedPlan.referer, selectedPlan.origin) {
         formBody {
@@ -568,60 +442,39 @@ object EhEngine {
   suspend fun downloadArchive(gid: Long, token: String, res: String, isHath: Boolean): String? {
     val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
     val plan =
-      selectGalleryArchiveRequestPlan(
-        legacyPlanner = {
-          val url = EhUrl.getArchiveUrl(gid, token)
-          val referer = EhUrl.getGalleryDetailUrl(gid, token)
-          val form =
-            if (isHath) listOf(GalleryFormField("hathdl_xres", res))
-            else
-              listOf(
-                GalleryFormField("dltype", res),
-                GalleryFormField(
-                  "dlcheck",
-                  if (res == "org") "Download Original Archive" else "Download Resample Archive",
-                ),
-              )
-          GalleryArchiveRequestPlan(
-            GalleryArchiveRequestKind.DOWNLOAD,
-            url,
-            referer,
-            EhUrl.origin,
-            form,
-          )
-        },
-        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
-        rustPlanner = {
-          planGalleryArchiveRequest(
-            GalleryArchiveRequest(
-              1,
-              site,
-              GalleryArchiveRequestKind.DOWNLOAD,
-              gid,
-              token,
-              res,
-              isHath,
-            )
-          )
-        },
+      planGalleryArchiveRequest(
+        GalleryArchiveRequest(
+          1,
+          site,
+          GalleryArchiveRequestKind.DOWNLOAD,
+          gid,
+          token,
+          res,
+          isHath,
+        )
       )
+    val networkPolicy = planGalleryArchiveDownloadPolicy(isHath)
     val request =
       ehRequest(plan.url, plan.referer, plan.origin) {
         formBody {
           plan.form.forEach { append(it.name, it.value) }
         }
       }
-    var result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
-    if (!isHath) {
-      if (result == null) {
-        // Wait for the server to prepare archives
-        delay(1000)
-        result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
-        if (result == null) throw EhException("Archive unavailable")
+    for (attempt in networkPolicy.attempts) {
+      if (attempt.delayBeforeMillis != 0L) delay(attempt.delayBeforeMillis)
+      val result = request.fetchUsingAsByteBuffer(ArchiveParser::parseArchiveUrl)
+      if (result != null) {
+        return when (networkPolicy.parsedOutcome) {
+          GalleryArchiveParsedOutcome.RETURN_URL -> result
+          GalleryArchiveParsedOutcome.RETURN_NULL -> null
+        }
       }
-      return result
     }
-    return null
+    return when (networkPolicy.exhaustedNullOutcome) {
+      GalleryArchiveNullOutcome.RETURN_NULL -> null
+      GalleryArchiveNullOutcome.ARCHIVE_UNAVAILABLE ->
+        throw EhException(GALLERY_ARCHIVE_UNAVAILABLE_MESSAGE)
+    }
   }
 
   suspend fun resetImageLimits() =
@@ -630,40 +483,18 @@ object EhEngine {
           append("reset_imagelimit", "Reset Quota")
         }
       }
-      .fetchUsingAsText(HomeParser::parseResetLimits)
+      .fetchUsingAsByteBuffer(HomeParser::parseResetLimits)
 
   suspend fun modifyFavorites(gidArray: LongArray, srcCat: Int, dstCat: Int): FavParserResult {
     if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
     val selectedPlan =
-      selectFavoriteMutationPlan(
-        legacyPlanner = {
-          val url =
-            ehUrl(EhUrl.FAV_PATH) {
-                if (FavListUrlBuilder.isValidFavCat(srcCat))
-                  addQueryParameter("favcat", srcCat.toString())
-              }
-              .buildString()
-          val catStr = if (dstCat == -1) "delete" else "fav$dstCat"
-          FavoriteMutationPlan(
-            FavoriteMutationKind.BULK,
-            url,
-            url,
-            EhUrl.origin,
-            listOf(FavoriteMutationField("ddact", catStr)) +
-              gidArray.map { FavoriteMutationField("modifygids[]", it.toString()) },
-          )
-        },
-        rustEnabled = { CoreBackendSelector.snapshot() == CoreBackend.RUST },
-        rustPlanner = {
-          planFavoriteMutation(
-            FavoriteMutationRequest(
-              1,
-              if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
-              single = null,
-              bulk = FavoriteMutationBulk(gidArray.toList(), srcCat, dstCat),
-            )
-          )
-        },
+      planFavoriteMutation(
+        FavoriteMutationRequest(
+          1,
+          if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC,
+          single = null,
+          bulk = FavoriteMutationBulk(gidArray.toList(), srcCat, dstCat),
+        )
       )
     return ehRequest(selectedPlan.url, selectedPlan.referer, selectedPlan.origin) {
         formBody {
@@ -694,11 +525,7 @@ object EhEngine {
           put("showkey", showKey)
         }
       }
-    return if (Settings.useRustCore.value) {
-      request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
-    } else {
-      request.fetchUsingAsText { GalleryPageParser.parse(filterNot { it == '\\' }) }
-    }
+    return request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
   }
 
   suspend fun rateGallery(
@@ -719,23 +546,17 @@ object EhEngine {
           put("rating", ceil((rating * 2).toDouble()).toInt())
         }
       }
-    return RateGalleryParser.parseWithAdapters(
-      useRust = Settings.useRustCore.value,
-      legacyParser = { request.fetchUsingAsText(RateGalleryParser::parse) },
-      rustParser = { request.fetchUsingAsByteBuffer(RateGalleryParser::parseV1) },
-    )
+    return request.fetchUsingAsByteBuffer(RateGalleryParser::parseV1)
   }
 
   suspend fun fillGalleryListByApi(
     galleryInfoList: List<GalleryInfo>,
     referer: String? = null,
-    useRust: Boolean = Settings.useRustCore.value,
-  ) =
-    galleryInfoList.chunked(MAX_REQUEST_SIZE).chunked(MAX_SEQUENTIAL_REQUESTS).forEachIndexed {
-      index,
-      chunk ->
+  ) {
+    val policy = planGalleryMetadataPolicy(galleryInfoList.size)
+    policy.toRequestWaves(galleryInfoList).forEachIndexed { index, chunk ->
       if (index != 0) {
-        delay(REQUEST_INTERVAL)
+        delay(policy.waveDelayMillis)
       }
       chunk.parMap { galleries ->
         val request =
@@ -753,16 +574,11 @@ object EhEngine {
               put("namespace", 1)
             }
           }
-        GalleryApiParser.parseWithAdapters(
-          useRust = useRust,
-          legacyParser = { request.fetchUsingAsText { GalleryApiParser.parse(this, galleries) } },
-          rustParser = {
-            val batch = request.fetchUsingAsByteBuffer(GalleryApiParser::parseV1)
-            GalleryApiParser.applyV1(batch, galleries)
-          },
-        )
+        val batch = request.fetchUsingAsByteBuffer(GalleryApiParser::parseV1)
+        GalleryApiParser.applyV1(batch, galleries)
       }
     }
+  }
 
   suspend fun voteComment(
     apiUid: Long,
@@ -784,11 +600,7 @@ object EhEngine {
           put("comment_vote", commentVote)
         }
       }
-    return VoteCommentParser.parseWithAdapters(
-      useRust = Settings.useRustCore.value,
-      legacyParser = { request.fetchUsingAsText(VoteCommentParser::parse) },
-      rustParser = { request.fetchUsingAsByteBuffer(VoteCommentParser::parseV1) },
-    )
+    return request.fetchUsingAsByteBuffer(VoteCommentParser::parseV1)
   }
 
   suspend fun voteTag(
@@ -811,18 +623,13 @@ object EhEngine {
           put("vote", vote)
         }
       }
-    return VoteTagParser.parseWithAdapters(
-      useRust = Settings.useRustCore.value,
-      legacyParser = { request.fetchUsingAsByteBuffer(VoteTagParser::parse) },
-      rustParser = { request.fetchUsingAsByteBuffer(VoteTagParser::parseV1) },
-    )
+    return request.fetchUsingAsByteBuffer(VoteTagParser::parseV1)
   }
 
   suspend fun getGalleryToken(
     gid: Long,
     gtoken: String,
     page: Int,
-    useRust: Boolean = Settings.useRustCore.value,
   ): String {
     val request =
       ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
@@ -837,11 +644,7 @@ object EhEngine {
           }
         }
       }
-    return GalleryTokenApiParser.parseWithAdapters(
-      useRust = useRust,
-      legacyParser = { request.fetchUsingAsText(GalleryTokenApiParser::parse) },
-      rustParser = { request.fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1) },
-    )
+    return request.fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1)
   }
 
   private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) =

@@ -1,7 +1,6 @@
 package com.hippo.ehviewer.bridge.download
 
 import com.hippo.ehviewer.bridge.ApiEnvelope
-import com.hippo.ehviewer.bridge.CoreBackend
 import com.hippo.ehviewer.bridge.RustError
 import com.hippo.ehviewer.bridge.RustErrorKind
 import com.hippo.ehviewer.bridge.RustFailureException
@@ -14,7 +13,6 @@ import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 
@@ -29,6 +27,31 @@ class DownloadProgressBridgeTest {
     assertEquals("downloadProgress", envelope.module)
     assertEquals(goldenPlan, envelope.payload)
     assertEquals(null, envelope.error)
+  }
+
+  @Test
+  fun estimateRequestCborMatchesRustWithRuntimeNegativeCounters() {
+    val request =
+      DownloadProgressRequest(
+        version = 1,
+        snapshot =
+          DownloadProgressSnapshot(
+            state = DownloadState.DOWNLOADING,
+            speedBytesPerSecond = -1,
+            remainingMilliseconds = -1,
+            finished = 0,
+            downloaded = 0,
+            total = 10,
+            legacy = -1,
+          ),
+        command =
+          DownloadProgressCommand.estimate(
+            speedBytesPerSecond = 8_192,
+            transfers = listOf(ActiveDownloadTransfer(contentLength = -1, receivedSize = 4_096)),
+          ),
+      )
+
+    assertEquals(ESTIMATE_REQUEST_CBOR_HEX, rustCbor.encodeToByteArray(request).toHex())
   }
 
   @Test
@@ -50,191 +73,6 @@ class DownloadProgressBridgeTest {
 
     assertEquals(goldenPlan, actual)
     assertEquals(1, calls)
-  }
-
-  @Test
-  fun legacyPlannerCoversEveryCommandAndANontrivialEta() {
-    val reset =
-      planLegacyDownloadProgress(runtimeSnapshot, DownloadProgressCommand.reset()).snapshot
-    assertEquals(
-      DownloadProgressSnapshot(DownloadState.DOWNLOADING, -1, -1, 0, 0, -1, -1),
-      reset,
-    )
-
-    val pages =
-      planLegacyDownloadProgress(runtimeSnapshot, DownloadProgressCommand.setPages(12)).snapshot
-    assertEquals(runtimeSnapshot.copy(total = 12), pages)
-
-    val pageResult =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.setPageResult(finished = 4, downloaded = 5, total = 12),
-        )
-        .snapshot
-    assertEquals(runtimeSnapshot.copy(finished = 4, downloaded = 5, total = 12), pageResult)
-
-    val estimate =
-      planLegacyDownloadProgress(
-          runtimeSnapshot.copy(total = 10, downloaded = 2),
-          DownloadProgressCommand.estimate(
-            speedBytesPerSecond = 250,
-            transfers =
-              listOf(
-                ActiveDownloadTransfer(contentLength = 1_000, receivedSize = 400),
-                ActiveDownloadTransfer(contentLength = 500, receivedSize = 100),
-              ),
-          ),
-        )
-        .snapshot
-    assertEquals(250, estimate.speedBytesPerSecond)
-    assertEquals(22_000, estimate.remainingMilliseconds)
-
-    val finish =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.finish(
-            finished = 3,
-            downloaded = 4,
-            total = 10,
-            failed = false,
-          ),
-        )
-        .snapshot
-    assertEquals(DownloadState.FINISHED, finish.state)
-    assertEquals(7, finish.legacy)
-  }
-
-  @Test
-  fun legacyPlannerPreservesBaselineEtaAndSignedWrapping() {
-    val emptyEstimate =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.estimate(
-            speedBytesPerSecond = 3,
-            transfers = emptyList(),
-          ),
-        )
-        .snapshot
-    assertEquals(runtimeSnapshot.remainingMilliseconds, emptyEstimate.remainingMilliseconds)
-
-    val stalled =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.estimate(
-            speedBytesPerSecond = 0,
-            transfers = emptyList(),
-          ),
-        )
-        .snapshot
-    assertEquals(300L * 24L * 60L * 60L * 1000L, stalled.remainingMilliseconds)
-
-    val success =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.finish(
-            finished = Int.MIN_VALUE,
-            downloaded = 1,
-            total = Int.MAX_VALUE,
-            failed = false,
-          ),
-        )
-        .snapshot
-    assertEquals(-1, success.legacy)
-
-    val failure =
-      planLegacyDownloadProgress(
-          runtimeSnapshot,
-          DownloadProgressCommand.finish(
-            finished = 3,
-            downloaded = 4,
-            total = 10,
-            failed = true,
-          ),
-        )
-        .snapshot
-    assertEquals(DownloadState.FAILED, failure.state)
-  }
-
-  @Test
-  fun selectorRunsOnlyTheLegacyPlannerForLegacyBackend() {
-    var legacyCalls = 0
-    var rustCalls = 0
-    val actual =
-      selectDownloadProgressPlan(
-        backend = CoreBackend.LEGACY,
-        legacyPlanner = {
-          legacyCalls += 1
-          goldenPlan
-        },
-        rustPlanner = {
-          rustCalls += 1
-          goldenPlan.copy(snapshot = runtimeSnapshot)
-        },
-      )
-
-    assertEquals(goldenPlan, actual)
-    assertEquals(1, legacyCalls)
-    assertEquals(0, rustCalls)
-  }
-
-  @Test
-  fun selectorRunsOnlyTheRustPlannerForRustBackend() {
-    var legacyCalls = 0
-    var rustCalls = 0
-    val rustPlan = goldenPlan.copy(snapshot = runtimeSnapshot)
-    val actual =
-      selectDownloadProgressPlan(
-        backend = CoreBackend.RUST,
-        legacyPlanner = {
-          legacyCalls += 1
-          goldenPlan
-        },
-        rustPlanner = {
-          rustCalls += 1
-          rustPlan
-        },
-      )
-
-    assertEquals(rustPlan, actual)
-    assertEquals(0, legacyCalls)
-    assertEquals(1, rustCalls)
-  }
-
-  @Test
-  fun selectorPropagatesFailuresFromTheSelectedPlanner() {
-    var rustCalls = 0
-    assertFailsWith<IllegalStateException> {
-      selectDownloadProgressPlan(
-        backend = CoreBackend.LEGACY,
-        legacyPlanner = { throw IllegalStateException("legacy") },
-        rustPlanner = {
-          rustCalls += 1
-          goldenPlan
-        },
-      )
-    }
-    assertEquals(0, rustCalls)
-
-    var legacyCalls = 0
-    assertFailsWith<LinkageError> {
-      selectDownloadProgressPlan(
-        backend = CoreBackend.RUST,
-        legacyPlanner = {
-          legacyCalls += 1
-          goldenPlan
-        },
-        rustPlanner = { throw LinkageError("missing") },
-      )
-    }
-    assertEquals(0, legacyCalls)
-
-    assertFailsWith<CancellationException> {
-      selectDownloadProgressPlan(
-        backend = CoreBackend.RUST,
-        legacyPlanner = { goldenPlan },
-        rustPlanner = { throw CancellationException("cancelled") },
-      )
-    }
   }
 
   @Test
@@ -284,6 +122,8 @@ class DownloadProgressBridgeTest {
   private companion object {
     const val REQUEST_CBOR_HEX =
       "a36776657273696f6e0168736e617073686f74a7657374617465646e6f6e6573737065656442797465735065725365636f6e64077572656d61696e696e674d696c6c697365636f6e6473096866696e6973686564016a646f776e6c6f616465640265746f74616c03666c65676163790467636f6d6d616e64a4646b696e646d73657450616765526573756c746866696e6973686564036a646f776e6c6f616465640465746f74616c0a"
+    const val ESTIMATE_REQUEST_CBOR_HEX =
+      "a36776657273696f6e0168736e617073686f74a76573746174656b646f776e6c6f6164696e6773737065656442797465735065725365636f6e64207572656d61696e696e674d696c6c697365636f6e6473206866696e6973686564006a646f776e6c6f616465640065746f74616c0a666c65676163792067636f6d6d616e64a3646b696e6468657374696d61746573737065656442797465735065725365636f6e64192000697472616e736665727381a26d636f6e74656e744c656e677468206c726563656976656453697a65191000"
     const val RESPONSE_CBOR_HEX =
       "a46776657273696f6e01666d6f64756c6570646f776e6c6f616450726f6772657373677061796c6f6164a168736e617073686f74a7657374617465646e6f6e6573737065656442797465735065725365636f6e64077572656d61696e696e674d696c6c697365636f6e6473096866696e6973686564036a646f776e6c6f616465640465746f74616c0a666c656761637904656572726f72f6"
     const val MISSING_PAYLOAD_CBOR_HEX =
@@ -312,6 +152,7 @@ class DownloadProgressBridgeTest {
     val goldenCommand =
       DownloadProgressCommand.setPageResult(finished = 3, downloaded = 4, total = 10)
     val goldenRequest = DownloadProgressRequest(1, goldenSnapshot, goldenCommand)
-    val goldenPlan = planLegacyDownloadProgress(goldenSnapshot, goldenCommand)
+    val goldenPlan =
+      DownloadProgressPlan(goldenSnapshot.copy(finished = 3, downloaded = 4, total = 10))
   }
 }

@@ -247,11 +247,7 @@ private suspend fun doModifyFavorites(
         currentSlot = favoriteSlot,
         localFavorited = localFavorited,
       )
-    val plan =
-      com.hippo.ehviewer.bridge.resolveLocalFavoriteMutation(
-        request,
-        com.hippo.ehviewer.bridge.CoreBackendSelector.snapshot(),
-      )
+    val plan = com.hippo.ehviewer.bridge.resolveLocalFavoriteMutation(request)
     when (plan.action) {
       com.hippo.ehviewer.bridge.LocalFavoriteAction.REMOVE_CLOUD -> {
         EhEngine.modifyFavorites(gid, token)

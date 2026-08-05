@@ -382,110 +382,6 @@ internal data class ReaderFetchPlannerSelection(
   val startPlan: ReaderFetchPlan,
 )
 
-/** Independent Kotlin translation of the frozen V1 legacy reader-fetch transition table. */
-internal fun legacyPlanReaderFetch(
-  state: ReaderFetchState,
-  event: ReaderFetchEvent,
-): ReaderFetchPlan =
-  when (state.phase) {
-    ReaderFetchPhase.INITIAL ->
-      when (event.kind) {
-        ReaderFetchEventKind.START ->
-          if (state.force) {
-            plan(
-              state.copy(phase = ReaderFetchPhase.ACQUIRING_TOKENS),
-              ReaderFetchAction.acquireTokens(),
-            )
-          } else {
-            plan(
-              state.copy(phase = ReaderFetchPhase.CHECKING_CACHE),
-              ReaderFetchAction.checkCache(),
-            )
-          }
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.CHECKING_CACHE ->
-      when (event.kind) {
-        ReaderFetchEventKind.CACHE_HIT ->
-          plan(state.copy(phase = ReaderFetchPhase.FINISHED), ReaderFetchAction.setFinished())
-        ReaderFetchEventKind.CACHE_MISS ->
-          plan(
-            state.copy(phase = ReaderFetchPhase.ACQUIRING_TOKENS),
-            ReaderFetchAction.acquireTokens(),
-          )
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.ACQUIRING_TOKENS ->
-      when (event.kind) {
-        ReaderFetchEventKind.TOKENS_MISSING ->
-          plan(
-            state.copy(phase = ReaderFetchPhase.FAILED),
-            ReaderFetchAction.setFailed(ReaderFetchErrorSource.P_TOKEN_MESSAGE),
-          )
-        ReaderFetchEventKind.TOKENS_READY -> {
-          val showKeyAvailable = checkNotNull(event.showKeyAvailable)
-          val next = state.copy(showKeyAvailable = showKeyAvailable)
-          val source = selectedPageSource(next)
-          ReaderFetchPlan(
-            state =
-              next.copy(
-                phase = ReaderFetchPhase.FETCHING_PAGE,
-                pageSource = source,
-              ),
-            actions =
-              listOf(
-                ReaderFetchAction.setDownloading(),
-                ReaderFetchAction.fetchPage(source),
-              ),
-          )
-        }
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.FETCHING_PAGE ->
-      when (event.kind) {
-        ReaderFetchEventKind.API_RECOVERABLE_FAILURE -> {
-          require(state.pageSource == ReaderFetchPageSource.API) {
-            "Reader Fetch API recovery requires the API source"
-          }
-          retryPageFetch(state.copy(forceHtml = true), emptyList())
-        }
-        ReaderFetchEventKind.PAGE_READY -> pageReadyPlan(state, event)
-        ReaderFetchEventKind.OUTER_FAILURE_RAISED -> outerFailurePlan(state, event)
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.RESOLVING_ORIGINAL ->
-      when (event.kind) {
-        ReaderFetchEventKind.ORIGINAL_READY ->
-          plan(
-            state.copy(phase = ReaderFetchPhase.DOWNLOADING_IMAGE),
-            ReaderFetchAction.downloadImage(ReaderFetchImageTarget.ORIGINAL),
-          )
-        ReaderFetchEventKind.OUTER_FAILURE_RAISED -> outerFailurePlan(state, event)
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.DOWNLOADING_IMAGE ->
-      when (event.kind) {
-        ReaderFetchEventKind.IMAGE_SUCCEEDED ->
-          plan(state.copy(phase = ReaderFetchPhase.FINISHED), ReaderFetchAction.setFinished())
-        ReaderFetchEventKind.IMAGE_FAILED -> imageFailurePlan(state, checkNotNull(event.failure))
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.CLASSIFYING_OUTER_FAILURE ->
-      when (event.kind) {
-        ReaderFetchEventKind.OUTER_FAILURE_CLASSIFIED -> {
-          val actions = buildList {
-            if (checkNotNull(event.invalidPage)) add(ReaderFetchAction.invalidateToken())
-            add(ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED))
-          }
-          ReaderFetchPlan(state.copy(phase = ReaderFetchPhase.FAILED), actions)
-        }
-        else -> invalidTransition()
-      }
-    ReaderFetchPhase.FINISHED,
-    ReaderFetchPhase.FAILED,
-    ReaderFetchPhase.CANCELLED -> invalidTransition()
-  }
-
 /** Encodes one transition, invokes Rust, and validates the versioned response envelope. */
 internal fun planReaderFetch(
   state: ReaderFetchState,
@@ -508,20 +404,14 @@ internal fun planReaderFetch(
     .toReaderFetchPlan()
 }
 
-/** Selects one implementation before the first platform effect and computes Start with it. */
-internal fun selectReaderFetchPlanner(
-  enabled: Boolean,
+/** Creates the Rust planner before the first platform effect and computes Start with it. */
+internal fun startReaderFetchPlanner(
   initialState: ReaderFetchState,
   nativeCall: (ByteBuffer, Int, ByteBuffer) -> Int = ::nativePlanReaderFetchV1,
 ): ReaderFetchPlannerSelection {
   val start = ReaderFetchEvent.start()
-  val planner = if (enabled) RustReaderFetchPlanner(nativeCall) else LegacyReaderFetchPlanner
+  val planner = RustReaderFetchPlanner(nativeCall)
   return ReaderFetchPlannerSelection(planner, planner.next(initialState, start))
-}
-
-private object LegacyReaderFetchPlanner : ReaderFetchPlanner {
-  override fun next(state: ReaderFetchState, event: ReaderFetchEvent) =
-    legacyPlanReaderFetch(state, event)
 }
 
 private class RustReaderFetchPlanner(private val nativeCall: (ByteBuffer, Int, ByteBuffer) -> Int) :
@@ -536,132 +426,6 @@ private fun ApiEnvelope<ReaderFetchPlan>.toReaderFetchPlan(): ReaderFetchPlan {
   error?.let { throw RustFailureException(it) }
   return checkNotNull(payload) { "Rust Reader Fetch response has no payload" }
 }
-
-private fun pageReadyPlan(
-  state: ReaderFetchState,
-  event: ReaderFetchEvent,
-): ReaderFetchPlan {
-  val source = checkNotNull(event.source)
-  require(state.pageSource == source) {
-    "Reader Fetch page result source does not match the request"
-  }
-  val showKeyAvailable = checkNotNull(event.showKeyAvailable)
-  if (state.attempt == 0 && state.skipHath) {
-    return plan(
-      state.copy(
-        phase = ReaderFetchPhase.FETCHING_PAGE,
-        attempt = 1,
-        forceHtml = true,
-        showKeyAvailable = showKeyAvailable,
-        pageSource = ReaderFetchPageSource.HTML,
-      ),
-      ReaderFetchAction.fetchPage(ReaderFetchPageSource.HTML),
-    )
-  }
-  return if (state.originalRequested && checkNotNull(event.originAvailable)) {
-    plan(
-      state.copy(
-        phase = ReaderFetchPhase.RESOLVING_ORIGINAL,
-        showKeyAvailable = showKeyAvailable,
-        pageSource = null,
-      ),
-      ReaderFetchAction.resolveOriginal(
-        appendSkipKey = state.attempt == 1 && checkNotNull(event.skipKeyAvailable)
-      ),
-    )
-  } else {
-    plan(
-      state.copy(
-        phase = ReaderFetchPhase.DOWNLOADING_IMAGE,
-        forceHtml = true,
-        showKeyAvailable = showKeyAvailable,
-        pageSource = null,
-      ),
-      ReaderFetchAction.downloadImage(ReaderFetchImageTarget.RESIZED),
-    )
-  }
-}
-
-private fun outerFailurePlan(
-  state: ReaderFetchState,
-  event: ReaderFetchEvent,
-): ReaderFetchPlan {
-  val actions = buildList {
-    if (checkNotNull(event.fatal)) add(ReaderFetchAction.notifyFatal())
-    add(ReaderFetchAction.captureCurrentError())
-  }
-  return ReaderFetchPlan(
-    state = state.copy(phase = ReaderFetchPhase.CLASSIFYING_OUTER_FAILURE, pageSource = null),
-    actions = actions,
-  )
-}
-
-private fun imageFailurePlan(
-  state: ReaderFetchState,
-  failure: ReaderFetchImageFailure,
-): ReaderFetchPlan =
-  when (failure) {
-    ReaderFetchImageFailure.CANCELLATION ->
-      ReaderFetchPlan(
-        state.copy(phase = ReaderFetchPhase.CANCELLED),
-        listOf(
-          ReaderFetchAction.removeIntermediateFiles(),
-          ReaderFetchAction.rethrowCancellation(),
-        ),
-      )
-    ReaderFetchImageFailure.FILE_NOT_FOUND ->
-      ReaderFetchPlan(
-        state.copy(phase = ReaderFetchPhase.CLASSIFYING_OUTER_FAILURE),
-        listOf(
-          ReaderFetchAction.removeIntermediateFiles(),
-          ReaderFetchAction.captureCurrentError(),
-        ),
-      )
-    ReaderFetchImageFailure.RECOVERABLE ->
-      retryPageFetch(
-        state,
-        listOf(
-          ReaderFetchAction.removeIntermediateFiles(),
-          ReaderFetchAction.captureCurrentError(),
-        ),
-      )
-  }
-
-private fun retryPageFetch(
-  state: ReaderFetchState,
-  precedingActions: List<ReaderFetchAction>,
-): ReaderFetchPlan {
-  return if (state.attempt < MAX_READER_FETCH_ATTEMPT) {
-    val source = selectedPageSource(state)
-    ReaderFetchPlan(
-      state =
-        state.copy(
-          phase = ReaderFetchPhase.FETCHING_PAGE,
-          attempt = state.attempt + 1,
-          pageSource = source,
-        ),
-      actions = precedingActions + ReaderFetchAction.fetchPage(source),
-    )
-  } else {
-    ReaderFetchPlan(
-      state = state.copy(phase = ReaderFetchPhase.FAILED, pageSource = null),
-      actions = precedingActions + ReaderFetchAction.setFailed(ReaderFetchErrorSource.RETAINED),
-    )
-  }
-}
-
-private fun selectedPageSource(state: ReaderFetchState) =
-  if (state.forceHtml || !state.showKeyAvailable) {
-    ReaderFetchPageSource.HTML
-  } else {
-    ReaderFetchPageSource.API
-  }
-
-private fun plan(state: ReaderFetchState, action: ReaderFetchAction) =
-  ReaderFetchPlan(state, listOf(action))
-
-private fun invalidTransition(): Nothing =
-  throw IllegalArgumentException("Reader Fetch event is invalid for the current phase")
 
 /** Invokes the V1 `eh_domain::reader::fetch` reducer using separate direct buffers. */
 private external fun nativePlanReaderFetchV1(
