@@ -13,5 +13,6 @@ build
 .codex/
 .codegraph/
 .trellis/
+.grok/
 AGENTS.md
 .gitattributes
