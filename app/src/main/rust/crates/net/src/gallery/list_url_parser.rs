@@ -8,6 +8,7 @@
 //! state. Input values are never logged or copied into errors.
 
 use eh_domain::contracts::{ApiEnvelope, RustError};
+use eh_domain::gallery_rules::{CATEGORY_UNKNOWN, category_from_alias, invert_category};
 use serde::{Deserialize, Serialize};
 
 const MODE_NORMAL: i32 = 0;
@@ -15,19 +16,6 @@ const MODE_UPLOADER: i32 = 1;
 const MODE_TAG: i32 = 2;
 const MODE_IMAGE_SEARCH: i32 = 4;
 const MODE_TOPLIST: i32 = 6;
-
-const CATEGORY_MISC: i32 = 0x1;
-const CATEGORY_DOUJINSHI: i32 = 0x2;
-const CATEGORY_MANGA: i32 = 0x4;
-const CATEGORY_ARTIST_CG: i32 = 0x8;
-const CATEGORY_GAME_CG: i32 = 0x10;
-const CATEGORY_IMAGE_SET: i32 = 0x20;
-const CATEGORY_COSPLAY: i32 = 0x40;
-const CATEGORY_ASIAN_PORN: i32 = 0x80;
-const CATEGORY_NON_H: i32 = 0x100;
-const CATEGORY_WESTERN: i32 = 0x200;
-const CATEGORY_PRIVATE: i32 = 0x400;
-const ALL_CATEGORIES: i32 = 0x3ff;
 
 const ADVANCED_SEARCH_SH: i32 = 1;
 const ADVANCED_SEARCH_STO: i32 = 2;
@@ -199,7 +187,9 @@ pub fn parse(snapshot: &GalleryListUrlSnapshot) -> Result<Option<GalleryListUrlS
         }
         "toplist.php" => Ok(parse_toplist(&snapshot.parameters)),
         category_name => {
-            let Some(category) = category(category_name) else {
+            let Some(category) =
+                category_from_alias(category_name).filter(|category| *category != CATEGORY_UNKNOWN)
+            else {
                 return Ok(None);
             };
             let mut state = state_from_parameters(&snapshot.parameters);
@@ -280,31 +270,6 @@ fn parse_toplist(parameters: &GalleryListUrlParameters) -> Option<GalleryListUrl
     })
 }
 
-fn category(value: &str) -> Option<i32> {
-    let aliases: &[(&[&str], i32)] = &[
-        (&["misc"], CATEGORY_MISC),
-        (&["doujinshi"], CATEGORY_DOUJINSHI),
-        (&["manga"], CATEGORY_MANGA),
-        (
-            &["artistcg", "Artist CG Sets", "Artist CG"],
-            CATEGORY_ARTIST_CG,
-        ),
-        (&["gamecg", "Game CG Sets", "Game CG"], CATEGORY_GAME_CG),
-        (&["imageset", "Image Sets", "Image Set"], CATEGORY_IMAGE_SET),
-        (&["cosplay"], CATEGORY_COSPLAY),
-        (&["asianporn", "Asian Porn"], CATEGORY_ASIAN_PORN),
-        (&["non-h"], CATEGORY_NON_H),
-        (&["western"], CATEGORY_WESTERN),
-        (&["private"], CATEGORY_PRIVATE),
-    ];
-    aliases.iter().find_map(|(names, category)| {
-        names
-            .iter()
-            .any(|name| value.eq_ignore_ascii_case(name))
-            .then_some(*category)
-    })
-}
-
 fn decode_query_component(value: &str) -> Result<String, RustError> {
     let mut decoded = String::with_capacity(value.len());
     let mut index = 0;
@@ -362,10 +327,6 @@ fn parse_i32(value: Option<&str>, default: i32) -> i32 {
     value
         .and_then(|value| value.parse().ok())
         .unwrap_or(default)
-}
-
-const fn invert_category(category: i32) -> i32 {
-    !category & ALL_CATEGORIES
 }
 
 #[cfg(test)]

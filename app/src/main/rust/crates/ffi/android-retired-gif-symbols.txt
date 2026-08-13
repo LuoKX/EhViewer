@@ -1,0 +1,3 @@
+Java_com_hippo_ehviewer_jni_GifUtilsKt_isGif
+Java_com_hippo_ehviewer_jni_GifUtilsKt_mmap
+Java_com_hippo_ehviewer_jni_GifUtilsKt_munmap

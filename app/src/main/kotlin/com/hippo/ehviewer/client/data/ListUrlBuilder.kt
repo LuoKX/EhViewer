@@ -30,8 +30,6 @@ import com.hippo.ehviewer.bridge.gallery.buildGalleryListUrl
 import com.hippo.ehviewer.bridge.resolveQuickSearchMatch
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
-import com.hippo.ehviewer.ui.main.AdvanceTable
-import io.ktor.http.Parameters
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -118,39 +116,6 @@ data class ListUrlBuilder(
         saved = q?.let(QuickSearchSnapshot::from),
       )
     return resolveQuickSearchMatch(request)
-  }
-
-  constructor(
-    params: Parameters
-  ) : this(
-    prev = params["prev"],
-    next = params["next"],
-    jumpTo = params["seek"],
-    range = params["range"]?.toIntOrNull() ?: 0,
-    category = params["f_cats"]?.toIntOrNull()?.let(EhUtils::invCategory) ?: EhUtils.NONE,
-    keyword = params["f_search"],
-  ) {
-    if (params["advsearch"] == "1") {
-      advanceSearch = 0
-      if (params["f_sh"] == "on") {
-        advanceSearch = advanceSearch or AdvanceTable.SH
-      }
-      if (params["f_sto"] == "on") {
-        advanceSearch = advanceSearch or AdvanceTable.STO
-      }
-      if (params["f_sfl"] == "on") {
-        advanceSearch = advanceSearch or AdvanceTable.SFL
-      }
-      if (params["f_sfu"] == "on") {
-        advanceSearch = advanceSearch or AdvanceTable.SFU
-      }
-      if (params["f_sft"] == "on") {
-        advanceSearch = advanceSearch or AdvanceTable.SFT
-      }
-      minRating = params["f_srdd"]?.toIntOrNull() ?: -1
-      pageFrom = params["f_spf"]?.toIntOrNull() ?: -1
-      pageTo = params["f_spt"]?.toIntOrNull() ?: -1
-    }
   }
 
   /** Returns the complete platform-neutral state compared by the URL parser rollout adapter. */

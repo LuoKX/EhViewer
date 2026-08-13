@@ -42,6 +42,7 @@ pub mod comment_vote;
 pub mod comments;
 pub mod detail;
 pub mod favorite_mutation;
+pub mod favorite_note;
 pub mod favorites;
 pub mod favorites_url;
 pub mod list;

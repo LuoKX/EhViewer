@@ -75,54 +75,27 @@ object EhUtils {
   private const val BG_COLOR_MISC = 0xfff06292u
   private const val BG_COLOR_UNKNOWN = 0xff000000u
 
-  // Remove [XXX], (XXX), {XXX}, ~XXX~ stuff
-  private val PATTERN_TITLE_PREFIX = Regex("""^(?:\([^)]*\)|\[[^]]*]|\{[^}]*\}|~[^~]*~|\s+)*""")
-
-  // Remove [XXX], (XXX), {XXX}, ~XXX~ stuff and something like ch. 1-23
-  private val PATTERN_TITLE_SUFFIX =
-    Regex(
-      """(?:\s+ch.[\s\d-]+)?(?:\([^)]*\)|\[[^]]*]|\{[^}]*\}|~[^~]*~|\s+)*$""",
-      RegexOption.IGNORE_CASE,
-    )
-
-  private val CATEGORY_VALUES =
-    hashMapOf(
-      MISC to arrayOf("misc"),
-      DOUJINSHI to arrayOf("doujinshi"),
-      MANGA to arrayOf("manga"),
-      ARTIST_CG to arrayOf("artistcg", "Artist CG Sets", "Artist CG"),
-      GAME_CG to arrayOf("gamecg", "Game CG Sets", "Game CG"),
-      IMAGE_SET to arrayOf("imageset", "Image Sets", "Image Set"),
-      COSPLAY to arrayOf("cosplay"),
-      ASIAN_PORN to arrayOf("asianporn", "Asian Porn"),
-      NON_H to arrayOf("non-h"),
-      WESTERN to arrayOf("western"),
-      PRIVATE to arrayOf("private"),
-      UNKNOWN to arrayOf("unknown"),
-    )
-  private val CATEGORY_STRINGS = CATEGORY_VALUES.entries.map { (k, v) -> v to k }
-
   val isExHentai: Boolean
     get() = Settings.gallerySite.value == EhUrl.SITE_EX
 
   val isMpvAvailable
     get() = EhCookieStore.getHathPerks()?.contains('q') == true
 
-  fun getCategory(type: String?): Int {
-    for (entry in CATEGORY_STRINGS) {
-      for (str in entry.first) {
-        if (str.equals(type, ignoreCase = true)) {
-          return entry.second
-        }
-      }
-    }
-    return UNKNOWN
-  }
-
   fun getCategory(type: Int): String =
-    CATEGORY_VALUES.getOrDefault(type, CATEGORY_VALUES[UNKNOWN])!![0]
-
-  fun invCategory(category: Int): Int = category.inv() and ALL_CATEGORY
+    when (type) {
+      MISC -> "misc"
+      DOUJINSHI -> "doujinshi"
+      MANGA -> "manga"
+      ARTIST_CG -> "artistcg"
+      GAME_CG -> "gamecg"
+      IMAGE_SET -> "imageset"
+      COSPLAY -> "cosplay"
+      ASIAN_PORN -> "asianporn"
+      NON_H -> "non-h"
+      WESTERN -> "western"
+      PRIVATE -> "private"
+      else -> "unknown"
+    }
 
   val mergeColor = { primaryContainer: Color, src: Color ->
     val fromHct = Hct.from(src)
@@ -177,16 +150,6 @@ object EhUtils {
         if (gi.title.isNullOrEmpty()) gi.titleJpn else gi.title
       }
       .orEmpty()
-
-  fun extractTitle(fullTitle: String?): String? {
-    var title: String = fullTitle ?: return null
-    title = PATTERN_TITLE_PREFIX.replaceFirst(title, "")
-    title = PATTERN_TITLE_SUFFIX.replaceFirst(title, "")
-    // Sometimes title is combined by romaji and english translation.
-    // Only need romaji.
-    // TODO But not sure every '|' means that
-    return title.substringBeforeLast('|').trim().ifEmpty { null }
-  }
 
   context(ctx: Context)
   suspend fun downloadArchive(galleryDetail: GalleryDetail, archive: Archive) {

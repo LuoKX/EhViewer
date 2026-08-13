@@ -36,6 +36,16 @@ jobs:
           python3 -m unittest scripts.tests.test_check_rewrite_names
           python3 scripts/check_rewrite_names.py
 
+      - name: Retired Compatibility Source Check
+        run: |
+          test ! -e app/src/main/cpp/archive.c
+          test ! -e app/src/main/cpp/gifutils.c
+          test ! -e app/src/main/cpp/ehviewer.h
+          test ! -d app/src/main/cpp/natsort
+          test ! -e app/src/main/kotlin/com/hippo/ehviewer/jni/Archive.kt
+          test ! -e app/src/main/rust/src/parser.rs
+          test ! -d app/src/main/rust/src/parser
+
       - name: Rustfmt Check
         working-directory: ./app/src/main/rust
         run: cargo fmt --all -- --check
@@ -57,24 +67,9 @@ jobs:
           cargo doc --package eh_ffi --features jvm --no-deps
           cargo doc --package ehviewer_rust --features jvm --no-deps
 
-      # Legacy parser tests still contain live-network smoke cases. They are
-      # migrated to offline fixtures slice by slice and must not weaken the
-      # deterministic unit-test gate for the new architecture.
-      - name: Rust Core Unit Test
+      - name: Rust Workspace Unit Test
         working-directory: ./app/src/main/rust
-        run: cargo test --package eh_archive --package eh_domain --package eh_ffi --package eh_image --package eh_net
-
-      - name: Gallery List Compatibility Test
-        working-directory: ./app/src/main/rust
-        run: 'cargo test --package ehviewer_rust parser::list::tests::'
-
-      - name: Gallery Archive Compatibility Test
-        working-directory: ./app/src/main/rust
-        run: |
-          cargo test --package ehviewer_rust \
-            parser::test_parser::tests::test_parse_archive_url
-          cargo test --package ehviewer_rust \
-            parser::test_parser::tests::test_parse_archives_with_funds
+        run: cargo test --workspace --all-features
 
       - name: FFI WebP Boundary Test
         working-directory: ./app/src/main/rust
@@ -84,26 +79,47 @@ jobs:
         working-directory: ./app/src/main/rust
         run: 'cargo test --package eh_ffi --all-features codec::tests::'
 
-      - name: JVM V1 Symbol Check
+      - name: JVM Symbol Check
         working-directory: ./app/src/main/rust
         run: |
           cargo build --package ehviewer_rust --features jvm
           nm -g --defined-only target/debug/libehviewer_rust.a \
-            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_/ { print $3 }' \
+            | awk '$2 == "T" { print $3 }' \
             | sort -u \
-            | grep 'V1$' \
-            > target/jvm-v1-symbols.txt
+            > target/jvm-defined-symbols.txt
+          grep '^Java_com_hippo_ehviewer_' target/jvm-defined-symbols.txt \
+            > target/jvm-symbols.txt
+          grep 'V1$' target/jvm-symbols.txt > target/jvm-v1-symbols.txt
           diff -u crates/ffi/jvm-v1-symbols.txt target/jvm-v1-symbols.txt
-          nm -g --defined-only target/debug/libehviewer_rust.a \
-            | awk '$2 == "T" && $3 == "Java_com_hippo_ehviewer_jni_HashKt_sha1" { print $3 }' \
-            | sort -u \
+          grep '^Java_com_hippo_ehviewer_jni_HashKt_sha1$' target/jvm-symbols.txt \
             > target/jvm-compat-symbols.txt
           diff -u crates/ffi/jvm-compat-symbols.txt target/jvm-compat-symbols.txt
-          nm -g --defined-only target/debug/libehviewer_rust.a \
-            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_/ { print $3 }' \
-            | sort -u \
+          grep '^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_' target/jvm-symbols.txt \
             > target/jvm-webp-symbols.txt
           diff -u crates/ffi/jvm-webp-symbols.txt target/jvm-webp-symbols.txt
+          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' target/jvm-symbols.txt \
+            > target/jvm-gif-symbols.txt
+          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' crates/ffi/android-image-symbols.txt \
+            > target/jvm-gif-symbols.expected.txt
+          diff -u target/jvm-gif-symbols.expected.txt target/jvm-gif-symbols.txt
+          cat \
+            crates/ffi/jvm-v1-symbols.txt \
+            crates/ffi/jvm-compat-symbols.txt \
+            crates/ffi/jvm-webp-symbols.txt \
+            target/jvm-gif-symbols.expected.txt \
+            | sort -u \
+            > target/jvm-symbols.expected.txt
+          diff -u target/jvm-symbols.expected.txt target/jvm-symbols.txt
+          grep '^JNI_OnLoad$' target/jvm-defined-symbols.txt > target/jvm-loader-symbols.txt
+          diff -u crates/ffi/jvm-loader-symbols.txt target/jvm-loader-symbols.txt
+          comm -12 \
+            crates/ffi/jvm-retired-parser-symbols.txt \
+            target/jvm-symbols.txt \
+            > target/jvm-retired-parser-symbols-present.txt
+          if [[ -s target/jvm-retired-parser-symbols-present.txt ]]; then
+            cat target/jvm-retired-parser-symbols-present.txt
+            exit 1
+          fi
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
@@ -152,9 +168,38 @@ jobs:
             --fail-under-lines 95 \
             --fail-under-functions 95
 
+      - name: Gallery Filter Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov clean --workspace
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_rules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-gallery-filter.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery_filter::tests::
+
+      - name: Gallery Rules Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov clean --workspace
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_domain \
+            --lib \
+            --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_filter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-domain-gallery-rules.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery_rules::tests::
+
       - name: Download Queue Coverage
         working-directory: ./app/src/main/rust
         run: |
+          cargo llvm-cov clean --workspace
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
@@ -241,6 +286,20 @@ jobs:
             --fail-under-lines 95 \
             --fail-under-functions 95
 
+      - name: Archive Recovery Policy Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov clean --workspace
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_archive \
+            --lib \
+            --ignore-filename-regex '(/lib\.rs$|/reader\.rs$|/writer\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-archive-recovery.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- recovery::tests::
+
       - name: Archive Reader Coverage
         working-directory: ./app/src/main/rust
         run: |
@@ -277,13 +336,29 @@ jobs:
             --fail-under-lines 95 \
             --fail-under-functions 95
 
-      - name: Image Region Coverage
+      - name: Image GIF Coverage
         working-directory: ./app/src/main/rust
         run: |
+          cargo llvm-cov clean --workspace
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_image \
             --lib \
-            --ignore-filename-regex '(/border\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
+            --all-features \
+            --ignore-filename-regex '(/border\.rs$|/pixel\.rs$|/qr\.rs$|/region\.rs$|/lib\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-image-gif.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gif::tests::
+
+      - name: Image Region Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov clean --workspace
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_image \
+            --lib \
+            --ignore-filename-regex '(/border\.rs$|/gif\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-image-region.lcov \
             --fail-under-lines 95 \
@@ -309,7 +384,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list.lcov \
             --fail-under-lines 95 \
@@ -322,7 +397,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url.lcov \
             --fail-under-lines 95 \
@@ -335,7 +410,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url-parser.lcov \
             --fail-under-lines 95 \
@@ -348,7 +423,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-navigation.lcov \
             --fail-under-lines 95 \
@@ -361,7 +436,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-favorites-url.lcov \
             --fail-under-lines 95 \
@@ -374,12 +449,27 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorites.lcov \
             --fail-under-lines 95 \
             --fail-under-functions 95 \
             -- gallery::favorites::tests::
+
+      - name: Gallery Favorite Note Coverage
+        working-directory: ./app/src/main/rust
+        run: |
+          cargo llvm-cov clean --workspace
+          mkdir -p target/llvm-cov
+          cargo llvm-cov --package eh_net \
+            --lib \
+            --all-features \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --lcov \
+            --output-path target/llvm-cov/eh-net-gallery-favorite-note.lcov \
+            --fail-under-lines 95 \
+            --fail-under-functions 95 \
+            -- gallery::favorite_note::tests::
 
       - name: Gallery Favorite Mutation Coverage
         working-directory: ./app/src/main/rust
@@ -388,7 +478,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
             --fail-under-lines 95 \
@@ -402,7 +492,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_note|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|network_policy|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive-request.lcov \
             --fail-under-lines 95 \
@@ -415,7 +505,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive.lcov \
             --fail-under-lines 95 \
@@ -428,7 +518,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comments.lcov \
             --fail-under-lines 95 \
@@ -441,7 +531,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comment-vote.lcov \
             --fail-under-lines 95 \
@@ -454,7 +544,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-detail.lcov \
             --fail-under-lines 95 \
@@ -467,7 +557,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-preview.lcov \
             --fail-under-lines 95 \
@@ -480,7 +570,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-token.lcov \
             --fail-under-lines 95 \
@@ -493,7 +583,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-tag-vote.lcov \
             --fail-under-lines 95 \
@@ -506,7 +596,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-rate.lcov \
             --fail-under-lines 95 \
@@ -519,7 +609,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-metadata.lcov \
             --fail-under-lines 95 \
@@ -720,24 +810,89 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           script: ./gradlew :app:connectedDefaultDebugAndroidTest --no-daemon -Pandroid.injected.build.abi=x86_64
 
-      - name: Android V1 Symbol Check
+      - name: Android JNI Symbol Check
         run: |
           native_library=app/build/intermediates/stripped_native_libs/defaultDebug/stripDefaultDebugDebugSymbols/out/lib/x86_64/libehviewer.so
+          unstripped_native_library=app/build/intermediates/cmake/defaultDebug/obj/x86_64/libehviewer.so
           nm -D --defined-only "$native_library" \
-            | awk '$2 == "T" && $3 ~ /^Java_com_hippo_ehviewer_/ { print $3 }' \
+            | awk '$2 == "T" { print $3 }' \
             | sort -u \
-            | grep 'V1$' \
-            > app/build/android-v1-symbols.txt
+            > app/build/android-dynamic-symbols.txt
+          grep '^Java_com_hippo_ehviewer_' app/build/android-dynamic-symbols.txt \
+            > app/build/android-java-symbols.txt
+          grep 'V1$' app/build/android-java-symbols.txt > app/build/android-v1-symbols.txt
           diff -u \
             app/src/main/rust/crates/ffi/jvm-v1-symbols.txt \
             app/build/android-v1-symbols.txt
-          nm -D --defined-only "$native_library" \
-            | awk '$2 == "T" && ($3 ~ /^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_/ || $3 ~ /^Java_com_hippo_ehviewer_image_ImageKt_/) { print $3 }' \
-            | sort -u \
+          grep '^Java_com_hippo_ehviewer_bridge_archive_ArchiveReaderBridgeKt_.*V2$' \
+            app/build/android-java-symbols.txt \
+            > app/build/android-archive-v2-symbols.txt
+          diff -u \
+            app/src/main/rust/crates/ffi/archive-v2-symbols.txt \
+            app/build/android-archive-v2-symbols.txt
+          grep '^Java_com_hippo_ehviewer_jni_HashKt_sha1$' \
+            app/build/android-java-symbols.txt \
+            > app/build/android-compat-symbols.txt
+          diff -u \
+            app/src/main/rust/crates/ffi/jvm-compat-symbols.txt \
+            app/build/android-compat-symbols.txt
+          grep -E '^Java_com_hippo_ehviewer_(coil_AnimatedWebPDrawableKt_|image_ImageKt_|jni_GifUtilsKt_)' \
+            app/build/android-java-symbols.txt \
             > app/build/android-image-symbols.txt
           diff -u \
             app/src/main/rust/crates/ffi/android-image-symbols.txt \
             app/build/android-image-symbols.txt
+          cat \
+            app/src/main/rust/crates/ffi/jvm-v1-symbols.txt \
+            app/src/main/rust/crates/ffi/archive-v2-symbols.txt \
+            app/src/main/rust/crates/ffi/jvm-compat-symbols.txt \
+            app/src/main/rust/crates/ffi/android-image-symbols.txt \
+            | sort -u \
+            > app/build/android-java-symbols.expected.txt
+          diff -u \
+            app/build/android-java-symbols.expected.txt \
+            app/build/android-java-symbols.txt
+          grep '^JNI_OnLoad$' app/build/android-dynamic-symbols.txt \
+            > app/build/android-loader-symbols.txt
+          diff -u \
+            app/src/main/rust/crates/ffi/jvm-loader-symbols.txt \
+            app/build/android-loader-symbols.txt
+          cat \
+            app/build/android-java-symbols.expected.txt \
+            app/src/main/rust/crates/ffi/jvm-loader-symbols.txt \
+            | sort -u \
+            > app/build/android-dynamic-symbols.expected.txt
+          diff -u \
+            app/build/android-dynamic-symbols.expected.txt \
+            app/build/android-dynamic-symbols.txt
+          comm -12 \
+            app/src/main/rust/crates/ffi/android-retired-gif-symbols.txt \
+            app/build/android-java-symbols.txt \
+            > app/build/android-retired-gif-symbols-present.txt
+          if [[ -s app/build/android-retired-gif-symbols-present.txt ]]; then
+            cat app/build/android-retired-gif-symbols-present.txt
+            exit 1
+          fi
+          comm -12 \
+            app/src/main/rust/crates/ffi/jvm-retired-parser-symbols.txt \
+            app/build/android-java-symbols.txt \
+            > app/build/android-retired-parser-symbols-present.txt
+          if [[ -s app/build/android-retired-parser-symbols-present.txt ]]; then
+            cat app/build/android-retired-parser-symbols-present.txt
+            exit 1
+          fi
+          nm --defined-only "$unstripped_native_library" \
+            | awk 'NF >= 3 { print $NF }' \
+            | sort -u \
+            > app/build/android-defined-symbols.txt
+          comm -12 \
+            app/src/main/rust/crates/ffi/android-retired-native-symbols.txt \
+            app/build/android-defined-symbols.txt \
+            > app/build/android-retired-native-symbols-present.txt
+          if [[ -s app/build/android-retired-native-symbols-present.txt ]]; then
+            cat app/build/android-retired-native-symbols-present.txt
+            exit 1
+          fi
 
   default:
     runs-on: ubuntu-latest

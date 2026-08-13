@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use std::ops::Index;
 
 use eh_domain::contracts::{ApiEnvelope, GalleryItemSummary, GalleryPage, RustError};
+use eh_domain::gallery_rules::category_value;
 use tl::{Node, Parser, ParserOptions, VDom};
 
 use crate::html::{
@@ -82,25 +83,6 @@ pub fn parse_dom(dom: &VDom<'_>, parser: &Parser<'_>) -> Result<GalleryPage, Rus
         next: page_cursor(dom, parser, "unext", "next"),
         items,
     })
-}
-
-/// Converts the remote category label to the existing Android category bit.
-#[must_use]
-pub fn category_value(category: &str) -> i32 {
-    match category {
-        "misc" => 0x1,
-        "doujinshi" => 0x2,
-        "manga" => 0x4,
-        "artistcg" | "artist cg sets" | "artist cg" => 0x8,
-        "gamecg" | "game cg sets" | "game cg" => 0x10,
-        "imageset" | "image sets" | "image set" => 0x20,
-        "cosplay" => 0x40,
-        "asianporn" | "asian porn" => 0x80,
-        "non-h" => 0x100,
-        "western" => 0x200,
-        "private" => 0x400,
-        _ => 0x800,
-    }
 }
 
 /// Removes the known gallery-thumbnail host and `t/` prefix from a URL.
@@ -275,9 +257,10 @@ fn page_cursor(
 #[cfg(test)]
 mod tests {
     use eh_domain::contracts::{ApiEnvelope, GalleryItemSummary, GalleryPage, RustError};
+    use eh_domain::gallery_rules::category_value;
 
     use super::{
-        API_VERSION, MODULE, category_value, gallery_key, parse, parse_envelope, parse_rating,
+        API_VERSION, MODULE, gallery_key, parse, parse_envelope, parse_rating,
         parse_thumbnail_resolution, thumbnail_key,
     };
     use crate::test_support::to_hex;

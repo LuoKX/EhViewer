@@ -16,6 +16,7 @@ use eh_net::gallery::archive::{
 use eh_net::gallery::comment_vote::parse_envelope as parse_gallery_comment_vote_envelope;
 use eh_net::gallery::comments::parse_envelope as parse_gallery_comments_envelope;
 use eh_net::gallery::detail::parse_envelope as parse_gallery_detail_envelope;
+use eh_net::gallery::favorite_note::parse_envelope as parse_gallery_favorite_note_envelope;
 use eh_net::gallery::favorites::parse_envelope as parse_gallery_favorites_envelope;
 use eh_net::gallery::list::parse_envelope as parse_gallery_list_envelope;
 use eh_net::gallery::metadata::parse_envelope as parse_gallery_metadata_envelope;
@@ -51,9 +52,28 @@ pub fn parseFavV1(
     parse_text_in_place(&mut env, &buffer, limit, parse_gallery_favorites_envelope)
 }
 
+/// Parses one Add Favorites response into the exact legacy favorite-note string.
+///
+/// Android retains HTTP and UI state. The response body and note are never copied
+/// into boundary errors, and there is no Kotlin parser fallback.
+#[jni_fn("com.hippo.ehviewer.client.parser.FavoritesParserKt")]
+pub fn parseFavoriteNoteV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    buffer: JByteBuffer<'_>,
+    limit: jint,
+) -> jint {
+    parse_text_in_place(
+        &mut env,
+        &buffer,
+        limit,
+        parse_gallery_favorite_note_envelope,
+    )
+}
+
 /// Parses account image limits into the versioned Rust-first V1 envelope.
 ///
-/// The unversioned `parseLimit` symbol remains the default-off rollback path.
+/// Android retains HTTP, account state, and presentation; no unversioned parser is linked.
 #[jni_fn("com.hippo.ehviewer.client.parser.HomeParserKt")]
 pub fn parseLimitV1(
     mut env: JNIEnv<'_>,
@@ -99,8 +119,7 @@ pub fn parseFundsV1(
 
 /// Parses News HTML event-pane markup into the versioned Rust-first V1 envelope.
 ///
-/// Android retains HTTP, cookies, scheduling, and notification side effects. The
-/// unversioned `parseEventPane` symbol remains the default-off rollback path.
+/// Android retains HTTP, cookies, scheduling, and notification side effects.
 #[jni_fn("com.hippo.ehviewer.client.parser.EventPaneParser")]
 pub fn nativeParseNewsV1(
     mut env: JNIEnv<'_>,
@@ -113,8 +132,8 @@ pub fn nativeParseNewsV1(
 
 /// Parses Gallery List HTML into the versioned Rust-first V1 envelope.
 ///
-/// This symbol is deliberately separate from `parseGalleryInfoList`, which
-/// remains the runtime rollback path with its legacy CBOR/error shape.
+/// This is the sole production Gallery List parser symbol; its unversioned predecessor
+/// is retired and rejected by the ABI negative manifest.
 #[jni_fn("com.hippo.ehviewer.client.parser.GalleryListParserKt")]
 pub fn parseGalleryInfoListV1(
     mut env: JNIEnv<'_>,
@@ -138,7 +157,7 @@ pub fn parseSignInV1(
 
 /// Parses a rich Gallery Detail response into the versioned Rust-first V1 envelope.
 ///
-/// The unversioned `nativeParse` symbol preserves the complete rollback contract.
+/// Android retains request execution and presentation; the unversioned symbol is retired.
 #[jni_fn("com.hippo.ehviewer.client.parser.GalleryDetailParser")]
 pub fn nativeParseV1(
     mut env: JNIEnv<'_>,
@@ -151,7 +170,7 @@ pub fn nativeParseV1(
 
 /// Parses gallery comments into the versioned Rust-first V1 envelope.
 ///
-/// The unversioned `nativeParseComments` symbol remains the runtime rollback path.
+/// Android retains request execution, filtering facts, and presentation.
 #[jni_fn("com.hippo.ehviewer.client.parser.GalleryDetailParser")]
 pub fn nativeParseCommentsV1(
     mut env: JNIEnv<'_>,
@@ -164,7 +183,7 @@ pub fn nativeParseCommentsV1(
 
 /// Parses gallery previews into the versioned Rust-first V1 envelope.
 ///
-/// The unversioned `nativeParsePreviews` symbol remains the runtime rollback path.
+/// Android retains request execution, paging state, and presentation.
 #[jni_fn("com.hippo.ehviewer.client.parser.GalleryDetailParser")]
 pub fn nativeParsePreviewsV1(
     mut env: JNIEnv<'_>,
@@ -177,7 +196,7 @@ pub fn nativeParsePreviewsV1(
 
 /// Parses reader-page image metadata into the versioned Rust-first V1 envelope.
 ///
-/// The original Kotlin parser remains the default-off runtime rollback path.
+/// Android retains HTTP, scheduling, cache state, and image presentation.
 #[jni_fn("com.hippo.ehviewer.client.parser.GalleryPageParser")]
 pub fn nativeParseReaderPageV1(
     mut env: JNIEnv<'_>,
@@ -277,7 +296,7 @@ pub fn nativeParseVoteCommentV1(
 /// Parses gallery torrent tables into a versioned list with validated info hashes.
 ///
 /// Raw source URLs are intentionally absent from the V1 payload. The unversioned
-/// `parseTorrent` symbol remains the default-off rollback path.
+/// parser symbol is retired.
 #[jni_fn("com.hippo.ehviewer.client.parser.TorrentParserKt")]
 pub fn parseTorrentV1(
     mut env: JNIEnv<'_>,
@@ -290,7 +309,7 @@ pub fn parseTorrentV1(
 
 /// Parses user-config favorite-category names into the versioned V1 envelope.
 ///
-/// The unversioned `parseFavCat` symbol remains the default-off rollback path.
+/// Android retains request execution and preference persistence.
 #[jni_fn("com.hippo.ehviewer.client.parser.UserConfigParser")]
 pub fn parseFavCatV1(
     mut env: JNIEnv<'_>,
@@ -303,8 +322,8 @@ pub fn parseFavCatV1(
 
 /// Parses archive choices and optional balances into the versioned V1 envelope.
 ///
-/// This symbol remains separate from `parseArchives` so the unversioned parser
-/// stays available as the default-off runtime rollback path.
+/// Android retains HTTP, balance state, and archive-choice presentation; the
+/// unversioned parser symbol is retired.
 #[jni_fn("com.hippo.ehviewer.client.parser.ArchiveParserKt")]
 pub fn parseArchivesV1(
     mut env: JNIEnv<'_>,
@@ -320,8 +339,7 @@ pub fn parseArchivesV1(
 
 /// Parses a validated final archive URL into the versioned V1 envelope.
 ///
-/// Unsafe present links become typed Rust failures and never reach the legacy
-/// string-concatenation parser when this default-off path is selected.
+/// Unsafe present links become typed Rust failures and never reach Android effects.
 #[jni_fn("com.hippo.ehviewer.client.parser.ArchiveParserKt")]
 pub fn parseArchiveUrlV1(
     mut env: JNIEnv<'_>,

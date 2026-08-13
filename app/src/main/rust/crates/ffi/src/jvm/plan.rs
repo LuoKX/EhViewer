@@ -625,7 +625,7 @@ pub fn nativePlanLocalFavoriteMutationV1(
 
 /// Constructs one sanitized Gallery List request URL through `eh_net`.
 ///
-/// Android retains mutable navigation state, site selection, and runtime rollback.
+/// Android retains mutable navigation state and site selection.
 #[jni_fn("com.hippo.ehviewer.bridge.gallery.GalleryListUrlBridgeKt")]
 pub fn nativeBuildGalleryListUrlV1(
     mut env: JNIEnv<'_>,
@@ -675,9 +675,8 @@ pub fn nativeParseGalleryListUrlV1(
 
 /// Parses one gallery detail or reader-page navigation reference through `eh_net`.
 ///
-/// Android retains navigation, destination construction, and the default-off
-/// legacy rollback parser. Candidate URLs and tokens are never attached to
-/// boundary errors.
+/// Android retains navigation and destination construction. Candidate URLs and
+/// tokens are never attached to boundary errors, and no parser fallback is linked.
 #[jni_fn("com.hippo.ehviewer.bridge.gallery.GalleryNavigationBridgeKt")]
 pub fn nativeParseGalleryNavigationV1(
     mut env: JNIEnv<'_>,

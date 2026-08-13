@@ -4,10 +4,11 @@ use eh_domain::contracts::{
     ApiEnvelope, GalleryDetail, GalleryDetailPage, GalleryItemSummary, GalleryVersionSummary,
     RustError,
 };
+use eh_domain::gallery_rules::category_value;
 use tl::{HTMLTag, Node, NodeHandle, Parser, ParserOptions, VDom};
 
 use super::{comments, preview, tags};
-use crate::gallery::list::{category_value, gallery_key, thumbnail_key};
+use crate::gallery::list::{gallery_key, thumbnail_key};
 use crate::html::first_element_child;
 use crate::news;
 use crate::text::unescape;

@@ -351,3 +351,369 @@ fn trim_digit_run(bytes: &[u8]) -> &[u8] {
         .position(|byte| *byte != b'0')
         .map_or(&bytes[bytes.len() - 1..], |index| &bytes[index..])
 }
+
+#[cfg(test)]
+mod tests {
+    use std::cmp::Ordering;
+
+    use super::{
+        COMIC_INFO_ENTRY_NAME, IMAGE_EXTENSIONS, RecoveryArchiveEntry, RecoveryArchiveError,
+        RecoveryArchiveFormat, RecoveryArchiveImage, RecoveryArchiveInspection,
+        RecoveryArchiveIssue, RecoveryArchiveLimits, RecoveryArchiveMetadata,
+        SPIDER_INFO_ENTRY_NAME, compression_ratio_exceeded, inspect_recovery_entries,
+        natural_compare, path_depth, playable_extension, safe_relative_path,
+    };
+
+    fn entry(name: &str, size: u64) -> RecoveryArchiveEntry {
+        RecoveryArchiveEntry {
+            name: name.to_owned(),
+            compressed_size: None,
+            uncompressed_size: size,
+            regular: true,
+            encrypted: false,
+            readable: true,
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn defaults_and_wire_contracts_are_stable() {
+        let limits = RecoveryArchiveLimits::default();
+        assert_eq!(limits.maximum_entries, 100_000);
+        assert_eq!(limits.maximum_name_bytes, 4_096);
+        assert_eq!(limits.maximum_path_depth, 32);
+        assert_eq!(limits.maximum_entry_bytes, 512 * 1024 * 1024);
+        assert_eq!(limits.maximum_total_bytes, 4 * 1024 * 1024 * 1024);
+        assert_eq!(limits.maximum_metadata_bytes, 512 * 1024);
+        assert_eq!(limits.maximum_compression_ratio, 1_000);
+
+        let inspection = RecoveryArchiveInspection {
+            format: RecoveryArchiveFormat::TarGzip,
+            entry_count: 2,
+            total_uncompressed_bytes: 5,
+            images: vec![RecoveryArchiveImage {
+                name: "2.jpg".to_owned(),
+                size: 3,
+            }],
+            metadata: vec![RecoveryArchiveMetadata {
+                name: SPIDER_INFO_ENTRY_NAME.to_owned(),
+                bytes: vec![1, 2],
+            }],
+            issues: vec![RecoveryArchiveIssue::UnsafePath],
+        };
+        let encoded = serde_json::to_string(&inspection).unwrap();
+        assert_eq!(
+            encoded,
+            concat!(
+                r#"{"format":"tarGzip","entryCount":2,"totalUncompressedBytes":5,"#,
+                r#""images":[{"name":"2.jpg","size":3}],"metadata":[{"name":".ehviewer","#,
+                r#""bytes":[1,2]}],"issues":["unsafePath"]}"#,
+            )
+        );
+        assert_eq!(
+            serde_json::from_str::<RecoveryArchiveInspection>(&encoded).unwrap(),
+            inspection
+        );
+
+        for format in [
+            RecoveryArchiveFormat::Zip,
+            RecoveryArchiveFormat::Rar,
+            RecoveryArchiveFormat::Rar5,
+            RecoveryArchiveFormat::SevenZip,
+            RecoveryArchiveFormat::Tar,
+            RecoveryArchiveFormat::TarGzip,
+            RecoveryArchiveFormat::TarXz,
+        ] {
+            let encoded = serde_json::to_string(&format).unwrap();
+            assert_eq!(
+                serde_json::from_str::<RecoveryArchiveFormat>(&encoded).unwrap(),
+                format
+            );
+        }
+
+        let encoded = serde_json::to_string(&limits).unwrap();
+        assert_eq!(
+            serde_json::from_str::<RecoveryArchiveLimits>(&encoded).unwrap(),
+            limits
+        );
+        let sample = entry("1.jpg", 1);
+        let encoded = serde_json::to_string(&sample).unwrap();
+        assert_eq!(
+            serde_json::from_str::<RecoveryArchiveEntry>(&encoded).unwrap(),
+            sample
+        );
+        for issue in [
+            RecoveryArchiveIssue::Encrypted,
+            RecoveryArchiveIssue::Unreadable,
+            RecoveryArchiveIssue::UnsafePath,
+            RecoveryArchiveIssue::LimitExceeded,
+            RecoveryArchiveIssue::DuplicateMetadata,
+            RecoveryArchiveIssue::DuplicateName,
+        ] {
+            let encoded = serde_json::to_string(&issue).unwrap();
+            assert_eq!(
+                serde_json::from_str::<RecoveryArchiveIssue>(&encoded).unwrap(),
+                issue
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_every_zero_limit_and_reports_byte_overflow() {
+        let baseline = RecoveryArchiveLimits::default();
+        let invalid = [
+            RecoveryArchiveLimits {
+                maximum_entries: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_name_bytes: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_path_depth: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_entry_bytes: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_total_bytes: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_metadata_bytes: 0,
+                ..baseline
+            },
+            RecoveryArchiveLimits {
+                maximum_compression_ratio: 0,
+                ..baseline
+            },
+        ];
+        for limits in invalid {
+            let error = inspect_recovery_entries(RecoveryArchiveFormat::Zip, &[], limits)
+                .expect_err("zero limits must be rejected");
+            assert!(matches!(error, RecoveryArchiveError::InvalidLimits));
+            assert_eq!(error.to_string(), "archive recovery limits are invalid");
+        }
+
+        let limits = RecoveryArchiveLimits {
+            maximum_entry_bytes: u64::MAX,
+            maximum_total_bytes: u64::MAX,
+            ..baseline
+        };
+        let error = inspect_recovery_entries(
+            RecoveryArchiveFormat::Zip,
+            &[entry("first.bin", u64::MAX), entry("second.bin", 1)],
+            limits,
+        )
+        .expect_err("the checked byte sum must not wrap");
+        assert!(matches!(error, RecoveryArchiveError::ByteCountOverflow));
+        assert_eq!(error.to_string(), "archive recovery byte count overflow");
+    }
+
+    #[test]
+    fn retains_safe_images_and_metadata_in_deterministic_order() {
+        let mut comic_info = entry(COMIC_INFO_ENTRY_NAME, 3);
+        comic_info.metadata = Some(b"xml".to_vec());
+        let mut spider_info = entry(SPIDER_INFO_ENTRY_NAME, 2);
+        spider_info.metadata = Some(vec![1, 2]);
+        let entries = [
+            entry("pages/10.jpg", 10),
+            comic_info,
+            entry("pages/2.jpg", 2),
+            spider_info,
+            entry("pages/01.jpg", 1),
+            entry("pages/ignored.JPG", 4),
+            entry("README", 5),
+            entry("pages/empty.png", 0),
+        ];
+
+        let inspection = inspect_recovery_entries(
+            RecoveryArchiveFormat::SevenZip,
+            &entries,
+            RecoveryArchiveLimits::default(),
+        )
+        .unwrap();
+
+        assert_eq!(inspection.format, RecoveryArchiveFormat::SevenZip);
+        assert_eq!(inspection.entry_count, 8);
+        assert_eq!(inspection.total_uncompressed_bytes, 27);
+        assert_eq!(
+            inspection.images,
+            [
+                RecoveryArchiveImage {
+                    name: "pages/01.jpg".to_owned(),
+                    size: 1,
+                },
+                RecoveryArchiveImage {
+                    name: "pages/2.jpg".to_owned(),
+                    size: 2,
+                },
+                RecoveryArchiveImage {
+                    name: "pages/10.jpg".to_owned(),
+                    size: 10,
+                },
+            ]
+        );
+        assert_eq!(
+            inspection.metadata,
+            [
+                RecoveryArchiveMetadata {
+                    name: SPIDER_INFO_ENTRY_NAME.to_owned(),
+                    bytes: vec![1, 2],
+                },
+                RecoveryArchiveMetadata {
+                    name: COMIC_INFO_ENTRY_NAME.to_owned(),
+                    bytes: b"xml".to_vec(),
+                },
+            ]
+        );
+        assert!(inspection.issues.is_empty());
+    }
+
+    #[test]
+    fn classifies_all_untrusted_entry_failures_without_duplicate_issues() {
+        let limits = RecoveryArchiveLimits {
+            maximum_entries: 32,
+            maximum_name_bytes: 20,
+            maximum_path_depth: 2,
+            maximum_entry_bytes: 100,
+            maximum_total_bytes: 20,
+            maximum_metadata_bytes: 4,
+            maximum_compression_ratio: 10,
+        };
+        let mut duplicate_metadata = entry(COMIC_INFO_ENTRY_NAME, 3);
+        duplicate_metadata.metadata = Some(b"bad length".to_vec());
+        let mut encrypted = entry("secret.png", 3);
+        encrypted.encrypted = true;
+        let mut unreadable = entry("broken.gif", 3);
+        unreadable.readable = false;
+        let mut zero_compressed = entry("ratio.jpg", 1);
+        zero_compressed.compressed_size = Some(0);
+        let mut high_ratio = entry("ratio2.jpg", 11);
+        high_ratio.compressed_size = Some(1);
+        let mut directory = entry("folder", 1);
+        directory.regular = false;
+        let mut first_metadata = entry(COMIC_INFO_ENTRY_NAME, 3);
+        first_metadata.metadata = Some(b"xml".to_vec());
+        let mut oversized_metadata = entry(SPIDER_INFO_ENTRY_NAME, 5);
+        oversized_metadata.metadata = Some(vec![0; 5]);
+        let entries = [
+            first_metadata,
+            duplicate_metadata,
+            encrypted,
+            unreadable,
+            zero_compressed,
+            high_ratio,
+            directory,
+            oversized_metadata,
+            entry("../escape.jpg", 1),
+            entry("too/deep/image.jpg", 1),
+            entry("this-name-is-too-long.jpg", 1),
+            entry("oversized.jpg", 101),
+            entry("valid.webp", 15),
+        ];
+
+        let inspection =
+            inspect_recovery_entries(RecoveryArchiveFormat::Rar5, &entries, limits).unwrap();
+
+        assert_eq!(inspection.entry_count, 13);
+        assert_eq!(inspection.total_uncompressed_bytes, 32);
+        assert_eq!(
+            inspection.images,
+            [RecoveryArchiveImage {
+                name: "valid.webp".to_owned(),
+                size: 15,
+            }]
+        );
+        assert_eq!(inspection.metadata.len(), 1);
+        assert_eq!(
+            inspection.issues,
+            [
+                RecoveryArchiveIssue::Encrypted,
+                RecoveryArchiveIssue::Unreadable,
+                RecoveryArchiveIssue::UnsafePath,
+                RecoveryArchiveIssue::LimitExceeded,
+                RecoveryArchiveIssue::DuplicateMetadata,
+                RecoveryArchiveIssue::DuplicateName,
+            ]
+        );
+    }
+
+    #[test]
+    fn entry_count_limit_truncates_policy_work_but_reports_the_full_count() {
+        let limits = RecoveryArchiveLimits {
+            maximum_entries: 1,
+            ..RecoveryArchiveLimits::default()
+        };
+        let inspection = inspect_recovery_entries(
+            RecoveryArchiveFormat::Tar,
+            &[entry("2.jpg", 2), entry("1.jpg", 1)],
+            limits,
+        )
+        .unwrap();
+
+        assert_eq!(inspection.entry_count, 2);
+        assert_eq!(inspection.total_uncompressed_bytes, 2);
+        assert_eq!(
+            inspection.images,
+            [RecoveryArchiveImage {
+                name: "2.jpg".to_owned(),
+                size: 2,
+            }]
+        );
+        assert_eq!(inspection.issues, [RecoveryArchiveIssue::LimitExceeded]);
+    }
+
+    #[test]
+    fn path_ratio_extension_and_natural_order_helpers_cover_boundaries() {
+        for unsafe_name in [
+            "",
+            "/root.jpg",
+            "\\root.jpg",
+            "C:drive.jpg",
+            "./same.jpg",
+            "../parent.jpg",
+            "a//b.jpg",
+            "a\\\\b.jpg",
+        ] {
+            assert!(!safe_relative_path(unsafe_name), "{unsafe_name}");
+        }
+        for safe_name in ["1.jpg", "dir/1.jpg", "dir\\1.jpg", ".ehviewer"] {
+            assert!(safe_relative_path(safe_name), "{safe_name}");
+        }
+        assert_eq!(path_depth("a/b\\c.jpg"), 3);
+
+        let mut item = entry("image.jpg", 0);
+        item.compressed_size = Some(0);
+        assert!(!compression_ratio_exceeded(&item, 10));
+        item.uncompressed_size = 1;
+        assert!(compression_ratio_exceeded(&item, 10));
+        item.compressed_size = Some(2);
+        item.uncompressed_size = 20;
+        assert!(!compression_ratio_exceeded(&item, 10));
+        item.uncompressed_size = 22;
+        assert!(compression_ratio_exceeded(&item, 10));
+        item.compressed_size = None;
+        assert!(!compression_ratio_exceeded(&item, 1));
+
+        for extension in IMAGE_EXTENSIONS {
+            let name = format!("image.{extension}");
+            assert_eq!(playable_extension(&name), Some(extension));
+        }
+        assert_eq!(playable_extension("image"), None);
+        assert_eq!(playable_extension("image.JPG"), None);
+
+        assert_eq!(natural_compare("image2.jpg", "image10.jpg"), Ordering::Less);
+        assert_eq!(natural_compare("image1.jpg", "image01.jpg"), Ordering::Less);
+        assert_eq!(
+            natural_compare("image000.jpg", "image0.jpg"),
+            Ordering::Greater
+        );
+        assert_eq!(natural_compare("image.jpg", "image0.jpg"), Ordering::Less);
+        assert_eq!(natural_compare("b.jpg", "a.jpg"), Ordering::Greater);
+        assert_eq!(natural_compare("same", "same"), Ordering::Equal);
+    }
+}

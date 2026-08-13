@@ -8,11 +8,13 @@
 //! [`contracts`] models versioned responses, typed domain failures, and the DTOs
 //! crossing the Rust-to-Android boundary. [`daily`] owns daily-check eligibility,
 //! [`download`] owns the pure queue state machine, [`download_catalog`] owns
-//! catalog sorting/filtering, [`library`] owns Android-persistence-facing plans,
-//! [`search`] owns query normalization, [`settings`] owns portable repair rules,
-//! [`reader`] plans page scheduling and deterministic image-fetch transitions,
-//! and [`session`] plans sanitized lifecycle transitions and classifies response
-//! failures without receiving cookie values, credentials, or bodies. Android
+//! catalog sorting/filtering, [`gallery_filter`] owns Gallery list/comment filter
+//! decisions, [`gallery_rules`] owns category and similar-title compatibility,
+//! [`library`] owns Android-persistence-facing plans, [`search`] owns query
+//! normalization, [`settings`] owns portable repair rules, [`reader`] plans page
+//! scheduling and deterministic image-fetch transitions, and [`session`] plans
+//! sanitized lifecycle transitions and classifies response failures without
+//! receiving cookie values, credentials, or bodies. Android
 //! retains services, persistence, notifications, network workers, credentials,
 //! image objects, and file handles. Domain failures
 //! describe business outcomes only; an FFI adapter remains responsible for
@@ -39,6 +41,8 @@ pub mod contracts;
 pub mod daily;
 pub mod download;
 pub mod download_catalog;
+pub mod gallery_filter;
+pub mod gallery_rules;
 pub mod library;
 pub mod reader;
 pub mod recovery;

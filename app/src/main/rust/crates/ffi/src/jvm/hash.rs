@@ -1,10 +1,8 @@
 //! Compatibility JNI hash exports owned by Rust.
 
-use std::fs::File;
 use std::io::Read;
-use std::os::fd::FromRawFd;
 
-use anyhow::{Context as _, ensure};
+use anyhow::Context as _;
 use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jint, jstring};
@@ -20,7 +18,7 @@ use super::jni_throwing;
 #[jni_fn("com.hippo.ehviewer.jni.HashKt")]
 pub fn sha1(mut env: JNIEnv<'_>, _: JClass<'_>, file_descriptor: jint) -> jstring {
     jni_throwing(&mut env, |env| {
-        let file = duplicate_file_descriptor(file_descriptor)
+        let file = super::duplicate_file_descriptor(file_descriptor, "SHA-1")
             .context("Failed to duplicate SHA-1 input descriptor")?;
         let value = digest_reader(file).context("Failed to read SHA-1 input descriptor")?;
         Ok(env.new_string(value)?.into_raw())
@@ -38,22 +36,6 @@ fn digest_reader(mut reader: impl Read) -> std::io::Result<String> {
         digest.update(&buffer[..read]);
     }
     Ok(format!("{:x}", digest.finalize()))
-}
-
-#[allow(
-    unsafe_code,
-    reason = "duplicating an Android-owned POSIX descriptor requires libc ownership conversion"
-)]
-fn duplicate_file_descriptor(file_descriptor: jint) -> anyhow::Result<File> {
-    ensure!(file_descriptor >= 0, "SHA-1 file descriptor is negative");
-    // SAFETY: `dup` does not take ownership and reports an invalid descriptor via `-1`.
-    let duplicated_descriptor = unsafe { libc::dup(file_descriptor) };
-    if duplicated_descriptor < 0 {
-        return Err(std::io::Error::last_os_error())
-            .context("Failed to duplicate SHA-1 file descriptor");
-    }
-    // SAFETY: the successful `dup` result is uniquely owned by this `File`.
-    Ok(unsafe { File::from_raw_fd(duplicated_descriptor) })
 }
 
 #[cfg(test)]

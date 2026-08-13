@@ -105,6 +105,7 @@ import com.ehviewer.core.util.withIOContext
 import com.ehviewer.core.util.withUIContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.gallery.extractGalleryTitle
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhFilter.remember
 import com.hippo.ehviewer.client.EhUrl
@@ -566,7 +567,7 @@ fun BelowHeader(galleryDetail: GalleryDetail, voteTag: VoteTag) {
       icon = Icons.Default.Search,
       text = stringResource(id = R.string.similar_gallery),
       onClick = {
-        val keyword = EhUtils.extractTitle(galleryDetail.title)
+        val keyword = extractGalleryTitle(galleryDetail.title)
         val artistTag = galleryDetail.tagGroups.artistTag()
         if (null != keyword) {
           navigate(

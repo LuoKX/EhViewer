@@ -2,7 +2,6 @@
 
 use std::fs::File;
 use std::io::{Seek, SeekFrom};
-use std::os::fd::FromRawFd;
 
 use anyhow::{Context as _, Result, ensure};
 use eh_archive::writer::{CbzEntry, write_generated_cbz};
@@ -94,6 +93,10 @@ fn reset_failed_archive(output_file: &mut File) {
     if output_file.set_len(0).is_ok() {
         output_file.seek(SeekFrom::Start(0)).ok();
     }
+}
+
+fn duplicate_file_descriptor(file_descriptor: jint) -> Result<File> {
+    super::duplicate_file_descriptor(file_descriptor, "Archive")
 }
 
 /// Opens one ZIP, 7z, RAR, or tar archive through a Rust-owned V2 handle.
@@ -366,22 +369,4 @@ pub fn nativeValidateDownloadedCbzV1(
         i64::try_from(validation.uncompressed_bytes)
             .context("Downloaded CBZ validated byte count exceeds JNI range")
     })
-}
-
-#[allow(
-    unsafe_code,
-    reason = "duplicating an Android-owned POSIX descriptor requires libc ownership conversion"
-)]
-fn duplicate_file_descriptor(file_descriptor: jint) -> Result<File> {
-    ensure!(file_descriptor >= 0, "Archive file descriptor is negative");
-    // SAFETY: `dup` accepts any integer descriptor and reports invalid inputs
-    // through `-1`; it does not take ownership of the Java-owned descriptor.
-    let duplicated_descriptor = unsafe { libc::dup(file_descriptor) };
-    if duplicated_descriptor < 0 {
-        return Err(std::io::Error::last_os_error())
-            .context("Failed to duplicate archive file descriptor");
-    }
-    // SAFETY: a non-negative `dup` result is a new owned descriptor. `File`
-    // closes only this duplicate and never the descriptor owned by Java.
-    Ok(unsafe { File::from_raw_fd(duplicated_descriptor) })
 }

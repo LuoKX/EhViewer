@@ -19,12 +19,11 @@ package com.hippo.ehviewer.image
 
 import android.graphics.Bitmap
 import android.hardware.HardwareBuffer
+import android.os.Build
 import androidx.compose.ui.unit.IntSize
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import arrow.fx.coroutines.ExitCase
-import arrow.fx.coroutines.bracketCase
 import coil3.BitmapImage
 import coil3.DrawableImage
 import coil3.Image as CoilImage
@@ -39,18 +38,15 @@ import coil3.size.Size
 import coil3.size.SizeResolver
 import com.ehviewer.core.files.openFileDescriptor
 import com.ehviewer.core.files.toUri
-import com.ehviewer.core.util.isAtLeastP
-import com.ehviewer.core.util.isAtLeastU
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.coil.AnimatedWebPDrawable
 import com.hippo.ehviewer.coil.BitmapImageWithExtraInfo
 import com.hippo.ehviewer.coil.detectQrCode
 import com.hippo.ehviewer.coil.hardwareThreshold
 import com.hippo.ehviewer.coil.maybeCropBorder
-import com.hippo.ehviewer.jni.isGif
-import com.hippo.ehviewer.jni.mmap
-import com.hippo.ehviewer.jni.munmap
+import com.hippo.ehviewer.jni.prepareGifSourceOwned
 import com.hippo.ehviewer.jni.rewriteGifSource
+import com.hippo.ehviewer.jni.shouldUseGifWorkaround
 import com.hippo.ehviewer.ktbuilder.execute
 import com.hippo.ehviewer.ktbuilder.imageRequest
 import java.nio.ByteBuffer
@@ -124,31 +120,42 @@ class Image private constructor(image: CoilImage, private val src: ImageSource) 
       }
     }
 
+    private suspend fun decodePreparedGif(
+      source: ByteArray,
+      checkExtraneousAds: Boolean,
+    ): Image {
+      val prepared = byteBufferSource(ByteBuffer.wrap(source)) {}
+      val image =
+        try {
+          prepared.left().decodeCoil(checkExtraneousAds)
+        } catch (failure: Throwable) {
+          prepared.close()
+          throw failure
+        }
+      return Image(image, prepared).apply {
+        if (innerImage is BitmapImage) prepared.close()
+      }
+    }
+
     suspend fun decode(src: ImageSource, checkExtraneousAds: Boolean = false): Image {
+      val useGifWorkaround = shouldUseGifWorkaround(Build.VERSION.SDK_INT)
       val image =
         when (src) {
           is PathSource -> {
-            if (isAtLeastP && !isAtLeastU) {
-              src.source.openFileDescriptor("rw").use {
-                val fd = it.fd
-                if (isGif(fd)) {
-                  return bracketCase(
-                    { mmap(fd)!! },
-                    { buffer ->
-                      decode(
-                        byteBufferSource(buffer) { munmap(buffer).also { src.close() } },
-                        checkExtraneousAds,
-                      )
-                    },
-                    { buffer, case -> if (case !is ExitCase.Completed) munmap(buffer) },
-                  )
+            if (useGifWorkaround) {
+              val prepared =
+                src.source.openFileDescriptor("r").use {
+                  prepareGifSourceOwned(it.fd)
                 }
+              if (prepared != null) {
+                src.close()
+                return decodePreparedGif(prepared, checkExtraneousAds)
               }
             }
             src.right().decodeCoil(checkExtraneousAds)
           }
           is ByteBufferSource -> {
-            if (isAtLeastP && !isAtLeastU) {
+            if (useGifWorkaround) {
               rewriteGifSource(src.source)
             }
             src.left().decodeCoil(checkExtraneousAds)

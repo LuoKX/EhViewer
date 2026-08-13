@@ -154,6 +154,17 @@ cargo llvm-cov --package eh_ffi --lib --all-features \
 cargo llvm-cov --package eh_domain --all-features \
   --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/reader/fetch/tests\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95
+cargo llvm-cov clean --workspace
+cargo llvm-cov --package eh_domain --lib \
+  --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_rules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+  --lcov --output-path target/llvm-cov/eh-domain-gallery-filter.lcov \
+  --fail-under-lines 95 --fail-under-functions 95 -- gallery_filter::tests::
+cargo llvm-cov clean --workspace
+cargo llvm-cov --package eh_domain --lib \
+  --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_filter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+  --lcov --output-path target/llvm-cov/eh-domain-gallery-rules.lcov \
+  --fail-under-lines 95 --fail-under-functions 95 -- gallery_rules::tests::
+cargo llvm-cov clean --workspace
 cargo llvm-cov --package eh_domain --lib \
   --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/download/progress\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- download::tests::
@@ -175,8 +186,14 @@ cargo llvm-cov --package eh_domain --lib \
   --fail-under-lines 95 --fail-under-functions 95 -- session::lifecycle::tests::
 cargo llvm-cov --package eh_image --all-features \
   --fail-under-lines 95 --fail-under-functions 95
+cargo llvm-cov clean --workspace
+cargo llvm-cov --package eh_image --lib --all-features \
+  --ignore-filename-regex '(/border\.rs$|/pixel\.rs$|/qr\.rs$|/region\.rs$|/lib\.rs$)' \
+  --lcov --output-path target/llvm-cov/eh-image-gif.lcov \
+  --fail-under-lines 95 --fail-under-functions 95 -- gif::tests::
+cargo llvm-cov clean --workspace
 cargo llvm-cov --package eh_image --lib \
-  --ignore-filename-regex '(/border\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
+  --ignore-filename-regex '(/border\.rs$|/gif\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- region::tests::
 cargo llvm-cov --package eh_net --all-features \
   --fail-under-lines 95 --fail-under-functions 95
@@ -191,60 +208,65 @@ cargo llvm-cov --package eh_archive --lib \
 
 # Critical modules sharing a crate are also gated independently.
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --lcov --output-path target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::favorite_mutation::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_note|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|network_policy|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --lcov --output-path target/llvm-cov/eh-net-gallery-archive-request.lcov \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::archive_request::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
   --ignore-filename-regex '(/gallery/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- auth::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::list::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::metadata::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::list_url::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::list_url_parser::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::navigation::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::favorites_url::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::favorites::tests::
+cargo llvm-cov clean --workspace
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --lcov --output-path target/llvm-cov/eh-net-gallery-favorite-note.lcov \
+  --fail-under-lines 95 --fail-under-functions 95 -- gallery::favorite_note::tests::
+cargo llvm-cov --package eh_net --lib --all-features \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::archive::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::comments::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::comment_vote::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::detail::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::preview::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::token::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::tag
 cargo llvm-cov --package eh_net --lib --all-features \
-  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+  --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/archive_request\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
   --fail-under-lines 95 --fail-under-functions 95 -- gallery::rate::tests::
 cargo llvm-cov --package eh_net --lib --all-features \
   --ignore-filename-regex '(/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
@@ -281,13 +303,28 @@ cargo llvm-cov --package eh_ffi --lib --all-features \
   -Pandroid.injected.build.abi=x86_64
 ```
 
+The isolated gallery-filter gate was measured on 2026-08-13 at 560/562 lines
+(99.64%) and 55/55 functions (100%). The surrounding `llvm-cov clean` commands
+prevent profiles from adjacent focused gates from inflating or reducing that result.
+
+The isolated gallery-rules gate was measured on 2026-08-13 at 159/159 lines and
+18/18 functions (100% each). It covers every category bit, alias, canonical label,
+inversion boundary, title delimiter/chapter/pipe/null rule, and the exact V1 wire
+contract without borrowing coverage from Gallery filtering or another domain module.
+
 As each critical crate is introduced, CI adds a separate coverage invocation
 for that crate. Reports are retained as artifacts for review.
 
-The legacy root crate is temporarily excluded from the deterministic unit-test
-command because its parser suite still calls live services. Each migration slice
-must replace the relevant smoke test with offline fixtures; once the final live
-test is removed, `cargo test --workspace` becomes the mandatory command.
+The root live-network parser suite has been removed; all portable parser coverage now
+uses checked-in offline fixtures in the workspace crates. The mandatory deterministic
+Rust gate is `cargo test --workspace --all-features`, including the packaging facade
+and every workspace crate.
+
+ABI verification is bidirectional. Positive manifests require the exact V1, Archive
+V2, Android image, host WebP, Hash compatibility, and `JNI_OnLoad` symbol sets.
+Negative manifests fail if any retired unversioned parser, GIF, old C Archive, or
+`strnatcmp` symbol returns. Host archive checks run without Android; the final
+x86_64 check inspects both stripped dynamic exports and the unstripped native library.
 
 ## Current Enforced Packages
 
@@ -295,8 +332,9 @@ The detailed counts and selector wording below are historical pre-mainline evide
 Current tests exercise direct Rust bridges; any reference to parity, `default-off`,
 rollback switches, or global backend selection is non-normative.
 
-The current CI gate covers only critical code already migrated into the new
-workspace. It does not represent completion of the full rewrite:
+The current CI gate covers the complete portable Rust workspace and the native
+packaging boundary. Android UI, lifecycle, SAF, HTTP, and device integration remain
+platform-owned and are not implied by host Rust completion.
 
 The counts below are the latest recorded pre-C7 evidence. They must be regenerated
 after the C1-C6 single-switch and unified-archive changes before any completion claim.
@@ -373,6 +411,32 @@ validation, shared Gallery List typed errors, the Rust/Kotlin golden, and defaul
 single-parser selection. Android still owns GET/mutation HTTP, local favorites,
 Room enrichment, paging, refresh, and UI; real API/device rollback evidence remains
 open.
+Gallery Favorite Note parsing has an isolated, profile-clean gate over only
+`gallery/favorite_note.rs` and the shared legacy entity helpers in `text.rs`.
+The current focused result is 104/104 lines and 12/12 functions (100% each),
+covering exact first-textarea grammar, the seven historical entities, fixed
+body-free failures, shared Rust/Kotlin CBOR goldens, and compiled real-JNI source.
+Android still owns the request and presentation, and device execution remains open.
+The GIF delay workaround has a profile-clean `eh_image::gif` gate at 81/81 lines
+and 8/8 functions (100% each). Host tests cover exact headers, historical marker
+grammar, safe truncation, stop ordering, and an 8-MiB in-place fixture. JNI tests
+cover bounded, offset-preserving snapshots and repeated source immutability; Kotlin
+tests pin API 28–33 selection and one-call/no-fallback routing. The x86_64 and arm64
+debug native links pass with exact new image symbols and an exact retired
+`isGif`/`mmap`/`munmap` negative manifest. Real-JNI instrumentation is compiled but
+not executed here; its 8-MiB repeated preparation is evidence source, not measured
+device memory or latency proof. Production caps one prepared GIF at 512 MiB.
+The canonical Gallery title/category owner has a profile-clean
+`eh_domain::gallery_rules` gate at 159/159 lines and 18/18 functions (100% each).
+Kotlin freezes the removed regex behavior in tests, pins the same category bits and
+display labels, and invokes one `galleryTitle` V1 call for similar search. The
+real-JNI instrumentation source is compiled locally but not executed here.
+The previously uncovered `eh_archive::recovery` policy now has a profile-clean gate
+at 460/464 lines (99.14%) and 24/24 functions. It covers stable wire shapes, every
+zero resource limit, checked byte overflow, path/ratio/metadata/image classification,
+issue deduplication, entry-count truncation, and deterministic natural ordering. With
+that gap closed, aggregate `eh_archive` measures 1810/1835 lines (98.64%) and 151/151
+functions instead of failing the 95% gate because the recovery module was untouched.
 The API 35 image-device CI job now owns Bitmap/AHB format, repeated-lock, invalid
 coordinate, hardware-bitmap wrapping, and Java buffer-close integration. A
 separate Download Queue gate owns the pure reducer/recovery proof, while Kotlin

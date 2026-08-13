@@ -3,8 +3,8 @@
 //! `eh_ffi` is the only target crate that translates JVM buffers, Android image
 //! storage, and versioned wire contracts into calls to `eh_archive`, [`eh_domain`],
 //! `eh_image`, and [`eh_net`]. It contains no UI, Android lifecycle, persistence,
-//! credentials, or legacy parser behavior. The compatibility static library links
-//! this crate while existing Java symbol names remain stable during migration.
+//! credentials, or legacy parser behavior. The root packaging facade links this
+//! crate while checked manifests keep the Java symbols stable.
 //!
 //! # Dependency direction
 //!

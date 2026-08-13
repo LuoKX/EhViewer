@@ -5,25 +5,17 @@
 //! Rust receives only response JSON and emits normalized metadata in source order.
 
 use eh_domain::contracts::{ApiEnvelope, GalleryMetadataBatch, GalleryMetadataItem, RustError};
+use eh_domain::gallery_rules::category_value;
 use serde::Deserialize;
 use serde_json::Value;
 
-use super::{legacy_f64, legacy_i64, list::category_value};
+use super::{legacy_f64, legacy_i64};
+use crate::text::unescape_legacy_entities;
 
 const INVALID_RESPONSE: &str = "Gallery metadata response is invalid";
 const EHGT_THUMBNAIL_PREFIX: &str = "https://ehgt.org/";
 const EX_V1_THUMBNAIL_PREFIX: &str = "https://s.exhentai.org/t/";
 const EX_THUMBNAIL_PREFIX: &str = "https://s.exhentai.org/";
-const KNOWN_ENTITIES: [(&str, &str); 7] = [
-    ("&amp;", "&"),
-    ("&lt;", "<"),
-    ("&gt;", ">"),
-    ("&quot;", "\""),
-    ("&#039;", "'"),
-    ("&nbsp;", "\u{a0}"),
-    ("&times;", "×"),
-];
-
 /// Current Gallery List metadata bridge protocol version.
 pub const API_VERSION: u8 = 1;
 
@@ -96,11 +88,11 @@ pub fn parse(input: &str) -> Result<GalleryMetadataBatch, RustError> {
         }
         items.push(GalleryMetadataItem {
             gallery_id: raw.gid,
-            title: unescape_known(&raw.title),
-            title_japanese: unescape_known(&raw.title_jpn),
+            title: unescape_legacy_entities(&raw.title),
+            title_japanese: unescape_legacy_entities(&raw.title_jpn),
             category: category_value(&raw.category.to_ascii_lowercase()),
             thumbnail_key: metadata_thumbnail_key(&raw.thumb),
-            uploader: raw.uploader.map(|value| unescape_known(&value)),
+            uploader: raw.uploader.map(|value| unescape_legacy_entities(&value)),
             posted,
             rating,
             tags: raw.tags,
@@ -122,33 +114,13 @@ fn metadata_thumbnail_key(url: &str) -> String {
         .to_owned()
 }
 
-fn unescape_known(input: &str) -> String {
-    let mut output = String::with_capacity(input.len());
-    let mut remainder = input;
-    while let Some(offset) = remainder.find('&') {
-        output.push_str(&remainder[..offset]);
-        remainder = &remainder[offset..];
-        if let Some((entity, replacement)) = KNOWN_ENTITIES
-            .iter()
-            .find(|(entity, _)| remainder.starts_with(entity))
-        {
-            output.push_str(replacement);
-            remainder = &remainder[entity.len()..];
-        } else {
-            output.push('&');
-            remainder = &remainder[1..];
-        }
-    }
-    output.push_str(remainder);
-    output
-}
-
 #[cfg(test)]
 mod tests {
     use eh_domain::contracts::{GalleryMetadataBatch, GalleryMetadataItem, RustError};
 
-    use super::{API_VERSION, INVALID_RESPONSE, MODULE, parse, parse_envelope, unescape_known};
+    use super::{API_VERSION, INVALID_RESPONSE, MODULE, parse, parse_envelope};
     use crate::test_support::to_hex;
+    use crate::text::unescape_legacy_entities;
 
     const RESPONSE: &str = include_str!("../../test_data/gallery_metadata.json");
     const V1_GOLDEN_CBOR_HEX: &str = concat!(
@@ -156,8 +128,8 @@ mod tests {
         "61677061796c6f6164a1656974656d7382aa636769641865657469746c65781a52",
         "6f636b202620526f6c6c2026756e6b6e6f776e3b20266c743b687469746c654a",
         "706e75e697a5e69cac203ce789b9e99b863e2022e4b880226863617465676f72",
-        "7908687468756d624b65796861622f632e6a70676875706c6f6164657277416c",
-        "69636520274127c2a0c39720266d7973746572793b66706f737465641a6553f100",
+        "7908687468756d624b65796861622f632e6a70676875706c6f6164657276416c",
+        "6963652027412720c39720266d7973746572793b66706f737465641a6553f100",
         "66726174696e67f944c06a73696d706c655461677382706c616e67756167653a",
         "656e676c6973686d6172746973743a73616d706c656570616765730caa63676964",
         "26657469746c6560687469746c654a706e606863617465676f7279190800687468",
@@ -178,7 +150,7 @@ mod tests {
                 title_japanese: "日本 <特集> \"一\"".to_owned(),
                 category: 0x8,
                 thumbnail_key: "ab/c.jpg".to_owned(),
-                uploader: Some("Alice 'A'\u{a0}× &mystery;".to_owned()),
+                uploader: Some("Alice 'A' × &mystery;".to_owned()),
                 posted: 1_700_000_000,
                 rating: 4.75,
                 tags: vec!["language:english".to_owned(), "artist:sample".to_owned()],
@@ -245,8 +217,10 @@ mod tests {
     #[test]
     fn preserves_the_exact_known_entity_category_and_thumbnail_rules() {
         assert_eq!(
-            unescape_known("&amp;&lt;&gt;&quot;&#039;&nbsp;&times;&unknown;&amp;lt; plain"),
-            "&<>\"'\u{a0}×&unknown;&lt; plain"
+            unescape_legacy_entities(
+                "&amp;&lt;&gt;&quot;&#039;&nbsp;&times;&unknown;&amp;lt; plain"
+            ),
+            "&<>\"' ×&unknown;&lt; plain"
         );
         let cases = [
             ("misc", 0x1),

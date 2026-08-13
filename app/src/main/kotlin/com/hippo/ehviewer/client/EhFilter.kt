@@ -2,61 +2,149 @@ package com.hippo.ehviewer.client
 
 import arrow.core.memoize
 import com.ehviewer.core.database.model.Filter
-import com.ehviewer.core.database.model.FilterMode
+import com.ehviewer.core.model.GalleryComment
 import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.bridge.gallery.GalleryFilterComment
+import com.hippo.ehviewer.bridge.gallery.GalleryFilterGallery
+import com.hippo.ehviewer.bridge.gallery.GalleryFilterOperation
+import com.hippo.ehviewer.bridge.gallery.GalleryFilterRequest
+import com.hippo.ehviewer.bridge.gallery.GalleryFilterSnapshot
+import com.hippo.ehviewer.bridge.gallery.planGalleryFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
-private val regex = { p: Filter -> Regex(p.text) }.memoize()
+/**
+ * Kotlin [Regex] delegates to `java.util.regex.Pattern`; Android libcore implements that public API
+ * with ICU4C. Keeping compilation on Android preserves the stored-pattern behavior that Rust cannot
+ * reproduce exactly.
+ */
+private val androidIcuRegex = { pattern: String -> Regex(pattern) }.memoize()
 
 object EhFilter : CoroutineScope {
-    override val coroutineContext = Dispatchers.IO.limitedParallelism(1)
-    val filters = async { EhDB.getAllFilter() as MutableList }
-    private suspend inline fun anyActive(mode: FilterMode, predicate: (Filter) -> Boolean) = filters.await().any { it.mode == mode && it.enable && predicate(it) }
-    private fun <R> Filter.launchOps(
-        callback: (suspend (R) -> Unit)? = null,
-        ops: suspend Filter.() -> R,
-    ) = launch { ops().let { callback?.invoke(it) } }
-    fun Filter.remember(callback: (suspend (Boolean) -> Unit)? = null) = launchOps(callback) {
-        EhDB.addFilter(this).also { if (it) filters.await().add(this) }
-    }
-    fun Filter.trigger(callback: (suspend (Unit) -> Unit)? = null) = launchOps(callback) {
-        enable = !enable
-        EhDB.updateFilter(this)
-    }
-    fun Filter.forget(callback: (suspend (Unit) -> Unit)? = null) = launchOps(callback) {
-        EhDB.deleteFilter(this)
-        filters.await().remove(this)
+  override val coroutineContext = Dispatchers.IO.limitedParallelism(1)
+  val filters = async { EhDB.getAllFilter() as MutableList }
+
+  private fun <R> Filter.launchOps(
+    callback: (suspend (R) -> Unit)? = null,
+    ops: suspend Filter.() -> R,
+  ) = launch { ops().let { callback?.invoke(it) } }
+
+  fun Filter.remember(callback: (suspend (Boolean) -> Unit)? = null) =
+    launchOps(callback) {
+      EhDB.addFilter(this).also { if (it) filters.await().add(this) }
     }
 
-    private fun spiltTag(tag: String) = tag.run {
-        val index = indexOf(':')
-        if (index < 0) null to this else substring(0, index) to substring(index + 1)
+  fun Filter.trigger(callback: (suspend (Unit) -> Unit)? = null) =
+    launchOps(callback) {
+      enable = !enable
+      EhDB.updateFilter(this)
     }
 
-    private fun matchTag(tag: String, filter: String): Boolean {
-        val (tagNamespace, tagName) = spiltTag(tag)
-        val (filterNamespace, filterName) = spiltTag(filter)
-        return if (null != tagNamespace && null != filterNamespace && tagNamespace != filterNamespace) {
-            false
-        } else {
-            tagName == filterName
+  fun Filter.forget(callback: (suspend (Unit) -> Unit)? = null) =
+    launchOps(callback) {
+      EhDB.deleteFilter(this)
+      filters.await().remove(this)
+    }
+
+  /** Applies the Rust pre-enrichment plan and returns its metadata requirement. */
+  suspend fun <T : GalleryInfo> filterPreEnrichment(galleries: MutableList<T>): Boolean {
+    val filterSnapshots = snapshots()
+    val plan =
+      planGalleryFilter(
+        GalleryFilterRequest.galleries(
+          GalleryFilterOperation.PRE_ENRICHMENT,
+          filterSnapshots,
+          galleries.map { it.toFilterGallery() },
+        )
+      )
+    galleries.applyKeepPlan(plan.keep)
+    return plan.needsTags
+  }
+
+  /** Applies the Rust post-enrichment plan exactly once. */
+  suspend fun <T : GalleryInfo> filterPostEnrichment(galleries: MutableList<T>) {
+    val filterSnapshots = snapshots()
+    val plan =
+      planGalleryFilter(
+        GalleryFilterRequest.galleries(
+          GalleryFilterOperation.POST_ENRICHMENT,
+          filterSnapshots,
+          galleries.map { it.toFilterGallery() },
+        )
+      )
+    galleries.applyKeepPlan(plan.keep)
+  }
+
+  /** Returns the comment rows retained by one Rust plan. */
+  suspend fun filterComments(
+    comments: List<GalleryComment>,
+    scoreThreshold: Int,
+  ): List<GalleryComment> {
+    val filterSnapshots = snapshots()
+    val commentSnapshots = comments.map { GalleryFilterComment(it.score, it.uploader, it.user) }
+    val preflight =
+      planGalleryFilter(
+        GalleryFilterRequest.comments(
+          filters = filterSnapshots,
+          comments = commentSnapshots,
+          scoreThreshold = scoreThreshold,
+        )
+      )
+    val commentContentMatches =
+      evaluateGalleryCommentContentMatches(
+        filters = filterSnapshots,
+        comments = comments,
+        evaluationFilterIndices = preflight.commentEvaluationFilterIndices,
+      )
+    val plan =
+      planGalleryFilter(
+        GalleryFilterRequest.comments(
+          filters = filterSnapshots,
+          comments = commentSnapshots,
+          scoreThreshold = scoreThreshold,
+          commentContentMatches = commentContentMatches,
+        )
+      )
+    check(plan.keep.size == comments.size) { "Gallery comment filter plan length drifted" }
+    return comments.filterIndexed { index, _ -> plan.keep[index] }
+  }
+
+  private suspend fun snapshots() =
+    filters.await().map {
+      GalleryFilterSnapshot(it.mode.field, it.text, it.enable)
+    }
+}
+
+/** Executes Rust-ordered Android ICU work and returns an aligned sparse fact matrix. */
+internal fun evaluateGalleryCommentContentMatches(
+  filters: List<GalleryFilterSnapshot>,
+  comments: List<GalleryComment>,
+  evaluationFilterIndices: List<List<Int>>,
+): List<List<Boolean?>> {
+  require(evaluationFilterIndices.size == comments.size) {
+    "Gallery comment evaluation plan length drifted"
+  }
+  return comments.mapIndexed { commentIndex, comment ->
+    MutableList<Boolean?>(filters.size) { null }
+      .also { facts ->
+        for (filterIndex in evaluationFilterIndices[commentIndex]) {
+          val filter = filters[filterIndex]
+          val matched = androidIcuRegex(filter.text).containsMatchIn(comment.comment)
+          facts[filterIndex] = matched
+          if (matched) break
         }
-    }
+      }
+  }
+}
 
-    private fun matchTagNamespace(tag: String, filter: String): Boolean {
-        val (nameSpace, _) = spiltTag(tag)
-        return nameSpace == filter
-    }
+private fun GalleryInfo.toFilterGallery() = GalleryFilterGallery(title, uploader, simpleTags)
 
-    suspend fun needTags() = filters.await().any { it.enable && (it.mode == FilterMode.TAG || it.mode == FilterMode.TAG_NAMESPACE) }
-    suspend fun filterTitle(info: GalleryInfo) = anyActive(FilterMode.TITLE) { info.title.orEmpty().contains(it.text, true) }
-    suspend fun filterUploader(info: GalleryInfo) = anyActive(FilterMode.UPLOADER) { it.text == info.uploader }
-    suspend fun filterTag(info: GalleryInfo) = info.simpleTags?.any { tag -> anyActive(FilterMode.TAG) { matchTag(tag, it.text.lowercase()) } } == true
-    suspend fun filterTagNamespace(info: GalleryInfo) = info.simpleTags?.any { tag -> anyActive(FilterMode.TAG_NAMESPACE) { matchTagNamespace(tag, it.text.lowercase()) } } == true
-    suspend fun filterCommenter(commenter: String) = anyActive(FilterMode.COMMENTER) { it.text == commenter }
-    suspend fun filterComment(comment: String) = anyActive(FilterMode.COMMENT) { regex(it).containsMatchIn(comment) }
+private fun <T> MutableList<T>.applyKeepPlan(keep: List<Boolean>) {
+  check(keep.size == size) { "Gallery filter plan length drifted" }
+  val retained = filterIndexed { index, _ -> keep[index] }
+  clear()
+  addAll(retained)
 }

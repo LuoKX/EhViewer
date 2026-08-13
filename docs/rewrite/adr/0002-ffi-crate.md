@@ -63,7 +63,7 @@ host-JVM create/info/destroy exports; `eh_ffi::jvm::bitmap` owns border, QR, and
 Bitmap adapters; and `eh_ffi::jvm::hardware_buffer` owns the API 26+ region-copy
 adapter. Root forwards `jvm`, `android`, and `android-26` features but contains no
 forwarding symbol, image module, WebP module, or direct `ndk`, `image`, `eh_image`,
-or libwebp Cargo dependency. The three host WebP exports and seven final Android
+or libwebp Cargo dependency. The three host WebP exports and nine final Android
 image/WebP exports have separate exact manifests because host builds intentionally
 exclude Android Bitmap symbols. The Android libwebp fork is bindings-only, so CMake
 continues to build and supply `webp`/`webpdemux` at the final shared-library link;
@@ -74,6 +74,13 @@ glue is verified by Android target Clippy, Kotlin contract tests, symbol checks,
 instrumentation; it is not counted as host business logic merely to inflate unit
 coverage. Rust Core health and WebP have independent source-filtered coverage gates,
 so neither can borrow codec or aggregate tests.
+
+The final cleanup on 2026-08-13 removed the frozen root parser tree, its fourteen
+unversioned JNI exports, and its live-network test. It also removed the app-owned C
+Archive wrapper, nine old Archive JNI exports, Kotlin declarations, natsort, private
+header, and the earlier GIF C boundary. The root static library now retains only
+`JNI_OnLoad` and the `eh_ffi` link edge. Exact positive and negative manifests make
+that final ownership split executable in host and Android builds.
 
 ## Alternatives Considered
 
@@ -90,8 +97,8 @@ so neither can borrow codec or aggregate tests.
 ## Consequences
 
 - New V1 parser and planner JNI code now follows `domain/net <- ffi <- Android`.
-- Frozen legacy parsers and `JNI_OnLoad` remain in root; animated WebP and all Android
-  Bitmap/HardwareBuffer adapters now have one owner in `eh_ffi`.
+- Only `JNI_OnLoad` and static-link packaging remain in root; parser, animated WebP,
+  GIF, archive, Bitmap, and HardwareBuffer JNI adapters have one owner in `eh_ffi`.
 - Archive descriptor adapters now follow `ehviewer_rust -> eh_ffi -> eh_archive`;
   root has no direct `eh_archive` dependency or forwarding JNI wrapper.
 - Image adapters follow `ehviewer_rust -> eh_ffi -> eh_image`, while libwebp state is

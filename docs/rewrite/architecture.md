@@ -32,8 +32,8 @@ defaults that may change between Kotlin serialization releases.
 | Directory | Crate | Owns | Must not own |
 | --- | --- | --- | --- |
 | `crates/domain` | `eh_domain` | DTOs, errors, state machines, use cases | JNI, Android, HTTP, files |
-| `crates/archive` | `eh_archive` | Generated-CBZ writing and validation | JNI, Android, paths, lifecycle |
-| `crates/image` | `eh_image` | Pixel normalization, border/QR analysis, safe byte-row region copies | JNI, Android bitmap ownership, rendering |
+| `crates/archive` | `eh_archive` | Generated-CBZ writing/validation, bounded ZIP reading, recovery entry policy | JNI, Android, paths, lifecycle |
+| `crates/image` | `eh_image` | Pixel normalization, border/QR analysis, safe region copies, GIF recognition/rewrite | JNI, Android bitmap ownership, rendering |
 | `crates/net` | `eh_net` | Sessions, requests, parsers | UI and Android lifecycle |
 | `crates/store` | `eh_store` | Persistence ports/adapters | UI and parser rules |
 | `crates/ffi` | `eh_ffi` | JNI, CBOR, Rust Core health, unified archive-reader lifecycle, panic containment | Android lifecycle and unrelated business decisions |
@@ -60,19 +60,21 @@ unified V2 archive-reader exports, one always-available Rust Core health export,
 and the stable image/WebP exports. Its `webp` module owns libwebp
 input lifetime, decoder handles, and synchronized decode state;
 `jvm::{bitmap,hardware_buffer,webp}` owns Android/JVM validation and storage access.
-The crate also owns the direct-buffer/UTF-8/CBOR/panic-containment primitives shared
-with root compatibility adapters. It has no Android lifecycle, credential, path,
-persistence, legacy-parser, or business-decision ownership.
+The crate also owns the direct-buffer/UTF-8/CBOR/panic-containment primitives used by
+the Rust JNI adapters. The root packaging facade contains no parser or compatibility
+adapter. `eh_ffi` has no Android lifecycle, credential, path, persistence,
+legacy-parser, or unrelated business-decision ownership.
 
 The root static library directly depends on `eh_ffi` and forwards its `jvm`, `android`,
 and `android-26` features.
-CMake forces unresolved `Java_*` symbols out of the Rust archive and exports them
-from the final shared library. CI builds the archive, extracts the exact checked
-JNI symbols with `nm`, and compares them with `crates/ffi/jvm-v1-symbols.txt`; moving
-a function cannot silently rename or strip the Java ABI. The API-35 job also diffs
-the exact exports from the stripped x86_64 `libehviewer.so` against that manifest.
-A separate host manifest fixes the three JVM-visible WebP exports, while the stripped
-Android library is diffed against a seven-symbol image/WebP manifest.
+CMake builds a behavior-free link anchor, forces unresolved `Java_*` symbols out of
+the Rust archive, and exports them from the final shared library. CI builds the
+archive and final x86_64 library, extracts symbols with `nm`, and compares the exact
+60-symbol V1, 13-symbol Archive V2, nine-symbol Android image, three-symbol host WebP,
+single Hash compatibility, and single `JNI_OnLoad` sets with checked-in manifests.
+Negative manifests reject the fourteen retired unversioned parser exports, three
+retired GIF exports, nine old C Archive JNI exports, and `strnatcmp`; moving or
+reintroducing an implementation therefore cannot silently drift ownership or ABI.
 The Android `libwebp-sys2` fork is bindings-only, so CMake still builds and supplies
 `webp`/`webpdemux` to the final shared-library link. That build dependency does not
 own decoder state or JNI code; both remain private to `eh_ffi`.
@@ -184,6 +186,13 @@ site, authentication fact, pagination/filter fields, and an already selected
 prefix rules, host/path selection, percent-encoding, and exact query insertion
 order. Cookies, response bodies, gallery access tokens, credentials, and Android
 objects never enter this protocol.
+
+Category taxonomy is canonical in `eh_domain::gallery_rules`: the ten selectable
+bits, private/unknown sentinels, historical aliases, canonical labels, and masked
+inversion are shared by Gallery List/detail/metadata parsing and both catalog URL
+directions. Kotlin keeps only numeric presentation constants, category labels/colors,
+settings, and Compose state; category parsing and remote-mask inversion do not have
+a second production implementation.
 
 Kotlin retains the mutable `@Serializable ListUrlBuilder`, navigation/SavedState,
 settings, language-index table, and HTTP execution. During the default-off rollout,
@@ -657,8 +666,8 @@ Android-owned descriptor, seeks the duplicate from zero, restores its shared see
 offset, and closes only the duplicate. `SpiderDen`
 invokes validation after closing the writer and before `SpiderQueen` announces
 success. Failure deletes the generated CBZ but keeps source pages; cancellation
-performs the same cleanup and is rethrown. The operation-scoped global snapshot
-selects validation ownership; there is no validation-specific runtime selector.
+performs the same cleanup and is rethrown. Validation always uses the Rust adapter
+and has no runtime selector or replay path.
 
 ## Generated CBZ Writer Boundary
 
@@ -672,14 +681,12 @@ core compatible with sequential outputs and prevents Android seek behavior from
 leaking into the host-only crate.
 
 Android retains page/cache sources, ComicInfo generation, paths/SAF, descriptor
-lifetime, download completion, and cleanup. Kotlin opens fresh source
-descriptors and one truncate-mode `rwt` output descriptor, then uses the writer
-selected by the operation-scoped global snapshot. The V1 JNI adapter in
-`eh_ffi::jvm::archive` duplicates every
-descriptor and closes only the duplicates; matching the legacy contract, sources
-are consumed from their
-current position to EOF. Global off uses `archiveFdBatch`; global on uses only the
-Rust writer.
+lifetime, download completion, and cleanup. Kotlin opens fresh source descriptors
+and one truncate-mode `rwt` output descriptor, then calls the Rust V1 writer. The JNI
+adapter in `eh_ffi::jvm::archive` duplicates every descriptor and closes only the
+duplicates; matching the established contract, sources are consumed from their
+current position to EOF. The old `archiveFdBatch` declaration and C implementation
+are absent from production.
 
 Once Rust writing starts, any input, output, empty-entry, overflow, or ZIP
 finalization failure is surfaced and never falls through to the legacy writer on
@@ -704,11 +711,43 @@ opaque handles are synchronized; close is idempotent and waits for active extrac
 No native pointer, path, Android object, or Kotlin replay of archive logic crosses
 the boundary.
 
-`ArchivePageLoader` captures the global backend once. Global on sends every archive
-to Rust V2 regardless of filename extension and surfaces open, password, index, or
-extraction failures. Global off uses the retained legacy C reader for the complete
-operation. Kotlin/Android owns SAF, descriptor acquisition, password UI, GIF rewrite,
-and page lifecycle. API-35 and physical/SAF execution remain deferred C7 evidence.
+`ArchivePageLoader` sends every archive to Rust V2 regardless of filename extension
+and surfaces open, password, index, or extraction failures. The old C reader, Kotlin
+JNI declarations, natsort implementation, and private native header are absent from
+production; pinned libarchive remains only as the Rust reader's codec dependency.
+Kotlin/Android owns SAF, descriptor acquisition, password UI, and page lifecycle.
+API-35 and physical/SAF execution remain separate device evidence.
+
+## GIF Delay Workaround Boundary
+
+`eh_image::gif` owns exact `GIF87a`/`GIF89a` recognition and the historical Android
+9–13 short-frame-delay rewrite. Its safe bounded scan preserves the prior extension
+marker, terminator, and first-normal-delay stop rules without the C size underflow.
+
+`eh_ffi::jvm::gif::prepareGifSource` duplicates the Android descriptor through the
+shared checked helper, uses offset-based reads so the caller position does not move,
+reads only six bytes for non-GIF input, and snapshots GIF input into at most 512 MiB
+of Rust-owned bytes before returning a JVM-owned byte array. Non-seekable descriptors
+return an unclassified null without being consumed, so Kotlin hands the path back to
+Coil's normal opener instead of blocking non-GIF platform sources. Snapshot length,
+tail, header, and available modification time are rechecked to contain ordinary
+concurrent file changes; this is best-effort consistency rather than a filesystem
+transaction. Direct buffers use the same pure rewrite synchronously. Kotlin owns only
+API 28–33 selection, descriptor and Coil source lifetime, and presentation. Prepared
+bytes bypass the direct-buffer path, so they are not rewritten twice. No mmap pointer
+or native allocation lifetime crosses JNI; `gifutils.c`, `mmap`, and `munmap` are absent
+from production.
+
+## Gallery Title Rule Boundary
+
+`eh_domain::gallery_rules` also owns the historical similar-gallery title cleanup.
+It preserves ASCII Java `\s`, delimiter prefix/suffix stripping, the case-insensitive
+`ch.` wildcard and ASCII digit grammar, Java terminal-line behavior, final-pipe
+selection, Unicode trimming, and empty-to-null conversion. Android sends the nullable
+title through one `galleryTitle` V1 CBOR request and uses the validated nullable plan
+before constructing navigation. Boundary, linkage, or contract failure surfaces;
+there is no Kotlin production fallback. Android retains title preference, localized
+presentation, filename selection, and navigation effects.
 
 ## Gallery Favorites Mutation Planning
 

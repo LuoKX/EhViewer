@@ -162,8 +162,8 @@ corrosion_add_target_rustflags(
 )
 corrosion_link_libraries(ehviewer_rust android jnigraphics log webp webpdemux)
 
-# Build and link our app's native lib
-add_library(${PROJECT_NAME} SHARED archive.c gifutils.c natsort/strnatcmp.c)
+# Build the behavior-free app wrapper and link the Rust-owned native surfaces.
+add_library(${PROJECT_NAME} SHARED link_anchor.c)
 target_link_libraries(
         ${PROJECT_NAME} ehviewer_rust archive_static
         -Wl,-u,JNI_OnLoad -Wl,--undefined-glob,Java_*

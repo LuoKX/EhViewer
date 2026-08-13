@@ -112,7 +112,6 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonArray
 import kotlinx.serialization.json.put
-import moe.tarsin.coroutines.removeAllSuspend
 import moe.tarsin.coroutines.runSuspendCatching
 import okio.buffer
 import okio.sink
@@ -230,20 +229,6 @@ private fun throwLegacyDomainError(error: EhError): Nothing =
   }
 
 private val httpContentPool = DirectByteBufferPool(8, 0x80000)
-
-private suspend inline fun <T> HttpStatement.fetchUsingAsText(
-  crossinline block: suspend String.() -> T
-) = executeSafely { response ->
-  if (response.request.url.isLogin) throw NotLoggedInException()
-  val body = response.bodyAsUtf8Text()
-  runSuspendCatching {
-    block(body)
-  }
-    .onFailure {
-      rethrowExactly(response, body.left(), it)
-    }
-    .getOrThrow()
-}
 
 private suspend inline fun <T> HttpStatement.fetchUsingAsByteBuffer(
   crossinline block: suspend ByteBuffer.() -> T
@@ -437,7 +422,7 @@ object EhEngine {
 
   suspend fun getFavoriteNote(gid: Long, token: String) =
     ehRequest(EhUrl.getAddFavorites(gid, token), EhUrl.getGalleryDetailUrl(gid, token))
-      .fetchUsingAsText(FavoritesParser::parseNote)
+      .fetchUsingAsByteBuffer(FavoritesParser::parseNote)
 
   suspend fun downloadArchive(gid: Long, token: String, res: String, isHath: Boolean): String? {
     val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
@@ -647,23 +632,22 @@ object EhEngine {
     return request.fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1)
   }
 
-  private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) =
-    with(EhFilter) {
-      if (filter) removeAllSuspend { filterTitle(it) || filterUploader(it) }
-      val hasTags = any { !it.simpleTags.isNullOrEmpty() }
-      val hasPages = any { it.pages != 0 }
-      val hasRated = any { it.rated }
-      val needApi =
-        filter && needTags() && !hasTags || Settings.showGalleryPages.value && !hasPages || hasRated
-      if (needApi) fillGalleryListByApi(this@fillInfo, url)
-      if (filter) removeAllSuspend { filterUploader(it) || filterTag(it) || filterTagNamespace(it) }
-      forEach {
-        if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
-          it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
-        }
-        if (!needApi) it.generateSLang()
+  private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) {
+    val needsTags = filter && EhFilter.filterPreEnrichment(this)
+    val hasTags = any { !it.simpleTags.isNullOrEmpty() }
+    val hasPages = any { it.pages != 0 }
+    val hasRated = any { it.rated }
+    val needApi =
+      filter && needsTags && !hasTags || Settings.showGalleryPages.value && !hasPages || hasRated
+    if (needApi) fillGalleryListByApi(this, url)
+    if (filter) EhFilter.filterPostEnrichment(this)
+    forEach {
+      if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
+        it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
       }
+      if (!needApi) it.generateSLang()
     }
+  }
 
   suspend fun addFavorites(galleryList: List<Pair<Long, String>>, dstCat: Int) {
     galleryList.forEach { (gid, token) ->

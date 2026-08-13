@@ -6,13 +6,12 @@
 //! cookies, gallery tokens, response bodies, or platform state cross this API.
 
 use eh_domain::contracts::{ApiEnvelope, RustError};
+use eh_domain::gallery_rules::{CATEGORY_NON_H, invert_category};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 const PUBLIC_HOST: &str = "e-hentai.org";
 const RESTRICTED_HOST: &str = "exhentai.org";
-const ALL_CATEGORIES: i32 = 0x3ff;
-const NON_H_CATEGORY: i32 = 0x100;
 const ADVANCED_SEARCH_SH: i32 = 1;
 const ADVANCED_SEARCH_STO: i32 = 2;
 const ADVANCED_SEARCH_SFL: i32 = 4;
@@ -154,7 +153,7 @@ fn build_normal_or_subscription(request: &GalleryListUrlRequest) -> Url {
     };
     let mut url = base_url(request.site.host(), path);
     let category = if !request.signed_in && request.category <= 0 {
-        NON_H_CATEGORY
+        CATEGORY_NON_H
     } else {
         request.category
     };
@@ -279,10 +278,6 @@ fn append(url: &mut Url, name: &str, value: &str) {
 
 fn required<'a>(value: Option<&'a str>, message: &str) -> Result<&'a str, RustError> {
     value.ok_or_else(|| RustError::Error(message.to_owned()))
-}
-
-const fn invert_category(category: i32) -> i32 {
-    !category & ALL_CATEGORIES
 }
 
 #[cfg(test)]

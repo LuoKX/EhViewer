@@ -9,6 +9,7 @@ repository.workspace = true
 default = []
 jvm = [
     "dep:eh_archive",
+    "dep:eh_image",
     "dep:jni",
     "dep:jni_fn",
     "dep:libc",
@@ -19,7 +20,7 @@ jvm = [
     "dep:webp-host",
     "dep:zeroize",
 ]
-android = ["jvm", "dep:eh_image", "dep:image", "dep:ndk", "ndk/bitmap"]
+android = ["jvm", "dep:image", "dep:ndk", "ndk/bitmap"]
 android-26 = ["android", "ndk/api-level-26"]
 
 [dependencies]

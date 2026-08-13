@@ -4,7 +4,10 @@ mod archive;
 #[cfg(all(feature = "android", target_os = "android"))]
 mod bitmap;
 mod comic_info;
+mod gallery_filter;
 mod gallery_network_policy;
+mod gallery_title;
+mod gif;
 #[cfg(all(feature = "android-26", target_os = "android"))]
 mod hardware_buffer;
 mod hash;
@@ -14,16 +17,47 @@ mod plan;
 mod recovery_metadata;
 mod webp;
 
+use std::fs::File;
+use std::os::fd::FromRawFd;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::slice::{from_raw_parts, from_raw_parts_mut};
 
-use anyhow::Result;
+use anyhow::{Context as _, Result, ensure};
 use jni::JNIEnv;
 use jni::objects::JByteBuffer;
 use jni::sys::{jboolean, jint, jobject};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::codec;
+
+/// Duplicates a non-negative JVM-owned POSIX descriptor into one Rust-owned file.
+///
+/// The duplicate is closed when the returned file is dropped. POSIX duplicates
+/// share an open-file description, so callers that use position-changing I/O
+/// must restore the original position before returning to Java. Prefer
+/// offset-based reads when the Java descriptor position must remain unchanged.
+///
+/// # Errors
+///
+/// Returns an error for a negative descriptor or a failed `dup` call.
+#[allow(
+    unsafe_code,
+    reason = "duplicating a JVM-owned POSIX descriptor requires libc ownership conversion"
+)]
+fn duplicate_file_descriptor(file_descriptor: jint, description: &'static str) -> Result<File> {
+    ensure!(
+        file_descriptor >= 0,
+        "{description} file descriptor is negative"
+    );
+    // SAFETY: `dup` does not take ownership and reports an invalid descriptor via `-1`.
+    let duplicated_descriptor = unsafe { libc::dup(file_descriptor) };
+    if duplicated_descriptor < 0 {
+        return Err(std::io::Error::last_os_error())
+            .with_context(|| format!("Failed to duplicate {description} file descriptor"));
+    }
+    // SAFETY: the successful `dup` result is uniquely owned by this `File`.
+    Ok(unsafe { File::from_raw_fd(duplicated_descriptor) })
+}
 
 /// Borrows an immutable slice from a direct Java byte buffer for one synchronous call.
 ///
