@@ -9,10 +9,13 @@ import com.ehviewer.core.util.withNonCancellableContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.bridge.reader.ReaderPageState
+import com.hippo.ehviewer.bridge.reader.ReaderPolicyKind
+import com.hippo.ehviewer.bridge.reader.ReaderPolicyRequest
 import com.hippo.ehviewer.bridge.reader.ReaderScheduleActionKind
 import com.hippo.ehviewer.bridge.reader.ReaderScheduleCommand
 import com.hippo.ehviewer.bridge.reader.ReaderSchedulePlan
 import com.hippo.ehviewer.bridge.reader.ReaderScheduleSnapshot
+import com.hippo.ehviewer.bridge.reader.planReaderPolicy
 import com.hippo.ehviewer.bridge.reader.planReaderSchedule
 import com.hippo.ehviewer.image.Image
 import com.hippo.ehviewer.image.ImageSource
@@ -52,8 +55,16 @@ abstract class PageLoader(
 
   private val jobs = mutableIntObjectMapOf<Job>()
   private val mutex = NamedMutex<Int>()
-  private val semaphore = Semaphore(2)
-  private val cacheSize = readerImageCacheSize(OSUtils.appMaxMemory, OSUtils.totalMemory)
+  private val memoryPlan =
+    planReaderPolicy(
+      ReaderPolicyRequest(
+        kind = ReaderPolicyKind.MEMORY,
+        appMaxMemory = OSUtils.appMaxMemory,
+        totalMemory = OSUtils.totalMemory,
+      )
+    )
+  private val semaphore = Semaphore(checkNotNull(memoryPlan.decodeConcurrency))
+  private val cacheSize = checkNotNull(memoryPlan.cacheSize)
 
   private val cache =
     SieveCache<Int, Image>(
@@ -227,12 +238,13 @@ abstract class PageLoader(
             mutex.withLock(index) {
               semaphore.withPermit {
                 retryAfterImageCacheTrim(
+                  attempts = checkNotNull(memoryPlan.decodeAttempts),
                   trimCache = {
                     lock.write {
                       // Keep pages currently pinned by the reader; release only idle cache entries.
                       cache.removeIf { _, image -> image.refcnt.load() == 1 }
                     }
-                  }
+                  },
                 ) {
                   atomicallyDecodeAndUpdate(index)
                 }

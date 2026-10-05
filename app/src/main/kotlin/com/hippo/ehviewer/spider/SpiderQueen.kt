@@ -34,7 +34,13 @@ import com.hippo.ehviewer.bridge.reader.ReaderFetchImageTarget
 import com.hippo.ehviewer.bridge.reader.ReaderFetchPageSource
 import com.hippo.ehviewer.bridge.reader.ReaderFetchPhase
 import com.hippo.ehviewer.bridge.reader.ReaderFetchState
+import com.hippo.ehviewer.bridge.reader.ReaderPageCompletion
+import com.hippo.ehviewer.bridge.reader.ReaderPageNotification
+import com.hippo.ehviewer.bridge.reader.ReaderPolicyKind
+import com.hippo.ehviewer.bridge.reader.ReaderPolicyRequest
+import com.hippo.ehviewer.bridge.reader.ReaderSpiderState
 import com.hippo.ehviewer.bridge.reader.consumePreappliedImageCleanup
+import com.hippo.ehviewer.bridge.reader.planReaderPolicy
 import com.hippo.ehviewer.bridge.reader.startReaderFetchPlanner
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUrl
@@ -45,8 +51,6 @@ import com.hippo.ehviewer.client.exception.FatalException
 import com.hippo.ehviewer.client.exception.QuotaExceededException
 import com.hippo.ehviewer.util.displayString
 import kotlin.concurrent.atomics.AtomicInt
-import kotlin.concurrent.atomics.decrementAndFetch
-import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
@@ -399,36 +403,36 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
     spiderInfo.saveToCache()
   }
 
-  private fun isStateDone(state: Int): Boolean = state == STATE_FINISHED || state == STATE_FAILED
-
   fun updatePageState(index: Int, @State state: Int, error: String? = null) {
-    synchronized<Unit>(mPageStateLock) {
-      val oldState = pageStates[index]
-      pageStates[index] = state
-      if (!isStateDone(oldState) && isStateDone(state)) {
-        mDownloadedPages.incrementAndFetch()
-      } else if (isStateDone(oldState) && !isStateDone(state)) {
-        mDownloadedPages.decrementAndFetch()
+    val plan =
+      synchronized(mPageStateLock) {
+        val plan =
+          planReaderPolicy(
+            ReaderPolicyRequest(
+              kind = ReaderPolicyKind.PAGE_TRANSITION,
+              pages = pageStates.size,
+              finished = mFinishedPages.load(),
+              downloaded = mDownloadedPages.load(),
+              oldState = ReaderSpiderState.entries[pageStates[index]],
+              newState = ReaderSpiderState.entries[state],
+            )
+          )
+        pageStates[index] = state
+        mFinishedPages.store(checkNotNull(plan.finished))
+        mDownloadedPages.store(checkNotNull(plan.downloaded))
+        plan
       }
-      if (oldState != STATE_FINISHED && state == STATE_FINISHED) {
-        mFinishedPages.incrementAndFetch()
-      } else if (oldState == STATE_FINISHED && state != STATE_FINISHED) {
-        mFinishedPages.decrementAndFetch()
-      }
+    when (plan.notification) {
+      ReaderPageNotification.FAILURE -> notifyPageFailure(index, error)
+      ReaderPageNotification.SUCCESS -> notifyPageSuccess(index)
+      ReaderPageNotification.NONE -> Unit
+      null -> error("Missing reader notification")
     }
-
-    // Notify listeners
-    if (state == STATE_FAILED) {
-      notifyPageFailure(index, error)
-    } else if (state == STATE_FINISHED) {
-      notifyPageSuccess(index)
-    }
-    if (mDownloadedPages.load() == size) {
-      if (mFinishedPages.load() == size) {
-        archiveJob.start()
-      } else {
-        notifyAllPageDownloaded(failed = true)
-      }
+    when (plan.completion) {
+      ReaderPageCompletion.ARCHIVE -> archiveJob.start()
+      ReaderPageCompletion.FAILURE -> notifyAllPageDownloaded(failed = true)
+      ReaderPageCompletion.NONE -> Unit
+      null -> error("Missing reader completion")
     }
   }
 
@@ -876,10 +880,14 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
   private val pTokenFailedMessage = appCtx.getString(R.string.error_get_ptoken_error)
 }
 
-private val Url509Regex = Regex("https://(?:ehgt\\.org/|exhentai\\.org/im)g/509s?\\.gif")
 private const val FORCE_RETRY = "Force retry"
 private const val WORKER_DEBUG_TAG = "SpiderQueenWorker"
 
 private fun check509(url: String) {
-  if (Url509Regex.matches(url)) throw QuotaExceededException()
+  if (
+    checkNotNull(
+      planReaderPolicy(ReaderPolicyRequest(kind = ReaderPolicyKind.QUOTA, url = url)).exceeded
+    )
+  )
+    throw QuotaExceededException()
 }

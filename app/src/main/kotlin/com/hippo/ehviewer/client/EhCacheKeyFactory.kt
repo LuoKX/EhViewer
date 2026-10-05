@@ -16,6 +16,9 @@
 package com.hippo.ehviewer.client
 
 import com.ehviewer.core.model.GalleryInfo
+import com.hippo.ehviewer.bridge.gallery.CacheKeyKind
+import com.hippo.ehviewer.bridge.gallery.CacheKeyRequest
+import com.hippo.ehviewer.bridge.gallery.planCacheKey
 
 // Normal Preview (v2): https://*.hath.network/c(m|1|2)/[timed token]/[gid]-[index].(jpg|webp)
 // ExHentai Large Preview (v1 Cover): https://s.exhentai.org/t/***
@@ -25,28 +28,18 @@ import com.ehviewer.core.model.GalleryInfo
 
 const val URL_PREFIX_THUMB_E = "https://ehgt.org/"
 const val URL_PREFIX_THUMB_EX = "https://s.exhentai.org/"
-private const val URL_PREFIX_V1_THUMB_EX = URL_PREFIX_THUMB_EX + "t/"
-private val V2PreviewKeyRegex = Regex("/c([m12]/)[^/]+/(\\d+-\\d+)")
 
-fun getImageKey(gid: Long, index: Int): String = "image:$gid:$index"
+fun getImageKey(gid: Long, index: Int): String =
+  planCacheKey(CacheKeyRequest(kind = CacheKeyKind.IMAGE, gid = gid, index = index))
 
-fun getThumbKey(url: String): String = url.removePrefix(URL_PREFIX_THUMB_E).removePrefix(URL_PREFIX_V1_THUMB_EX).removePrefix(URL_PREFIX_THUMB_EX)
+fun getThumbKey(url: String): String =
+  planCacheKey(CacheKeyRequest(kind = CacheKeyKind.THUMB, input = url))
 
-fun getV2PreviewKey(url: String) = "$".plus(
-    V2PreviewKeyRegex.find(url)?.let {
-        it.groupValues[1] + it.groupValues[2]
-    } ?: url,
-)
+fun getV2PreviewKey(url: String): String =
+  planCacheKey(CacheKeyRequest(kind = CacheKeyKind.PREVIEW, input = url))
 
 val GalleryInfo.thumbUrl
-    get() = keyToUrl(thumbKey!!)
+  get() = keyToUrl(thumbKey!!)
 
-fun keyToUrl(key: String) = if (key.startsWith("https:")) {
-    key
-} else {
-    if (key.endsWith("webp")) {
-        if (EhUtils.isExHentai) URL_PREFIX_THUMB_EX else URL_PREFIX_THUMB_E
-    } else {
-        if (EhUtils.isExHentai) URL_PREFIX_V1_THUMB_EX else URL_PREFIX_THUMB_E
-    } + key
-}
+fun keyToUrl(key: String): String =
+  planCacheKey(CacheKeyRequest(kind = CacheKeyKind.URL, input = key, exHentai = EhUtils.isExHentai))

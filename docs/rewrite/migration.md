@@ -47,7 +47,7 @@ tag dictionary/index/scoring, EH recovery planning/reconciliation, Gallery reque
 and Detail/reader/MPV URL planning, and language/metadata inference. See
 [P1 migration](p1-migration.md) for boundaries, cache compatibility, budgets,
 independent coverage and device-execution status. P2 policies/codecs/file rules
-remain Kotlin-owned pending their own slices. This is not a claim that every
+now have direct Rust owners; see [P2 migration](p2-migration.md). This is not a claim that every
 portable line in the project has moved to Rust.
 
 ## Planned Order

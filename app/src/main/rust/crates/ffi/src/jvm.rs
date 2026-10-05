@@ -3,6 +3,7 @@
 mod archive;
 #[cfg(all(feature = "android", target_os = "android"))]
 mod bitmap;
+mod cache_keys;
 mod comic_info;
 mod gallery_enrichment;
 mod gallery_filter;
@@ -14,11 +15,16 @@ mod gif;
 mod hardware_buffer;
 mod hash;
 mod health;
+mod local_pages;
 mod parser;
 mod plan;
+mod reader_policy;
 mod recovery_eh_lookup;
 mod recovery_metadata;
+mod recovery_search;
+mod spider_info;
 mod tag_translation;
+mod transfer_speed;
 mod webp;
 
 use std::fs::File;

@@ -15,6 +15,7 @@ macro_rules! regex {
 }
 
 pub mod auth;
+pub mod cache_keys;
 pub mod gallery;
 pub mod home;
 mod html;

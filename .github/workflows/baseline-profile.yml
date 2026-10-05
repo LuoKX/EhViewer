@@ -34,7 +34,7 @@ jobs:
           java-version-file: .java-version
 
       - name: Install Rust Toolchain
-        run: rustup target add armv7-linux-androideabi
+        run: rustup target add x86_64-linux-android
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -55,6 +55,7 @@ jobs:
 
       - name: Generate Baseline Profile
         run: ./gradlew generateBaselineProfile
+          -PtargetAbis=x86_64
           -Pandroid.testoptions.manageddevices.emulator.gpu="swiftshader_indirect"
 
       - name: Upload reports

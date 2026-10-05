@@ -20,13 +20,11 @@ pub const DOWNLOAD_RECOVERY_API_VERSION: u8 = 1;
 /// Stable module identifier for download-recovery envelopes.
 pub const DOWNLOAD_RECOVERY_MODULE: &str = "downloadRecovery";
 /// Maximum accepted `.ehviewer` metadata length.
-pub const MAX_SPIDER_INFO_BYTES: usize = 512 * 1024;
+pub const MAX_SPIDER_INFO_BYTES: usize = crate::spider_info::MAX_BYTES;
 /// Maximum number of local entry facts accepted for one candidate.
 pub const MAX_LOCAL_ENTRIES: usize = 100_000;
 
-const IMAGE_EXTENSIONS: [&str; 11] = [
-    "jpeg", "jpg", "png", "gif", "webp", "bmp", "ico", "wbmp", "heic", "heif", "avif",
-];
+use crate::local_pages::IMAGE_EXTENSIONS;
 
 /// Physical kind of a locally discovered recovery candidate.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -256,36 +254,23 @@ pub struct RecoveryCandidatePlan {
     pub action: RecoveryPersistenceAction,
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SpiderInfoWire {
-    gid: i64,
-    token: String,
-    pages: i32,
-}
-
 /// Parses bounded current-CBOR or legacy-v2 `.ehviewer` metadata.
 ///
 /// # Errors
 ///
 /// Returns a fixed, token-free error for oversized, malformed, or invalid metadata.
 pub fn parse_spider_info(bytes: &[u8]) -> Result<RecoveryEvidence, RustError> {
-    if bytes.is_empty() || bytes.len() > MAX_SPIDER_INFO_BYTES {
-        return Err(invalid_metadata());
-    }
-    let parsed = serde_cbor::from_slice::<SpiderInfoWire>(bytes)
-        .ok()
-        .or_else(|| parse_legacy_spider_info(bytes));
-    let parsed = parsed.ok_or_else(invalid_metadata)?;
-    if parsed.gid <= 0 || !valid_token(&parsed.token) || parsed.pages <= 0 {
+    let (gid, token, pages) =
+        crate::spider_info::decode_identity(bytes).map_err(|_| invalid_metadata())?;
+    if gid <= 0 || !valid_token(&token) || pages <= 0 {
         return Err(invalid_metadata());
     }
     Ok(RecoveryEvidence {
         kind: RecoveryEvidenceKind::SpiderInfo,
-        gid: Some(parsed.gid),
-        token: Some(parsed.token),
+        gid: Some(gid),
+        token: Some(token),
         title: None,
-        declared_pages: u32::try_from(parsed.pages).ok(),
+        declared_pages: u32::try_from(pages).ok(),
         observed_pages: None,
     })
 }
@@ -694,17 +679,7 @@ fn summarize_archive_images(entries: &[RecoveryEntryInput]) -> PageSummary {
 }
 
 fn strict_page_number(name: &str) -> Option<u32> {
-    if name.contains('/') || name.contains('\\') {
-        return None;
-    }
-    let (stem, extension) = name.rsplit_once('.')?;
-    if stem.len() != 8
-        || !stem.bytes().all(|byte| byte.is_ascii_digit())
-        || !IMAGE_EXTENSIONS.contains(&extension)
-    {
-        return None;
-    }
-    stem.parse::<u32>().ok().filter(|page| *page > 0)
+    crate::local_pages::page_number(name, false, false)
 }
 
 fn playable_image_extension(name: &str) -> Option<&str> {
@@ -716,20 +691,6 @@ fn temporary_file(name: &str) -> bool {
     std::path::Path::new(name)
         .extension()
         .is_some_and(|extension| extension.eq_ignore_ascii_case("tmp"))
-}
-
-fn parse_legacy_spider_info(bytes: &[u8]) -> Option<SpiderInfoWire> {
-    let text = std::str::from_utf8(bytes).ok()?;
-    let mut lines = text.lines();
-    lines.next()?;
-    lines.next()?;
-    let gid = lines.next()?.parse().ok()?;
-    let token = lines.next()?.to_owned();
-    lines.next()?;
-    lines.next()?;
-    lines.next()?.parse::<i32>().ok()?;
-    let pages = lines.next()?.parse().ok()?;
-    Some(SpiderInfoWire { gid, token, pages })
 }
 
 fn parse_gallery_url(value: &str) -> Option<(i64, String)> {
@@ -1377,9 +1338,11 @@ mod tests {
         assert!(temporary_file("leftover.TmP"));
         assert!(!temporary_file("page.jpg"));
 
-        assert!(parse_legacy_spider_info(&[0xff]).is_none());
-        assert!(parse_legacy_spider_info(b"too\nshort\n").is_none());
-        assert!(parse_legacy_spider_info(b"h\nr\nnot-a-gid\ntoken\na\nb\n0\n1\n").is_none());
+        assert!(crate::spider_info::decode_identity(&[0xff]).is_err());
+        assert!(crate::spider_info::decode_identity(b"too\nshort\n").is_err());
+        assert!(
+            crate::spider_info::decode_identity(b"h\nr\nnot-a-gid\ntoken\na\nb\n0\n1\n").is_err()
+        );
         assert!(!valid_token("short"));
         assert!(!valid_token("012345678G"));
         assert!(valid_token("abcdef0123"));

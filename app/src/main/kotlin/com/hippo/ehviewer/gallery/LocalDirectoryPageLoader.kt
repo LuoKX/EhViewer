@@ -3,6 +3,8 @@ package com.hippo.ehviewer.gallery
 import arrow.autoCloseScope
 import com.ehviewer.core.files.list
 import com.ehviewer.core.files.sendTo
+import com.hippo.ehviewer.bridge.reader.LocalPagesRequest
+import com.hippo.ehviewer.bridge.reader.selectLocalPages
 import com.hippo.ehviewer.image.ImageSource
 import com.hippo.ehviewer.image.PathSource
 import kotlinx.coroutines.coroutineScope
@@ -22,16 +24,16 @@ suspend fun <T> useLocalDirectoryPageLoader(
   block: suspend (PageLoader) -> T,
 ) = autoCloseScope {
   coroutineScope {
-    val files =
-      directory.list().filter { LOCAL_PAGE.matches(it.name) }.sortedBy { it.name.lowercase() }
+    val entries = directory.list()
+    val selected = selectLocalPages(LocalPagesRequest(names = entries.map { it.name }))
+    val files = selected.map { entries[it.sourceIndex] }
     check(files.isNotEmpty()) { "Local recovery directory has no readable pages" }
     val loader =
       install(
         object : PageLoader(this, null, startPage, files.size, false) {
           override val title = title
 
-          override fun getImageExtension(index: Int) =
-            files[index].name.substringAfterLast('.', "").takeIf(String::isNotEmpty)
+          override fun getImageExtension(index: Int) = selected[index].extension
 
           override fun save(index: Int, file: Path) = runCatching {
             files[index] sendTo file
@@ -56,9 +58,3 @@ suspend fun <T> useLocalDirectoryPageLoader(
     block(loader)
   }
 }
-
-private val LOCAL_PAGE =
-  Regex(
-    "^[0-9]{8}\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$",
-    RegexOption.IGNORE_CASE,
-  )

@@ -14,19 +14,28 @@ plugins {
   alias(libs.plugins.baselineprofile)
 }
 
-val supportedAbis = arrayOf("arm64-v8a", "x86_64", "armeabi-v7a")
+val supportedAbis = setOf("arm64-v8a", "x86_64", "armeabi-v7a")
+val targetAbis =
+  providers
+    .gradleProperty("targetAbis")
+    .orElse("arm64-v8a")
+    .get()
+    .split(',')
+    .map { it.trim() }
+    .distinct()
+    .also { abis ->
+      require(abis.all { it in supportedAbis }) {
+        "targetAbis must contain only arm64-v8a, x86_64 or armeabi-v7a"
+      }
+    }
 
 android {
   splits {
     abi {
       isEnable = true
       reset()
-      if (isRelease) {
-        include(*supportedAbis)
-        isUniversalApk = true
-      } else {
-        include("arm64-v8a", "x86_64")
-      }
+      include(*targetAbis.toTypedArray())
+      isUniversalApk = isRelease && targetAbis.size > 1
     }
   }
 
@@ -91,9 +100,7 @@ android {
     buildConfigField("long", "COMMIT_TIME", commitTime)
     buildConfigField("String", "REPO_NAME", "\"$repoName\"")
     ndk {
-      if (isRelease) {
-        abiFilters.addAll(supportedAbis)
-      }
+      // ABI selection is owned by splits; ndk.abiFilters conflicts with APK splits.
       debugSymbolLevel = "FULL"
     }
   }
