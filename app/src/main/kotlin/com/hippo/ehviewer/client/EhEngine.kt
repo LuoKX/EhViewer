@@ -44,11 +44,19 @@ import com.hippo.ehviewer.bridge.gallery.GalleryArchiveNullOutcome
 import com.hippo.ehviewer.bridge.gallery.GalleryArchiveParsedOutcome
 import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryArchiveRequestKind
+import com.hippo.ehviewer.bridge.gallery.GalleryMetadataFacts
+import com.hippo.ehviewer.bridge.gallery.GalleryRequest
+import com.hippo.ehviewer.bridge.gallery.GalleryRequestIdentity
+import com.hippo.ehviewer.bridge.gallery.GalleryRequestKind
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
+import com.hippo.ehviewer.bridge.gallery.applyGalleryRequestPlan
+import com.hippo.ehviewer.bridge.gallery.inferGalleryLanguage
+import com.hippo.ehviewer.bridge.gallery.needsGalleryMetadata
 import com.hippo.ehviewer.bridge.gallery.planFavoriteMutation
 import com.hippo.ehviewer.bridge.gallery.planGalleryArchiveDownloadPolicy
 import com.hippo.ehviewer.bridge.gallery.planGalleryArchiveRequest
 import com.hippo.ehviewer.bridge.gallery.planGalleryMetadataPolicy
+import com.hippo.ehviewer.bridge.gallery.planGalleryRequest
 import com.hippo.ehviewer.bridge.gallery.toRequestWaves
 import com.hippo.ehviewer.bridge.toLegacyError
 import com.hippo.ehviewer.bridge.toRustError
@@ -102,16 +110,12 @@ import io.ktor.utils.io.pool.useInstance
 import io.ktor.utils.io.readAvailable
 import java.io.File
 import java.nio.ByteBuffer
-import kotlin.math.ceil
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.addJsonArray
-import kotlinx.serialization.json.put
 import moe.tarsin.coroutines.runSuspendCatching
 import okio.buffer
 import okio.sink
@@ -383,23 +387,29 @@ object EhEngine {
     return request.fetchUsingAsByteBuffer(SignInParser::parseV1)
   }
 
-  suspend fun commentGallery(url: String, comment: String, id: Long = -1) =
-    ehRequest(url, url, EhUrl.origin) {
-        formBody {
-          if (id == -1L) {
-            append("commenttext_new", comment)
-          } else {
-            append("commenttext_edit", comment)
-            append("edit_comment", id.toString())
-          }
-        }
-      }
+  suspend fun commentGallery(
+    url: String,
+    comment: String,
+    id: Long = -1,
+  ): com.ehviewer.core.model.GalleryCommentList {
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.COMMENT,
+          url = url,
+          comment = comment,
+          commentId = id,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) { applyGalleryRequestPlan(plan) }
       .executeSafely { response ->
-        // Ktor does not handle POST redirect, we need to do it manually
-        // https://youtrack.jetbrains.com/issue/KTOR-478
+        // Ktor does not follow POST redirects. Android retains this transport effect.
         val location = response.headers["Location"] ?: url
         ehRequest(location, url).fetchUsingAsByteBuffer(GalleryDetailParser::parseComments)
       }
+  }
 
   suspend fun modifyFavorites(gid: Long, token: String, dstCat: Int = -1, note: String = "") {
     if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
@@ -497,20 +507,21 @@ object EhEngine {
     showKey: String?,
     previousPToken: String?,
   ): GalleryPageParser.Result {
-    val referer =
-      if (index > 0 && previousPToken != null) EhUrl.getPageUrl(gid, index - 1, previousPToken)
-      else null
-    val request =
-      ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
-        jsonBody {
-          put("method", "showpage")
-          put("gid", gid)
-          put("page", index + 1)
-          put("imgkey", pToken)
-          put("showkey", showKey)
-        }
-      }
-    return request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.SHOW_PAGE,
+          gid = gid,
+          index = index,
+          token = pToken,
+          showKey = showKey,
+          previousToken = previousPToken,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) { applyGalleryRequestPlan(plan) }
+      .fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
   }
 
   suspend fun rateGallery(
@@ -520,45 +531,46 @@ object EhEngine {
     token: String,
     rating: Float,
   ): RateGalleryResult {
-    val request =
-      ehRequest(EhUrl.apiUrl, EhUrl.getGalleryDetailUrl(gid, token), EhUrl.origin) {
-        jsonBody {
-          put("method", "rategallery")
-          put("apiuid", apiUid)
-          put("apikey", requireNotNull(apiKey))
-          put("gid", gid)
-          put("token", token)
-          put("rating", ceil((rating * 2).toDouble()).toInt())
-        }
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.RATE,
+          gid = gid,
+          token = token,
+          rating = rating,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) {
+        applyGalleryRequestPlan(plan, apiUid, apiKey)
       }
-    return request.fetchUsingAsByteBuffer(RateGalleryParser::parseV1)
+      .fetchUsingAsByteBuffer(RateGalleryParser::parseV1)
   }
 
   suspend fun fillGalleryListByApi(
     galleryInfoList: List<GalleryInfo>,
     referer: String? = null,
   ) {
+    val site = EhUrl.requestSite
     val policy = planGalleryMetadataPolicy(galleryInfoList.size)
     policy.toRequestWaves(galleryInfoList).forEachIndexed { index, chunk ->
       if (index != 0) {
         delay(policy.waveDelayMillis)
       }
       chunk.parMap { galleries ->
+        val plan =
+          planGalleryRequest(
+            GalleryRequest(
+              1,
+              site,
+              GalleryRequestKind.METADATA,
+              url = referer,
+              identities = galleries.map { GalleryRequestIdentity(it.gid, it.token) },
+            )
+          )
         val request =
-          ehRequest(EhUrl.apiUrl, referer, EhUrl.origin) {
-            jsonBody {
-              put("method", "gdata")
-              array("gidlist") {
-                galleries.forEach { info ->
-                  addJsonArray {
-                    add(info.gid)
-                    add(info.token)
-                  }
-                }
-              }
-              put("namespace", 1)
-            }
-          }
+          ehRequest(plan.url, plan.referer, plan.origin) { applyGalleryRequestPlan(plan) }
         val batch = request.fetchUsingAsByteBuffer(GalleryApiParser::parseV1)
         GalleryApiParser.applyV1(batch, galleries)
       }
@@ -573,19 +585,22 @@ object EhEngine {
     commentId: Long,
     commentVote: Int,
   ): VoteCommentResult {
-    val request =
-      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
-        jsonBody {
-          put("method", "votecomment")
-          put("apiuid", apiUid)
-          put("apikey", requireNotNull(apiKey))
-          put("gid", gid)
-          put("token", token)
-          put("comment_id", commentId)
-          put("comment_vote", commentVote)
-        }
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.VOTE_COMMENT,
+          gid = gid,
+          token = token,
+          commentId = commentId,
+          vote = commentVote,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) {
+        applyGalleryRequestPlan(plan, apiUid, apiKey)
       }
-    return request.fetchUsingAsByteBuffer(VoteCommentParser::parseV1)
+      .fetchUsingAsByteBuffer(VoteCommentParser::parseV1)
   }
 
   suspend fun voteTag(
@@ -596,40 +611,38 @@ object EhEngine {
     tags: String,
     vote: Int,
   ): List<GalleryTagGroup> {
-    val request =
-      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
-        jsonBody {
-          put("method", "taggallery")
-          put("apiuid", apiUid)
-          put("apikey", requireNotNull(apiKey))
-          put("gid", gid)
-          put("token", token)
-          put("tags", tags)
-          put("vote", vote)
-        }
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.VOTE_TAG,
+          gid = gid,
+          token = token,
+          tags = tags,
+          vote = vote,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) {
+        applyGalleryRequestPlan(plan, apiUid, apiKey)
       }
-    return request.fetchUsingAsByteBuffer(VoteTagParser::parseV1)
+      .fetchUsingAsByteBuffer(VoteTagParser::parseV1)
   }
 
-  suspend fun getGalleryToken(
-    gid: Long,
-    gtoken: String,
-    page: Int,
-  ): String {
-    val request =
-      ehRequest(EhUrl.apiUrl, EhUrl.referer, EhUrl.origin) {
-        jsonBody {
-          put("method", "gtoken")
-          array("pagelist") {
-            addJsonArray {
-              add(gid)
-              add(gtoken)
-              add(page + 1)
-            }
-          }
-        }
-      }
-    return request.fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1)
+  suspend fun getGalleryToken(gid: Long, gtoken: String, page: Int): String {
+    val plan =
+      planGalleryRequest(
+        GalleryRequest(
+          1,
+          EhUrl.requestSite,
+          GalleryRequestKind.TOKEN,
+          gid = gid,
+          token = gtoken,
+          index = page,
+        )
+      )
+    return ehRequest(plan.url, plan.referer, plan.origin) { applyGalleryRequestPlan(plan) }
+      .fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1)
   }
 
   private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) {
@@ -638,14 +651,23 @@ object EhEngine {
     val hasPages = any { it.pages != 0 }
     val hasRated = any { it.rated }
     val needApi =
-      filter && needsTags && !hasTags || Settings.showGalleryPages.value && !hasPages || hasRated
+      needsGalleryMetadata(
+        GalleryMetadataFacts(
+          filter,
+          needsTags,
+          hasTags,
+          Settings.showGalleryPages.value,
+          hasPages,
+          hasRated,
+        )
+      )
     if (needApi) fillGalleryListByApi(this, url)
     if (filter) EhFilter.filterPostEnrichment(this)
     forEach {
       if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
         it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
       }
-      if (!needApi) it.generateSLang()
+      if (!needApi) it.generateSLang(::inferGalleryLanguage)
     }
   }
 

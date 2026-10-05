@@ -45,5 +45,27 @@ internal inline fun <reified Response> invokeRustCbor(
   return rustCbor.decodeFromByteArray(response)
 }
 
+/**
+ * Invokes a V1 exact-sized response boundary. Index queries and JSON planners can return much more
+ * than their tiny request, so their output must not use the four-times-request allocation.
+ */
+internal inline fun <reified Response> invokeRustCborBytes(
+  request: ByteArray,
+  operation: String,
+  maxResponseSize: Int = 16 * 1024 * 1024,
+  nativeCall: (ByteBuffer, Int) -> ByteArray,
+): Response {
+  val buffer =
+    ByteBuffer.allocateDirect(request.size).apply {
+      put(request)
+      flip()
+    }
+  val response = nativeCall(buffer, request.size)
+  require(response.isNotEmpty() && response.size <= maxResponseSize) {
+    "Invalid Rust $operation response size"
+  }
+  return rustCbor.decodeFromByteArray(response)
+}
+
 private const val RESPONSE_CAPACITY_MULTIPLIER = 4
 private const val RESPONSE_HEADROOM = 4096

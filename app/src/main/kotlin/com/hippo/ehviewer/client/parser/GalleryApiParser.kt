@@ -19,6 +19,7 @@ import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.bridge.ApiEnvelope
 import com.hippo.ehviewer.bridge.GalleryMetadataBatch
 import com.hippo.ehviewer.bridge.RustFailureException
+import com.hippo.ehviewer.bridge.gallery.inferGalleryLanguage
 import com.hippo.ehviewer.bridge.gallery.toGalleryMetadataBatch
 import com.hippo.ehviewer.client.exception.ParseException
 import java.nio.ByteBuffer
@@ -43,7 +44,11 @@ object GalleryApiParser {
    * Duplicate response IDs update the same first target repeatedly, while duplicate target IDs
    * leave every target after the first unchanged.
    */
-  internal fun applyV1(batch: GalleryMetadataBatch, galleryInfoList: List<GalleryInfo>) {
+  internal fun applyV1(
+    batch: GalleryMetadataBatch,
+    galleryInfoList: List<GalleryInfo>,
+    languageResolver: (String?, List<String>?) -> String? = ::inferGalleryLanguage,
+  ) {
     batch.items.forEach { item ->
       val gi = galleryInfoList.find { it.gid == item.galleryId } ?: return@forEach
       gi.apply {
@@ -56,7 +61,7 @@ object GalleryApiParser {
         rating = item.rating
         simpleTags = item.tags
         pages = item.pageCount
-        generateSLang()
+        generateSLang(languageResolver)
       }
     }
   }

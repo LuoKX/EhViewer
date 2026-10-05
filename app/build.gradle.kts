@@ -113,6 +113,7 @@ android {
   sourceSets.named("androidTest") {
     assets.directories.add("src/main/rust/test_data")
     assets.directories.add("src/main/rust/crates/net/test_data")
+    assets.directories.add("src/main/rust/crates/domain/test_data")
   }
 
   externalNativeBuild {

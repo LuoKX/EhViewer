@@ -40,6 +40,16 @@ goldens. The isolated Rust gate is 100% line (237/237) and function (11/11), foc
 coverage is 8/8, and the exact V1 manifest is 41/41. The real-JNI list/download device
 test compiles but has not run in the current non-KVM environment.
 
+## P1 Audit Follow-up
+
+The four portable gaps from the follow-up audit now have direct Rust owners:
+tag dictionary/index/scoring, EH recovery planning/reconciliation, Gallery request
+and Detail/reader/MPV URL planning, and language/metadata inference. See
+[P1 migration](p1-migration.md) for boundaries, cache compatibility, budgets,
+independent coverage and device-execution status. P2 policies/codecs/file rules
+remain Kotlin-owned pending their own slices. This is not a claim that every
+portable line in the project has moved to Rust.
+
 ## Planned Order
 
 1. Contract/domain foundation.

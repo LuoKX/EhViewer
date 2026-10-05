@@ -53,6 +53,7 @@ pub mod navigation;
 pub mod network_policy;
 pub mod preview;
 pub mod rate;
+pub mod request;
 pub mod tag_vote;
 mod tags;
 pub mod token;

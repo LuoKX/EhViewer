@@ -142,6 +142,14 @@ stability, and explicit JNI/linkage/CBOR/contract failure without fallback or re
 Tests assert values and typed errors. `dbg!`, snapshots without reviewed
 semantics, or “does not panic” alone are insufficient.
 
+## P1 Follow-up Gates
+
+Run `python3 scripts/check_p1_coverage.py` for the four current P1 production owners.
+It excludes test/other-owner sources and verifies each denominator independently.
+See [P1 evidence](p1-migration.md). Current CI exclusion lists are authoritative
+for older isolated gates; the command examples below retain historical source-layout
+snapshots and must use current CI exclusions after new owners are added.
+
 ## Commands
 
 ```bash

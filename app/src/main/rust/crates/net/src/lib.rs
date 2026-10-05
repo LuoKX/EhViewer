@@ -20,6 +20,7 @@ pub mod home;
 mod html;
 pub mod news;
 pub mod reader;
+pub mod tag_translation;
 #[cfg(test)]
 mod test_support;
 mod text;

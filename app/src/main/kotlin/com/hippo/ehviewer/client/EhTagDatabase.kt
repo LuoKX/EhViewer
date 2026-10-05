@@ -20,18 +20,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import arrow.core.Either
+import com.ehviewer.core.files.delete
+import com.ehviewer.core.files.exists
 import com.ehviewer.core.files.metadataOrNull
-import com.ehviewer.core.files.read
+import com.ehviewer.core.files.moveTo
+import com.ehviewer.core.files.openFileDescriptor
 import com.ehviewer.core.files.write
-import com.ehviewer.core.model.TagNamespace
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhApplication.Companion.ktorClient
 import com.hippo.ehviewer.R
+import com.hippo.ehviewer.bridge.tags.TagSuggestionRequest
+import com.hippo.ehviewer.bridge.tags.TagTranslationIndex
 import com.hippo.ehviewer.util.AppConfig
 import com.hippo.ehviewer.util.bodyAsUtf8Text
 import com.hippo.ehviewer.util.ensureSuccess
 import com.hippo.ehviewer.util.utf8
 import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.readAvailable
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -41,160 +50,131 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.io.Source
 import kotlinx.io.writeString
-import kotlinx.serialization.json.io.encodeToSink
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import moe.tarsin.coroutines.runSuspendCatching
+import okio.Path
 import splitties.init.appCtx
 
 object EhTagDatabase : CoroutineScope {
-    override val coroutineContext = Dispatchers.IO + Job()
-    private const val NAMESPACE_PREFIX = "n"
-    private val PREFIXES = arrayOf(
-        "-",
-        "~",
-        "tag:",
-        "weak:",
-    )
-    private lateinit var tagGroups: Map<String, Map<String, String>>
-    private val updateLock = Mutex()
-    var initialized by mutableStateOf(false)
+  override val coroutineContext = Dispatchers.IO + Job()
+  private val updateLock = Mutex()
+  private val indexLock = ReentrantReadWriteLock()
+  private var index: TagTranslationIndex? = null
+  var initialized by mutableStateOf(false)
+    private set
 
-    fun getTranslation(prefix: String? = NAMESPACE_PREFIX, tag: String?): String? = tagGroups[prefix]?.get(tag)?.trim()?.ifEmpty { null }
+  fun getTranslation(prefix: String? = "n", tag: String?): String? =
+    if (prefix == null || tag == null) null else indexLock.read { index?.translate(prefix, tag) }
 
-    // Copied from https://github.com/EhTagTranslation/EhSyringe/blob/c0cf88da04081072492829673aca34380b14dae6/src/plugin/suggest.ts#L37
-    // TODO: Optimize
-    private val nsScore = mapOf(
-        TagNamespace.Location.prefix to 10f,
-        TagNamespace.Other.prefix to 10f,
-        TagNamespace.Female.prefix to 9f,
-        TagNamespace.Male.prefix to 8.5f,
-        TagNamespace.Mixed.prefix to 8f,
-        TagNamespace.Parody.prefix to 3.3f,
-        TagNamespace.Character.prefix to 2.8f,
-        TagNamespace.Artist.prefix to 2.5f,
-        TagNamespace.Cosplayer.prefix to 2.4f,
-        TagNamespace.Group.prefix to 2.2f,
-        TagNamespace.Language.prefix to 2f,
-    )
+  data class Tag(val tag: String, val hint: String?, val score: Float)
 
-    data class Tag(val tag: String, val hint: String?, val score: Float)
+  context(_: Context)
+  fun suggestion(rawKeyword: String, expectTranslate: Boolean): List<Tag> = indexLock.read {
+    index
+      ?.suggest(
+        TagSuggestionRequest(
+          version = 1,
+          keyword = rawKeyword,
+          translate = expectTranslate && translatable,
+          limit = 50,
+        )
+      )
+      ?.map { Tag(it.tag, it.hint, it.score) }
+      .orEmpty()
+  }
 
-    context(_: Context)
-    fun suggestion(rawKeyword: String, expectTranslate: Boolean): List<Tag> {
-        val keyword = PREFIXES.fold(rawKeyword) { kwd, pfx -> kwd.removePrefix(pfx) }
-        if (!initialized || keyword.isEmpty()) return emptyList()
-        val translate = expectTranslate && translatable
-        val prefix = rawKeyword.dropLast(keyword.length)
-        val ns = keyword.substringBefore(':')
-        val tag = keyword.drop(ns.length + 1)
-        val nsPrefix = TagNamespace.from(ns)?.prefix ?: ns
-        val tags = tagGroups[nsPrefix.takeIf { tag.isNotEmpty() && it != NAMESPACE_PREFIX }]
-        return if (tags != null) {
-            lookup(tags, tag, translate).map { it.copy(tag = "$prefix$nsPrefix:${it.tag}") }
-        } else {
-            tagGroups.asSequence().flatMap { (nsPrefix, tags) ->
-                if (nsPrefix != NAMESPACE_PREFIX) {
-                    lookup(tags, keyword, translate).map { it.copy(tag = "$prefix$nsPrefix:${it.tag}", score = it.score / (nsScore[nsPrefix] ?: 1f)) }
-                } else {
-                    lookup(tags, keyword, translate).map { it.copy(tag = "$prefix${it.tag}:", score = 0f) }
-                }
-            }
-        }.toMutableList().apply { sortBy { it.score } }
+  private fun metadata(context: Context): Array<String> =
+    context.resources.getStringArray(R.array.tag_translation_metadata)
+
+  context(ctx: Context)
+  val translatable
+    get() = ctx.resources.getBoolean(R.bool.tag_translatable)
+
+  private suspend fun fetch(url: String) =
+    ktorClient.prepareGet(url).executeSafely {
+      it.status.ensureSuccess()
+      it.bodyAsUtf8Text()
     }
 
-    private fun lookup(tags: Map<String, String>, keyword: String, translate: Boolean) = if (translate) {
-        tags.asSequence().mapNotNull { (tag, hint) ->
-            val score = if (tag.startsWith(keyword, ignoreCase = true)) {
-                tag.length
-            } else {
-                if (tag.indexOf(" $keyword", ignoreCase = true) != -1) {
-                    tag.length * 2
-                } else {
-                    when (hint.indexOf(keyword, ignoreCase = true)) {
-                        -1 -> 0
-                        0 -> hint.length
-                        else -> hint.length * 2
-                    }
-                }
-            }
-            if (score != 0) Tag(tag, hint, score.toFloat()) else null
+  // Stream public JSON into a staging file. Never allocate its full text on the Java heap.
+  private suspend fun fetchData(url: String, target: Path) =
+    ktorClient.prepareGet(url).executeSafely { response ->
+      response.status.ensureSuccess()
+      val channel = response.bodyAsChannel()
+      val buffer = ByteArray(16 * 1024)
+      var total = 0L
+      target.write {
+        while (true) {
+          val count = channel.readAvailable(buffer)
+          if (count == -1) break
+          total += count
+          require(total <= MAX_TAG_DATA_BYTES) { "Tag index input exceeds resource budget" }
+          write(buffer, 0, count)
         }
-    } else {
-        tags.keys.asSequence().mapNotNull { tag ->
-            val score = if (tag.startsWith(keyword, ignoreCase = true)) {
-                tag.length
-            } else {
-                if (tag.indexOf(" $keyword", ignoreCase = true) != -1) {
-                    tag.length * 2
-                } else {
-                    0
-                }
-            }
-            if (score != 0) Tag(tag, null, score.toFloat()) else null
-        }
+      }
     }
 
-    private fun metadata(context: Context): Array<String> = context.resources.getStringArray(R.array.tag_translation_metadata)
-
-    context(ctx: Context)
-    val translatable
-        get() = ctx.resources.getBoolean(R.bool.tag_translatable)
-
-    private suspend fun fetch(url: String) = ktorClient.prepareGet(url).executeSafely {
-        it.status.ensureSuccess()
-        it.bodyAsUtf8Text()
+  fun launchUpdate() = launch {
+    updateLock.withLock {
+      runSuspendCatching { atomicallyUpdate() }.onFailure { logcat(it) }
     }
+  }
 
-    fun launchUpdate() = launch {
-        updateLock.withLock {
-            runSuspendCatching {
-                atomicallyUpdate()
-            }.onFailure {
-                logcat(it)
-            }
-        }
+  private fun openIndex(path: Path, remote: Boolean) =
+    path.openFileDescriptor("r").use { TagTranslationIndex.open(it.fd, remote) }
+
+  private fun publish(replacement: TagTranslationIndex) {
+    val previous = indexLock.write {
+      val previous = index
+      index = replacement
+      initialized = true
+      previous
     }
+    previous?.close()
+  }
 
-    private suspend fun atomicallyUpdate() {
-        val (sha1Name, sha1Url, dataName, dataUrl) = metadata(appCtx)
-        val workdir = AppConfig.tagTranslationsDir
-        val sha1File = workdir / sha1Name
-        val dataFile = workdir / dataName
-
-        if (!initialized) {
-            Either.catch {
-                tagGroups = dataFile.read(Source::parseAs)
-                initialized = true
-
-                // Perform only one automatic update (on app startup) per day
-                val lastModified = Instant.fromEpochMilliseconds(dataFile.metadataOrNull()!!.lastModifiedAtMillis!!)
-                if (Clock.System.now() - lastModified < 1.days) return
-            }.onLeft {
-                logcat(it)
-            }
+  private suspend fun atomicallyUpdate() {
+    val (sha1Name, sha1Url, dataName, dataUrl) = metadata(appCtx)
+    val workdir = AppConfig.tagTranslationsDir
+    val sha1File = workdir / sha1Name
+    val legacyData = workdir / dataName
+    // Preserve the old cached map for compatibility. New cache contains the original remote JSON.
+    val dataFile = workdir / "$dataName.rust-v1"
+    if (!initialized) {
+      Either.catch {
+          val remote = dataFile.exists()
+          val source = if (remote) dataFile else legacyData
+          publish(openIndex(source, remote))
+          val modified = source.metadataOrNull()?.lastModifiedAtMillis
+          if (
+            modified != null &&
+              Clock.System.now() - Instant.fromEpochMilliseconds(modified) < 1.days
+          )
+            return
         }
-
-        val currentSha1 = if (initialized) {
-            Either.catch { sha1File.utf8() }.getOrNull()
-        } else {
-            null
-        }
-        val newSha1 = fetch(sha1Url)
-        if (newSha1 == currentSha1) return
-
-        val rawData = fetch(dataUrl)
-        tagGroups = json.parseToJsonElement(rawData).jsonObject["data"]!!.jsonArray.associate { e ->
-            val data = e.jsonObject
-            val namespace = data["namespace"]!!.jsonPrimitive.content
-            val prefix = if (namespace == "rows") NAMESPACE_PREFIX else TagNamespace.from(namespace)!!.prefix!!
-            prefix to data["data"]!!.jsonObject.mapValues { it.value.jsonObject["name"]!!.jsonPrimitive.content }
-        }
-        initialized = true
-        sha1File.write { writeString(newSha1) }
-        dataFile.write { json.encodeToSink(tagGroups, this) }
+        .onLeft { logcat(it) }
     }
+    val currentSha1 = if (initialized) Either.catch { sha1File.utf8() }.getOrNull() else null
+    val newSha1 = fetch(sha1Url)
+    if (newSha1 == currentSha1) return
+    val staging = workdir / "$dataName.rust-v1.tmp"
+    val stagingSha = workdir / "$sha1Name.tmp"
+    var replacement: TagTranslationIndex? = null
+    try {
+      fetchData(dataUrl, staging)
+      replacement = openIndex(staging, remote = true)
+      stagingSha.write { writeString(newSha1) }
+      staging moveTo dataFile
+      stagingSha moveTo sha1File
+      val accepted = checkNotNull(replacement)
+      replacement = null // Publication owns it even if retiring the previous handle fails.
+      publish(accepted)
+    } finally {
+      replacement?.close()
+      staging.delete()
+      stagingSha.delete()
+    }
+  }
+
+  private const val MAX_TAG_DATA_BYTES = 64L * 1024 * 1024
 }

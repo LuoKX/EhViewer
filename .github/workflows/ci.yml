@@ -82,6 +82,7 @@ jobs:
       - name: JVM Symbol Check
         working-directory: ./app/src/main/rust
         run: |
+          export LC_ALL=C
           cargo build --package ehviewer_rust --features jvm
           nm -g --defined-only target/debug/libehviewer_rust.a \
             | awk '$2 == "T" { print $3 }' \
@@ -156,6 +157,9 @@ jobs:
             --fail-under-functions 95 \
             -- health::tests::
 
+      - name: P1 Critical Owner Coverage
+        run: python3 scripts/check_p1_coverage.py
+
       - name: Domain Coverage
         working-directory: ./app/src/main/rust
         run: |
@@ -175,7 +179,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_rules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_rules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-gallery-filter.lcov \
             --fail-under-lines 95 \
@@ -189,7 +193,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_filter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_filter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-gallery-rules.lcov \
             --fail-under-lines 95 \
@@ -203,7 +207,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/download/progress\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/download/tests\.rs$|/download/progress/tests\.rs$|/download/progress\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-download-queue.lcov \
             --fail-under-lines 95 \
@@ -216,7 +220,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/download/tests\.rs$|/download/progress/tests\.rs$|/download\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/download/tests\.rs$|/download/progress/tests\.rs$|/download\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-download-progress.lcov \
             --fail-under-lines 95 \
@@ -229,7 +233,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/fetch\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/fetch\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-reader-schedule.lcov \
             --fail-under-lines 95 \
@@ -242,7 +246,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-reader-fetch.lcov \
             --fail-under-lines 95 \
@@ -255,7 +259,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session/lifecycle\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session/lifecycle\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-session-policy.lcov \
             --fail-under-lines 95 \
@@ -268,7 +272,7 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session\.rs$|/lib\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-domain-session-lifecycle.lcov \
             --fail-under-lines 95 \
@@ -371,7 +375,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/gallery/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/gallery/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-auth.lcov \
             --fail-under-lines 95 \
@@ -384,7 +388,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list.lcov \
             --fail-under-lines 95 \
@@ -397,7 +401,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url.lcov \
             --fail-under-lines 95 \
@@ -410,7 +414,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url-parser.lcov \
             --fail-under-lines 95 \
@@ -423,7 +427,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-navigation.lcov \
             --fail-under-lines 95 \
@@ -436,7 +440,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-favorites-url.lcov \
             --fail-under-lines 95 \
@@ -449,7 +453,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorites.lcov \
             --fail-under-lines 95 \
@@ -464,7 +468,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorite-note.lcov \
             --fail-under-lines 95 \
@@ -478,7 +482,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
             --fail-under-lines 95 \
@@ -492,7 +496,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_note|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|network_policy|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_note|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|network_policy|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive-request.lcov \
             --fail-under-lines 95 \
@@ -505,7 +509,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive.lcov \
             --fail-under-lines 95 \
@@ -518,7 +522,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comments.lcov \
             --fail-under-lines 95 \
@@ -531,7 +535,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comment-vote.lcov \
             --fail-under-lines 95 \
@@ -544,7 +548,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-detail.lcov \
             --fail-under-lines 95 \
@@ -557,7 +561,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-preview.lcov \
             --fail-under-lines 95 \
@@ -570,7 +574,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-token.lcov \
             --fail-under-lines 95 \
@@ -583,7 +587,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-tag-vote.lcov \
             --fail-under-lines 95 \
@@ -596,7 +600,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-rate.lcov \
             --fail-under-lines 95 \
@@ -609,7 +613,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-metadata.lcov \
             --fail-under-lines 95 \
@@ -622,7 +626,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-reader-page.lcov \
             --fail-under-lines 95 \
@@ -635,7 +639,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/page\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/page\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-reader-mpv.lcov \
             --fail-under-lines 95 \
@@ -648,7 +652,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-image-limits.lcov \
             --fail-under-lines 95 \
@@ -661,7 +665,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-news.lcov \
             --fail-under-lines 95 \
@@ -674,7 +678,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-user-config.lcov \
             --fail-under-lines 95 \
@@ -687,7 +691,7 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex '(/gallery_enrichment(?:/|\.rs$)|/recovery_eh_lookup(?:/|\.rs$)|/tag_translation(?:/|\.rs$)|/gallery/request(?:/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
             --lcov \
             --output-path target/llvm-cov/eh-net-torrent.lcov \
             --fail-under-lines 95 \

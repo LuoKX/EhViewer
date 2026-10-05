@@ -6,6 +6,13 @@ import com.ehviewer.core.database.model.DownloadRecoveryCandidate
 import com.ehviewer.core.database.model.DownloadRecoveryStatus
 import com.ehviewer.core.model.BaseGalleryInfo
 import com.hippo.ehviewer.EhDB
+import com.hippo.ehviewer.bridge.download.RecoveryEhCandidate
+import com.hippo.ehviewer.bridge.download.RecoveryEhKind
+import com.hippo.ehviewer.bridge.download.RecoveryEhRequest
+import com.hippo.ehviewer.bridge.download.RecoveryEhSelection
+import com.hippo.ehviewer.bridge.download.RecoveryEhStep
+import com.hippo.ehviewer.bridge.download.RecoveryPromotionSignal
+import com.hippo.ehviewer.bridge.download.planRecoveryEhLookup
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.data.ListUrlBuilder
 import com.hippo.ehviewer.client.exception.NoHitsFoundException
@@ -20,68 +27,104 @@ internal sealed interface RecoveryLookupResult {
 
 internal object DownloadRecoveryEhLookup {
   suspend fun lookup(candidate: DownloadRecoveryCandidate): RecoveryLookupResult {
-    val hints = candidate.lookupHints()
-    val direct = lookupByKnownIdentity(candidate, hints.gid)
-    if (direct != null) return RecoveryLookupResult.Choices(listOf(direct))
-
-    val title = hints.title
-    if (title.isNotBlank()) {
-      val normalizedTitle = normalizeTitle(title)
-      val phrase = title.replace('"', ' ').trim()
-      val titleMatches =
-        try {
-          search("search:title:$normalizedTitle", "\"$phrase\"") { galleries ->
-            val exactMatches =
-              galleries.filter { normalizeTitle(it.title) == normalizedTitle }.ifEmpty { galleries }
-            hints.gid?.let { gid -> exactMatches.filter { it.gid == gid } } ?: exactMatches
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.LOOKUP,
+          gid = candidate.gid,
+          token = candidate.token,
+          title = candidate.title,
+          displayName = candidate.displayName,
+          hasPageToken = candidate.pageToken != null,
+          pageIndex = candidate.pageIndex ?: 0,
+        )
+      )
+    for (step in plan.steps) {
+      val choices =
+        when (step.kind) {
+          "pageToken" -> {
+            val gid = checkNotNull(plan.gid)
+            // Only EH/network failures advance to the next identity strategy. Native failures
+            // from selection run outside this catch and must surface instead of masquerading as
+            // misses.
+            val observed =
+              try {
+                RecoverySearchScheduler.execute(step.key) {
+                  listOf(
+                    BaseGalleryInfo(
+                      gid = gid,
+                      token =
+                        EhEngine.getGalleryToken(
+                          gid,
+                          checkNotNull(candidate.pageToken),
+                          candidate.pageIndex ?: 0,
+                        ),
+                    )
+                  )
+                }
+              } catch (cancelled: CancellationException) {
+                throw cancelled
+              } catch (_: Exception) {
+                emptyList()
+              }
+            select(observed, RecoveryEhSelection.IDENTITY, plan.gid, plan.title)
           }
-        } catch (_: NoHitsFoundException) {
-          emptyList()
+          "storedToken" ->
+            listOf(
+              BaseGalleryInfo(gid = checkNotNull(plan.gid), token = checkNotNull(candidate.token))
+            )
+          "title",
+          "gid" -> {
+            val observed =
+              try {
+                search(step)
+              } catch (_: NoHitsFoundException) {
+                emptyList()
+              }
+            select(
+              observed,
+              if (step.kind == "title") RecoveryEhSelection.TITLE else RecoveryEhSelection.GID,
+              plan.gid,
+              plan.title,
+            )
+          }
+          else -> error("Unsupported EH recovery lookup step")
         }
-      val titleResult = titleMatches.toLookupResult()
-      if (titleResult !== RecoveryLookupResult.NotFound) return titleResult
-    }
-    hints.gid?.let { gid ->
-      val gidMatches =
-        try {
-          search("search:gid:$gid", "gid:$gid") { galleries -> galleries.filter { it.gid == gid } }
-        } catch (_: NoHitsFoundException) {
-          emptyList()
-        }
-      return gidMatches.toLookupResult()
+      if (choices.isNotEmpty()) return RecoveryLookupResult.Choices(choices)
     }
     return RecoveryLookupResult.NotFound
   }
 
   suspend fun apply(candidate: DownloadRecoveryCandidate, gallery: BaseGalleryInfo): Boolean {
-    require(candidate.gid == null || candidate.gid == gallery.gid) {
-      "Selected EH gallery does not match the known gallery identifier"
-    }
-    require(gallery.gid > 0 && TOKEN.matches(gallery.token)) { "EH returned an invalid identity" }
+    planRecoveryEhLookup(
+      RecoveryEhRequest(
+        1,
+        RecoveryEhKind.VALIDATE_IDENTITY,
+        gid = gallery.gid,
+        token = gallery.token,
+        knownGid = candidate.gid,
+      )
+    )
     val resolvedGallery = hydrate(gallery)
-    val existingIssues = candidate.issues.split(',').filter(String::isNotBlank)
-    val unresolvedLocalIssues = existingIssues.filterNot {
-      it in IDENTITY_RESOLVED_ISSUES || it in LOOKUP_RESULT_ISSUES
-    }
-    val complete =
-      unresolvedLocalIssues.isEmpty() &&
-        candidate.localPageCount > 0 &&
-        resolvedGallery.pages == candidate.localPageCount
     val path =
       recoveryPromotionPath(candidate.relativePath, candidate.sourceKind, resolvedGallery.gid)
-    val status =
-      when {
-        !complete -> DownloadRecoveryStatus.CONTENT_INCOMPLETE
-        path == null -> DownloadRecoveryStatus.PATH_CONFLICT
-        else -> DownloadRecoveryStatus.READY
-      }
-    val issues = buildList {
-      addAll(unresolvedLocalIssues)
-      if (resolvedGallery.pages != candidate.localPageCount) add("PAGE_COUNT_CONFLICT")
-      if (path == null) add("ANDROID_PATH_CONFLICT")
-    }
-      .distinct()
-      .joinToString(",")
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.APPLY,
+          gid = resolvedGallery.gid,
+          token = resolvedGallery.token,
+          knownGid = candidate.gid,
+          issues = candidate.issues,
+          evidence = candidate.evidence,
+          localPages = candidate.localPageCount,
+          declaredPages = resolvedGallery.pages,
+          usablePath = path != null,
+        )
+      )
+    val status = DownloadRecoveryStatus.valueOf(checkNotNull(plan.status))
     val updated =
       candidate.copy(
         gid = resolvedGallery.gid,
@@ -89,11 +132,8 @@ internal object DownloadRecoveryEhLookup {
         title = resolvedGallery.title,
         titleJpn = resolvedGallery.titleJpn,
         declaredPages = resolvedGallery.pages,
-        evidence =
-          (candidate.evidence.split(',').filter(String::isNotBlank) + "EH_LOOKUP")
-            .distinct()
-            .joinToString(","),
-        issues = issues,
+        evidence = checkNotNull(plan.evidence),
+        issues = checkNotNull(plan.issues),
         status = status,
         updatedAt = System.currentTimeMillis(),
       )
@@ -115,206 +155,140 @@ internal object DownloadRecoveryEhLookup {
   }
 
   suspend fun markQueryFailed(candidate: DownloadRecoveryCandidate, failure: Throwable? = null) {
-    markLookupFailed(candidate, failure?.toLookupFailureIssue() ?: "EH_QUERY_FAILED")
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.QUERY_FAILURE,
+          issues = candidate.issues,
+          causeTypes = failure.causeTypes(),
+        )
+      )
+    EhDB.putDownloadRecoveryCandidate(
+      candidate.copy(
+        status = DownloadRecoveryStatus.valueOf(checkNotNull(plan.status)),
+        issues = checkNotNull(plan.issues),
+        updatedAt = System.currentTimeMillis(),
+      )
+    )
   }
 
   suspend fun markFailure(candidate: DownloadRecoveryCandidate, failure: Throwable) {
     Log.e("DownloadRecoveryEhLookup", "Recovery lookup/apply failed", failure)
     val latest =
       EhDB.getDownloadRecoveryCandidates().firstOrNull { it.candidateId == candidate.candidateId }
-    val promotionFailure = failure.toPromotionFailure()
-    val lookupWasApplied = latest?.evidence?.split(',')?.any { it == "EH_LOOKUP" } == true
-    if (promotionFailure != null || lookupWasApplied) {
-      val current = latest ?: candidate
-      val resolvedFailure =
-        promotionFailure
-          ?: PromotionFailure(
-            status =
-              current.status.takeUnless { it == DownloadRecoveryStatus.READY }
-                ?: DownloadRecoveryStatus.PATH_CONFLICT,
-            issue = "LOCAL_PROMOTION_FAILED",
-          )
-      EhDB.putDownloadRecoveryCandidate(
-        current.copy(
-          status = resolvedFailure.status,
-          issues =
-            (current.issues.split(',').filter(String::isNotBlank).filterNot {
-                it in LOOKUP_RESULT_ISSUES
-              } + resolvedFailure.issue)
+    val current = latest ?: candidate
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.FAILURE,
+          issues = candidate.issues,
+          causeTypes = failure.causeTypes(),
+          promotionSignals =
+            generateSequence(failure) { it.cause }
+              .take(8)
+              .mapNotNull { PROMOTION_SIGNALS[it.message] }
               .distinct()
-              .joinToString(","),
-          updatedAt = System.currentTimeMillis(),
+              .toList(),
+          latestEvidence = latest?.evidence,
+          latestIssues = latest?.issues,
+          currentStatus = current.status.name,
         )
       )
-    } else {
-      markLookupFailed(candidate, failure.toLookupFailureIssue())
-    }
-  }
-
-  suspend fun markNotFound(candidate: DownloadRecoveryCandidate) {
-    markLookupFailed(candidate, "EH_NO_MATCH")
-  }
-
-  private suspend fun markLookupFailed(candidate: DownloadRecoveryCandidate, issue: String) {
+    val target = if (plan.promotionFailure) current else candidate
     EhDB.putDownloadRecoveryCandidate(
-      candidate.copy(
-        status = DownloadRecoveryStatus.QUERY_FAILED,
-        issues =
-          (candidate.issues.split(',').filter(String::isNotBlank).filterNot {
-              it in LOOKUP_RESULT_ISSUES
-            } + issue)
-            .distinct()
-            .joinToString(","),
+      target.copy(
+        status = DownloadRecoveryStatus.valueOf(checkNotNull(plan.status)),
+        issues = checkNotNull(plan.issues),
         updatedAt = System.currentTimeMillis(),
       )
     )
   }
 
-  private suspend fun lookupByKnownIdentity(
-    candidate: DownloadRecoveryCandidate,
+  suspend fun markNotFound(candidate: DownloadRecoveryCandidate) {
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.QUERY_FAILURE,
+          issues = candidate.issues,
+          notFound = true,
+        )
+      )
+    EhDB.putDownloadRecoveryCandidate(
+      candidate.copy(
+        status = DownloadRecoveryStatus.valueOf(checkNotNull(plan.status)),
+        issues = checkNotNull(plan.issues),
+        updatedAt = System.currentTimeMillis(),
+      )
+    )
+  }
+
+  private fun select(
+    galleries: List<BaseGalleryInfo>,
+    selection: RecoveryEhSelection,
     gid: Long?,
-  ): BaseGalleryInfo? {
-    gid ?: return null
-    candidate.pageToken?.let { pageToken ->
-      val page = candidate.pageIndex ?: 0
-      val resolved =
-        try {
-          RecoverySearchScheduler.execute("gtoken:$gid:$page") {
-              listOf(
-                BaseGalleryInfo(
-                  gid = gid,
-                  token = EhEngine.getGalleryToken(gid, pageToken, page),
-                )
-              )
-            }
-            .singleOrNull()
-            ?.takeIf { TOKEN.matches(it.token) }
-        } catch (cancelled: CancellationException) {
-          throw cancelled
-        } catch (_: Exception) {
-          null
-        }
-      if (resolved != null) return resolved
-    }
-    return candidate.token?.takeIf(TOKEN::matches)?.let { token ->
-      BaseGalleryInfo(gid = gid, token = token)
-    }
+    title: String?,
+  ): List<BaseGalleryInfo> {
+    val plan =
+      planRecoveryEhLookup(
+        RecoveryEhRequest(
+          1,
+          RecoveryEhKind.SELECT,
+          gid = gid,
+          title = title,
+          selection = selection,
+          candidates = galleries.map { RecoveryEhCandidate(it.gid, it.token, it.title) },
+        )
+      )
+    return plan.selected.map(galleries::get)
   }
 
-  private fun DownloadRecoveryCandidate.lookupHints(): RecoveryLookupHints {
-    val sourceName = displayName.trim().substringAfterLast('/')
-    val sourceMatch = DOWNLOAD_SOURCE_NAME.matchEntire(sourceName)
-    val inferredGid = sourceMatch?.groupValues?.get(1)?.toLongOrNull()?.takeIf { it > 0 }
-    val gid = this.gid ?: inferredGid
-    val storedTitle = title?.trim().orEmpty()
-    val titleWithoutGeneratedPrefix = gid?.let { storedTitle.removePrefix("$it-").trim() }.orEmpty()
-    val generatedTitle = sourceMatch?.groups?.get(2)?.value?.trim().orEmpty()
-    val resolvedTitle =
-      titleWithoutGeneratedPrefix.ifBlank { generatedTitle }.ifBlank { storedTitle }
-    return RecoveryLookupHints(gid = gid, title = resolvedTitle)
-  }
-
-  private suspend fun search(
-    normalizedKey: String,
-    query: String,
-    select: (List<BaseGalleryInfo>) -> List<BaseGalleryInfo>,
-  ): List<BaseGalleryInfo> =
-    RecoverySearchScheduler.execute(normalizedKey) {
-      val url = ListUrlBuilder(keyword = query).build()
-      select(EhEngine.getRecoveryGalleryList(url).galleryInfoList)
-        .filter { it.gid > 0 && TOKEN.matches(it.token) }
-        .distinctBy { it.gid to it.token }
-        .take(25)
+  // Cache raw HTTP observations, never candidate-specific filtered decisions. The same normalized
+  // title can be queried by candidates with different known gids; Rust selects separately each
+  // time.
+  private suspend fun search(step: RecoveryEhStep): List<BaseGalleryInfo> =
+    RecoverySearchScheduler.execute(step.key) {
+      EhEngine.getRecoveryGalleryList(ListUrlBuilder(keyword = checkNotNull(step.query)).build())
+        .galleryInfoList
     }
 
   private suspend fun hydrate(gallery: BaseGalleryInfo): BaseGalleryInfo =
     RecoverySearchScheduler.execute("gdata:${gallery.gid}") {
-        listOf(BaseGalleryInfo(gid = gallery.gid, token = gallery.token)).also { galleries ->
-          EhEngine.fillGalleryListByApi(galleries)
+        listOf(BaseGalleryInfo(gid = gallery.gid, token = gallery.token)).also {
+          EhEngine.fillGalleryListByApi(it)
         }
       }
       .single()
 
-  private fun List<BaseGalleryInfo>.toLookupResult(): RecoveryLookupResult =
-    if (isEmpty()) RecoveryLookupResult.NotFound else RecoveryLookupResult.Choices(this)
+  private fun Throwable?.causeTypes(): List<String> =
+    generateSequence(this) { it.cause }.take(8).map { it.javaClass.simpleName }.toList()
 
-  private fun normalizeTitle(title: String?): String =
-    title.orEmpty().lowercase().replace(WHITESPACE, " ").trim()
-
-  private fun Throwable.toLookupFailureIssue(): String {
-    val types = generateSequence(this) { it.cause }.take(8).map { it.javaClass.simpleName }.toSet()
-    return when {
-      "NotLoggedInException" in types -> "EH_AUTH_REQUIRED"
-      "CloudflareBypassException" in types -> "EH_CLOUDFLARE_FAILED"
-      "UnknownHostException" in types -> "EH_DNS_FAILED"
-      "SocketTimeoutException" in types || "HttpTimeoutException" in types -> "EH_TIMEOUT"
-      "ConnectException" in types || "IOException" in types -> "EH_NETWORK_FAILED"
-      "ParseException" in types ||
-        "SerializationException" in types ||
-        "RustFailureException" in types -> "EH_PARSE_FAILED"
-      "EhException" in types ||
-        "IllegalArgumentException" in types ||
-        "IllegalStateException" in types ||
-        "NoSuchElementException" in types -> "EH_RESPONSE_FAILED"
-      else -> "EH_QUERY_FAILED"
-    }
-  }
-
-  private fun Throwable.toPromotionFailure(): PromotionFailure? {
-    val messages = generateSequence(this) { it.cause }.take(8).mapNotNull { it.message }.toSet()
-    return when {
-      "Recovery candidate no longer exists" in messages ->
-        PromotionFailure(DownloadRecoveryStatus.SOURCE_MISSING, "RECOVERY_SOURCE_MISSING")
-      messages.any {
-        it == "Recovery candidate changed before promotion" ||
-          it == "Recovery candidate is not ready" ||
-          it == "Recovery candidate identity changed before promotion" ||
-          it == "Recovery candidate token changed before promotion"
-      } -> PromotionFailure(DownloadRecoveryStatus.IDENTITY_CONFLICT, "IDENTITY_CONFLICT")
-      messages.any {
-        it == "Recovery candidate has no trusted page count" ||
-          it == "Recovery candidate is not locally complete" ||
-          it == "The formal gallery page count conflicts with the recovery candidate"
-      } -> PromotionFailure(DownloadRecoveryStatus.CONTENT_INCOMPLETE, "PAGE_COUNT_CONFLICT")
-      "Recovery source path changed before promotion" in messages ->
-        PromotionFailure(DownloadRecoveryStatus.PATH_CONFLICT, "ANDROID_PATH_CONFLICT")
-      messages.any {
-        it == "A valid source mapping already exists for this gallery" ||
-          it == "The recovery source is already mapped to a different gallery"
-      } -> PromotionFailure(DownloadRecoveryStatus.PATH_CONFLICT, "EXISTING_MAPPING_CONFLICT")
-      "An active download cannot be replaced by recovery" in messages ->
-        PromotionFailure(DownloadRecoveryStatus.IDENTITY_CONFLICT, "ACTIVE_DOWNLOAD_CONFLICT")
-      "The formal gallery identity conflicts with the recovery candidate" in messages ->
-        PromotionFailure(DownloadRecoveryStatus.IDENTITY_CONFLICT, "IDENTITY_CONFLICT")
-      "Promoted download could not be reloaded" in messages ->
-        PromotionFailure(DownloadRecoveryStatus.PATH_CONFLICT, "LOCAL_PROMOTION_FAILED")
-      else -> null
-    }
-  }
-
-  private val TOKEN = Regex("[0-9a-f]{10}")
-  private val WHITESPACE = Regex("\\s+")
-  private val DOWNLOAD_SOURCE_NAME =
-    Regex(
-      "^([1-9]\\d{0,18})(?:-(.+)|\\.(?:cbz|zip|rar|7z|tar|tar\\.gz|tar\\.xz))$",
-      RegexOption.IGNORE_CASE,
+  // Android Room exception strings become closed non-sensitive facts. Rust owns their precedence,
+  // status/issue decisions and reconciliation; arbitrary Throwable messages never cross JNI.
+  private val PROMOTION_SIGNALS =
+    mapOf(
+      "Recovery candidate no longer exists" to RecoveryPromotionSignal.SOURCE_MISSING,
+      "Recovery candidate changed before promotion" to RecoveryPromotionSignal.IDENTITY_CONFLICT,
+      "Recovery candidate is not ready" to RecoveryPromotionSignal.IDENTITY_CONFLICT,
+      "Recovery candidate identity changed before promotion" to
+        RecoveryPromotionSignal.IDENTITY_CONFLICT,
+      "Recovery candidate token changed before promotion" to
+        RecoveryPromotionSignal.IDENTITY_CONFLICT,
+      "Recovery candidate has no trusted page count" to RecoveryPromotionSignal.PAGE_COUNT_CONFLICT,
+      "Recovery candidate is not locally complete" to RecoveryPromotionSignal.PAGE_COUNT_CONFLICT,
+      "The formal gallery page count conflicts with the recovery candidate" to
+        RecoveryPromotionSignal.PAGE_COUNT_CONFLICT,
+      "Recovery source path changed before promotion" to RecoveryPromotionSignal.PATH_CONFLICT,
+      "A valid source mapping already exists for this gallery" to
+        RecoveryPromotionSignal.MAPPING_CONFLICT,
+      "The recovery source is already mapped to a different gallery" to
+        RecoveryPromotionSignal.MAPPING_CONFLICT,
+      "An active download cannot be replaced by recovery" to
+        RecoveryPromotionSignal.ACTIVE_DOWNLOAD_CONFLICT,
+      "The formal gallery identity conflicts with the recovery candidate" to
+        RecoveryPromotionSignal.FORMAL_IDENTITY_CONFLICT,
+      "Promoted download could not be reloaded" to RecoveryPromotionSignal.LOCAL_PROMOTION_FAILED,
     )
-  private val IDENTITY_RESOLVED_ISSUES =
-    setOf("MISSING_GID", "MISSING_TOKEN", "UNKNOWN_PAGE_COUNT", "INVALID_METADATA")
-  private val LOOKUP_RESULT_ISSUES =
-    setOf(
-      "EH_QUERY_FAILED",
-      "EH_NO_MATCH",
-      "EH_AUTH_REQUIRED",
-      "EH_CLOUDFLARE_FAILED",
-      "EH_DNS_FAILED",
-      "EH_TIMEOUT",
-      "EH_NETWORK_FAILED",
-      "EH_PARSE_FAILED",
-      "EH_RESPONSE_FAILED",
-    )
-
-  private data class RecoveryLookupHints(val gid: Long?, val title: String)
-
-  private data class PromotionFailure(val status: DownloadRecoveryStatus, val issue: String)
 }
