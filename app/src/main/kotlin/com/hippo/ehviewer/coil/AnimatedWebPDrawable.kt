@@ -9,6 +9,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import androidx.core.graphics.createBitmap
+import coil3.DrawableImage
 import com.ehviewer.core.util.logcat
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
@@ -29,10 +30,12 @@ import kotlinx.coroutines.launch
  * operation is idempotent, and native destruction waits for any decode in flight before recycling
  * resources.
  */
-class AnimatedWebPDrawable(source: ByteBuffer) : Drawable(), Animatable {
+class AnimatedWebPDrawable(source: ByteBuffer) :
+  Drawable(), Animatable, DrawableImage.SizeProvider {
   private val decodeScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
   private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG or Paint.FILTER_BITMAP_FLAG)
   private val decoder: Long
+  private val inputSize = source.remaining().toLong()
   private val width: Int
   private val height: Int
   private val loopCount: Int
@@ -80,6 +83,10 @@ class AnimatedWebPDrawable(source: ByteBuffer) : Drawable(), Animatable {
       throw cause
     }
   }
+
+  // Two Android frame bitmaps, two libwebp RGBA canvases, and the Rust-owned input copy.
+  override val size: Long
+    get() = 16L * width * height + inputSize
 
   override fun getIntrinsicWidth() = width
 

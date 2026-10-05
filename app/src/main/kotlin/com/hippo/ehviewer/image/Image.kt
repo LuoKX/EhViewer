@@ -51,12 +51,13 @@ import com.hippo.ehviewer.ktbuilder.execute
 import com.hippo.ehviewer.ktbuilder.imageRequest
 import java.nio.ByteBuffer
 import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.decrementAndFetch
 import kotlin.concurrent.atomics.updateAndFetch
 import okio.Path
 import splitties.init.appCtx
 
-class Image private constructor(image: CoilImage, private val src: ImageSource) {
+class Image private constructor(image: CoilImage, src: ImageSource) {
   val refcnt = AtomicInt(1)
 
   fun pin() = refcnt.updateAndFetch { if (it != 0) it + 1 else 0 } != 0
@@ -64,7 +65,6 @@ class Image private constructor(image: CoilImage, private val src: ImageSource) 
   fun unpin() = (refcnt.decrementAndFetch() == 0).also { if (it) recycle() }
 
   val intrinsicSize = with(image) { IntSize(width, height) }
-  val allocationSize = image.size
   val hasQrCode =
     when (image) {
       is BitmapImageWithExtraInfo -> image.hasQrCode
@@ -77,15 +77,33 @@ class Image private constructor(image: CoilImage, private val src: ImageSource) 
       else -> image
     }
 
-  private fun recycle() {
-    when (val image = innerImage!!) {
-      is DrawableImage -> {
-        (image.drawable as? AnimatedWebPDrawable)?.dispose()
-        src.close()
-      }
-      is BitmapImage -> image.bitmap.recycle()
+  // Static bitmaps and our WebP decoder own their pixels/input after decoding. Keeping the
+  // closed source here would also keep archive extraction buffers alive for the whole cache entry.
+  private var src: ImageSource? =
+    if (
+      innerImage is BitmapImage || (innerImage as? DrawableImage)?.drawable is AnimatedWebPDrawable
+    ) {
+      src.close()
+      null
+    } else {
+      src
     }
-    innerImage = null
+
+  val allocationSize =
+    image.size + ((this.src as? ByteBufferSource)?.source?.capacity()?.toLong() ?: 0L)
+
+  private fun recycle() {
+    try {
+      when (val image = innerImage!!) {
+        is DrawableImage -> (image.drawable as? AnimatedWebPDrawable)?.dispose()
+        is BitmapImage -> image.bitmap.recycle()
+      }
+    } finally {
+      innerImage = null
+      val source = src
+      src = null
+      source?.close()
+    }
   }
 
   companion object {
@@ -132,9 +150,7 @@ class Image private constructor(image: CoilImage, private val src: ImageSource) 
           prepared.close()
           throw failure
         }
-      return Image(image, prepared).apply {
-        if (innerImage is BitmapImage) prepared.close()
-      }
+      return Image(image, prepared)
     }
 
     suspend fun decode(src: ImageSource, checkExtraneousAds: Boolean = false): Image {
@@ -161,9 +177,7 @@ class Image private constructor(image: CoilImage, private val src: ImageSource) 
             src.left().decodeCoil(checkExtraneousAds)
           }
         }
-      return Image(image, src).apply {
-        if (innerImage is BitmapImage) src.close()
-      }
+      return Image(image, src)
     }
   }
 }
@@ -181,9 +195,14 @@ interface ByteBufferSource : ImageSource {
 
 inline fun byteBufferSource(buffer: ByteBuffer, crossinline release: () -> Unit) =
   object : ByteBufferSource {
-    override val source = buffer
+    private val buffer = AtomicReference<ByteBuffer?>(buffer)
 
-    override fun close() = release()
+    override val source: ByteBuffer
+      get() = checkNotNull(this.buffer.load()) { "Image source is closed" }
+
+    override fun close() {
+      if (this.buffer.exchange(null) != null) release()
+    }
   }
 
 /** Returns the content bounds detected by the host-tested Rust border algorithm. */

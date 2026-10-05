@@ -5,7 +5,6 @@ import androidx.collection.mutableIntObjectMapOf
 import arrow.fx.coroutines.ExitCase
 import arrow.fx.coroutines.bracketCase
 import com.ehviewer.core.model.GalleryInfo
-import com.ehviewer.core.util.isAtLeastO
 import com.ehviewer.core.util.withNonCancellableContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
@@ -41,8 +40,6 @@ import moe.tarsin.coroutines.withLock
 import okio.Path
 
 private val progressScope = CoroutineScope(Dispatchers.IO)
-private const val MAX_CACHE_SIZE = 512 * 1024 * 1024
-private const val MIN_CACHE_SIZE = 256 * 1024 * 1024
 
 abstract class PageLoader(
   val scope: CoroutineScope,
@@ -55,17 +52,15 @@ abstract class PageLoader(
 
   private val jobs = mutableIntObjectMapOf<Job>()
   private val mutex = NamedMutex<Int>()
-  private val semaphore = Semaphore(4)
+  private val semaphore = Semaphore(2)
+  private val cacheSize = readerImageCacheSize(OSUtils.appMaxMemory, OSUtils.totalMemory)
 
   private val cache =
     SieveCache<Int, Image>(
-      maxSize =
-        if (isAtLeastO) {
-          (OSUtils.totalMemory / 8).toInt().coerceIn(MIN_CACHE_SIZE, MAX_CACHE_SIZE)
-        } else {
-          (OSUtils.appMaxMemory / 3 * 2).toInt()
-        },
-      sizeOf = { _, v -> v.allocationSize.toInt() },
+      maxSize = cacheSize,
+      // A single oversized page must survive until the UI can pin it. Let it occupy the whole
+      // cache instead of immediately evicting/recycling the image we are about to publish.
+      sizeOf = { _, v -> readerImageCacheEntrySize(v.allocationSize, cacheSize) },
       onEntryRemoved = { k, o, n, _ -> if (o.unpin()) n ?: notifyPageWait(k) },
     )
 
@@ -231,7 +226,16 @@ abstract class PageLoader(
           try {
             mutex.withLock(index) {
               semaphore.withPermit {
-                atomicallyDecodeAndUpdate(index)
+                retryAfterImageCacheTrim(
+                  trimCache = {
+                    lock.write {
+                      // Keep pages currently pinned by the reader; release only idle cache entries.
+                      cache.removeIf { _, image -> image.refcnt.load() == 1 }
+                    }
+                  }
+                ) {
+                  atomicallyDecodeAndUpdate(index)
+                }
               }
             }
           } catch (e: Throwable) {
