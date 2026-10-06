@@ -33,7 +33,7 @@ internal data class ComicInfoTagGroup(
 
 @Serializable
 internal data class GalleryComicInfoRequest(
-  val version: Int = COMIC_INFO_API_VERSION,
+  val version: Int,
   val title: String?,
   @SerialName("titleJpn") val titleJpn: String? = null,
   val web: String,
@@ -46,13 +46,13 @@ internal data class GalleryComicInfoRequest(
 
 @Serializable
 private data class ComicInfoEncodeRequest(
-  val version: Int = COMIC_INFO_API_VERSION,
+  val version: Int,
   val info: ComicInfo,
 )
 
 @Serializable
 private data class ComicInfoDecodeRequest(
-  val version: Int = COMIC_INFO_API_VERSION,
+  val version: Int,
   @ByteString val xml: ByteArray,
 )
 
@@ -75,7 +75,10 @@ internal fun encodeComicInfoXml(
   nativeCall: ComicInfoNativeCall = ::nativeEncodeComicInfoXmlV1,
 ): ByteArray =
   decodeComicInfoEnvelope<ComicInfoXml>(
-      request = rustCbor.encodeToByteArray(ComicInfoEncodeRequest(info = info)),
+      request =
+        rustCbor.encodeToByteArray(
+          ComicInfoEncodeRequest(version = COMIC_INFO_API_VERSION, info = info)
+        ),
       operation = "ComicInfo Encode",
       nativeCall = nativeCall,
     )
@@ -86,7 +89,10 @@ internal fun decodeComicInfoXml(
   nativeCall: ComicInfoNativeCall = ::nativeDecodeComicInfoXmlV1,
 ): ComicInfo =
   decodeComicInfoEnvelope(
-    request = rustCbor.encodeToByteArray(ComicInfoDecodeRequest(xml = xml)),
+    request =
+      rustCbor.encodeToByteArray(
+        ComicInfoDecodeRequest(version = COMIC_INFO_API_VERSION, xml = xml)
+      ),
     operation = "ComicInfo Decode",
     nativeCall = nativeCall,
   )

@@ -726,6 +726,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     val expected = mCurrentTask
     launch {
       withExpectedDownloadProgressTask(expected) { info ->
+        info.pages = pages
         applyDownloadProgress(info, DownloadProgressCommand.setPages(pages))
         mutableNotifyFlow.emit(info)
       }
@@ -794,6 +795,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
       if (expected == null) {
         logcat(TAG, LogPriority.ERROR) { "Current task is null, but it should not be" }
       } else {
+        expected.pages = total
         runRustDownloadQueueCommand(
           DownloadQueueCommand.finish(expected.gid, failed),
           DownloadCompletion(expected, finished, downloaded, total, failed),

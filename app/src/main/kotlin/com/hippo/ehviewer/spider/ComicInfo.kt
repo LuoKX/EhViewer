@@ -5,6 +5,7 @@ import com.ehviewer.core.files.write
 import com.ehviewer.core.model.GalleryDetail
 import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.model.PowerStatus
+import com.hippo.ehviewer.bridge.archive.COMIC_INFO_API_VERSION
 import com.hippo.ehviewer.bridge.archive.ComicInfoTag
 import com.hippo.ehviewer.bridge.archive.ComicInfoTagGroup
 import com.hippo.ehviewer.bridge.archive.ComicInfoTagPower
@@ -14,6 +15,7 @@ import com.hippo.ehviewer.bridge.archive.decodeComicInfoXml
 import com.hippo.ehviewer.bridge.archive.encodeComicInfoXml
 import com.hippo.ehviewer.client.EhUrl
 import kotlinx.io.readByteArray
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okio.Path
 
@@ -22,6 +24,7 @@ const val COMIC_INFO_FILE = "ComicInfo.xml"
 fun GalleryInfo.getComicInfo(): ComicInfo =
   buildComicInfo(
     GalleryComicInfoRequest(
+      version = COMIC_INFO_API_VERSION,
       title = title,
       titleJpn = titleJpn,
       web = EhUrl.getGalleryDetailUrl(gid, token),
@@ -71,7 +74,7 @@ data class ComicInfo(
   val genre: List<String>?,
   val web: String?,
   val pageCount: Int = 0,
-  val languageISO: String?,
+  @SerialName("languageIso") val languageISO: String?,
   val characters: List<String>?,
   val teams: List<String>?,
   val communityRating: String?,

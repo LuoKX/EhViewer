@@ -58,6 +58,7 @@ import java.util.Locale
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import kotlinx.coroutines.CancellationException
 import moe.tarsin.coroutines.runSuspendCatching
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -85,6 +86,10 @@ class SpiderDen(val info: GalleryInfo) {
 
   constructor(info: GalleryInfo, dirname: String) : this(info) {
     downloadDir = downloadLocation / dirname
+  }
+
+  internal constructor(info: GalleryInfo, downloadDir: Path) : this(info) {
+    this.downloadDir = downloadDir
   }
 
   @Volatile
@@ -290,15 +295,20 @@ class SpiderDen(val info: GalleryInfo) {
     }
   }
 
-  suspend fun archive() =
+  internal suspend fun archive(
+    expectedPages: Int,
+    fetchMetadata: suspend (List<GalleryInfo>) -> Unit = {
+      EhEngine.fillGalleryListByApi(it)
+    },
+  ) =
     saveAsCbz &&
       downloadDir?.run {
         resolve(archiveName).let { file ->
           var completed = false
           try {
             runSuspendCatching {
-              archiveTo(file)
-              validateDownloadedCbzV1(file, info.pages)
+              archiveTo(file, expectedPages, fetchMetadata)
+              validateDownloadedCbzV1(file, expectedPages)
             }
               .onSuccess { completed = true }
               .onFailure { logcat(it) }
@@ -328,21 +338,20 @@ class SpiderDen(val info: GalleryInfo) {
   }
 
   suspend fun exportAsCbz(file: Path) =
-    downloadDir!!.find(archiveName)?.sendTo(file) ?: archiveTo(file)
+    downloadDir!!.find(archiveName)?.sendTo(file)
+      ?: archiveTo(file, resolveExportPageCount()) { EhEngine.fillGalleryListByApi(it) }
 
-  private suspend fun archiveTo(file: Path) = resourceScope {
+  private suspend fun archiveTo(
+    file: Path,
+    expectedPages: Int,
+    fetchMetadata: suspend (List<GalleryInfo>) -> Unit,
+  ) = resourceScope {
+    require(expectedPages > 0) { "Archive expected page count must be positive" }
     val comicInfo = closeable {
-      val f = downloadDir!! / COMIC_INFO_FILE
-      if (!f.exists()) {
-        writeComicInfo()
-      } else if (info.pages == 0) {
-        info.pages = readComicInfo(f)!!.pageCount
-      }
-      f.openFileDescriptor("r")
+      prepareComicInfo(expectedPages, fetchMetadata).openFileDescriptor("r")
     }
-    val pages = info.pages
     val (fdBatch, names) =
-      (0 until pages)
+      (0 until expectedPages)
         .parMap { idx ->
           val f = autoCloseable { getImageSource(idx) }
           closeable { f.source.openFileDescriptor("r") }.fd to
@@ -353,7 +362,50 @@ class SpiderDen(val info: GalleryInfo) {
     val arcFd = closeable { file.openFileDescriptor("rwt") }
     val sourceDescriptors = fdBatch.toIntArray()
     val entryNames = names.toTypedArray()
-    writeGeneratedCbzDescriptorV1(sourceDescriptors, entryNames, arcFd.fd, pages)
+    writeGeneratedCbzDescriptorV1(sourceDescriptors, entryNames, arcFd.fd, expectedPages)
+  }
+
+  private suspend fun prepareComicInfo(
+    expectedPages: Int,
+    fetchMetadata: suspend (List<GalleryInfo>) -> Unit,
+  ): Path {
+    val file = requireNotNull(downloadDir) / COMIC_INFO_FILE
+    val current = file.takeIf { it.exists() }?.let(::readComicInfo)
+    when {
+      current == null -> {
+        if (info !is GalleryDetail) {
+          try {
+            fetchMetadata(listOf(info))
+          } catch (e: CancellationException) {
+            throw e
+          } catch (e: Exception) {
+            logcat(e)
+          }
+        }
+        info.pages = expectedPages
+        writeComicInfo(fetchMetadata = false)
+      }
+      current.pageCount != expectedPages -> {
+        info.pages = expectedPages
+        writeComicInfo(current.copy(pageCount = expectedPages), file)
+      }
+      else -> info.pages = expectedPages
+    }
+    return file
+  }
+
+  private fun resolveExportPageCount(): Int {
+    val pages =
+      info.pages.takeIf { it > 0 }
+        ?: downloadDir
+          ?.resolve(COMIC_INFO_FILE)
+          ?.takeIf { it.exists() }
+          ?.let(::readComicInfo)
+          ?.pageCount
+    return requireNotNull(pages?.takeIf { it > 0 }) {
+        "Archive expected page count must be positive"
+      }
+      .also { info.pages = it }
   }
 
   suspend fun initDownloadDirIfExist() {
