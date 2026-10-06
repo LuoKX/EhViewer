@@ -8,6 +8,7 @@ mod bitmap;
 mod cache_keys;
 mod comic_info;
 mod comic_info_policy;
+mod download_metadata;
 mod file_rules;
 mod gallery_enrichment;
 mod gallery_filter;

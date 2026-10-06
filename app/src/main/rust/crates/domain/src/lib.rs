@@ -47,6 +47,7 @@ pub mod contracts;
 pub mod daily;
 pub mod download;
 pub mod download_catalog;
+pub mod download_metadata;
 pub mod file_rules;
 pub mod gallery_enrichment;
 pub mod gallery_filter;

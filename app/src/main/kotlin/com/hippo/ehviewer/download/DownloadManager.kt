@@ -28,9 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.util.size
-import arrow.fx.coroutines.parMapNotNull
+import arrow.fx.coroutines.parMap
 import com.ehviewer.core.data.model.asEntity
-import com.ehviewer.core.database.model.DownloadArtist
 import com.ehviewer.core.database.model.DownloadInfo
 import com.ehviewer.core.database.model.DownloadLabel
 import com.ehviewer.core.files.delete
@@ -44,15 +43,23 @@ import com.ehviewer.core.util.logcat
 import com.ehviewer.core.util.mapNotNull
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.download.DownloadMetadataApplyResult
+import com.hippo.ehviewer.bridge.download.DownloadMetadataPhase
+import com.hippo.ehviewer.bridge.download.DownloadMetadataRequest
 import com.hippo.ehviewer.bridge.download.DownloadProgressCommand
 import com.hippo.ehviewer.bridge.download.DownloadProgressRequest
 import com.hippo.ehviewer.bridge.download.DownloadQueueCommand
 import com.hippo.ehviewer.bridge.download.DownloadQueuePlan
 import com.hippo.ehviewer.bridge.download.DownloadSortRequest
 import com.hippo.ehviewer.bridge.download.DownloadState
+import com.hippo.ehviewer.bridge.download.MAX_DOWNLOAD_METADATA_ROWS
+import com.hippo.ehviewer.bridge.download.PinnedDownloadMetadata
+import com.hippo.ehviewer.bridge.download.applyDownloadMetadata
 import com.hippo.ehviewer.bridge.download.buildDownloadQueueRecoveryEntries
 import com.hippo.ehviewer.bridge.download.buildDownloadQueueSnapshot
 import com.hippo.ehviewer.bridge.download.isExpectedDownloadProgressTask
+import com.hippo.ehviewer.bridge.download.observeDownloadMetadata
+import com.hippo.ehviewer.bridge.download.planDownloadMetadata
 import com.hippo.ehviewer.bridge.download.planDownloadProgress
 import com.hippo.ehviewer.bridge.download.recoverDownloadQueue
 import com.hippo.ehviewer.bridge.download.reduceDownloadQueue
@@ -68,12 +75,13 @@ import com.hippo.ehviewer.spider.SpiderQueen.OnSpiderListener
 import com.hippo.ehviewer.spider.downloadDirname
 import com.hippo.ehviewer.spider.readComicInfo
 import com.hippo.ehviewer.spider.readCompatFromPath
-import com.hippo.ehviewer.spider.toSimpleTags
 import com.hippo.ehviewer.util.AppConfig
 import com.hippo.ehviewer.util.runAssertingNotMainThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.transform
@@ -166,28 +174,28 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   @Stable
   @Composable
-  fun collectDownloadState(gid: Long): State<Int> =
-    remember {
-      notifyFlow.transform { if (it.gid == gid) emit(getDownloadState(gid)) }
-    }.collectAsState(getDownloadState(gid))
+  fun collectDownloadState(gid: Long): State<Int> = remember {
+    notifyFlow.transform { if (it.gid == gid) emit(getDownloadState(gid)) }
+  }
+    .collectAsState(getDownloadState(gid))
 
   @Stable
   @Composable
-  fun collectContainDownloadInfo(gid: Long): State<Boolean> =
-    remember {
-      notifyFlow.transform { if (it.gid == gid) emit(containDownloadInfo(gid)) }
-    }.collectAsState(containDownloadInfo(gid))
+  fun collectContainDownloadInfo(gid: Long): State<Boolean> = remember {
+    notifyFlow.transform { if (it.gid == gid) emit(containDownloadInfo(gid)) }
+  }
+    .collectAsState(containDownloadInfo(gid))
 
   @Stable
   @Composable
   inline fun <T> updatedDownloadInfo(
     info: DownloadInfo,
     crossinline transform: @DisallowComposableCalls DownloadInfo.() -> T,
-  ): T =
-    remember {
-      notifyFlow.transform { if (it.gid == info.gid) emit(transform(it)) }
-    }.collectAsState(transform(info))
-      .value
+  ): T = remember {
+    notifyFlow.transform { if (it.gid == info.gid) emit(transform(it)) }
+  }
+    .collectAsState(transform(info))
+    .value
 
   suspend fun startAllDownload() {
     runRustDownloadQueueCommand(DownloadQueueCommand.startAll())
@@ -288,10 +296,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     sortMutex.withLock { sortDownloadsLocked(mode) }
   }
 
-  suspend fun resetAllReadingProgress() =
-    runCatching {
-      EhDB.clearProgressInfo()
-    }.onFailure { logcat(it) }
+  suspend fun resetAllReadingProgress() = runCatching {
+    EhDB.clearProgressInfo()
+  }
+    .onFailure { logcat(it) }
 
   /** Creates a missing Android row before asking Rust to start exactly one task. */
   private suspend fun startRustDownload(
@@ -331,18 +339,17 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   /** Stops and removes one item without allowing another queue command to interleave. */
-  private suspend fun deleteRustDownload(galleryId: Long): DownloadInfo? =
-    sortMutex.withLock {
-      mutex.withLock {
-        recoverRustDownloadQueueIfNeededLocked()
-        reduceRustDownloadQueueLocked(DownloadQueueCommand.stopOne(galleryId))
-        mAllInfoMap.remove(galleryId)?.also { info ->
-          EhDB.removeDownloadInfo(info)
-          allInfoList.remove(info)
-          mutableNotifyFlow.emit(info)
-        }
+  private suspend fun deleteRustDownload(galleryId: Long): DownloadInfo? = sortMutex.withLock {
+    mutex.withLock {
+      recoverRustDownloadQueueIfNeededLocked()
+      reduceRustDownloadQueueLocked(DownloadQueueCommand.stopOne(galleryId))
+      mAllInfoMap.remove(galleryId)?.also { info ->
+        EhDB.removeDownloadInfo(info)
+        allInfoList.remove(info)
+        mutableNotifyFlow.emit(info)
       }
     }
+  }
 
   /** Stops and removes selected items atomically with respect to Rust queue commands. */
   private suspend fun deleteRustDownloads(galleryIds: LongArray) {
@@ -458,49 +465,42 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
       plan.cancelGalleryId?.let { galleryId ->
         checkNotNull(detachCurrentWorkerLocked(galleryId))
       }
-    val completedInfo =
-      completion?.let { result ->
-        val progressPlan =
-          mCurrentTask?.let { info ->
-            val command =
-              DownloadProgressCommand.finish(
-                result.finished,
-                result.downloaded,
-                result.total,
-                failed = result.failed,
-              )
-            planDownloadProgress(
-              DownloadProgressRequest(1, info.toDownloadProgressSnapshot(), command),
-            )
-          }
-        if (progressPlan != null) {
-          val expectedState =
-            plan.snapshot.entries
-              .single { it.galleryId == result.galleryId }
-              .state
-          require(progressPlan.snapshot.state == expectedState) {
-            "Download progress state does not match queue finish state"
-          }
-        }
-        mSpeedReminder.onFinish()
-        checkNotNull(detachCurrentWorkerLocked(result.galleryId)).also { info ->
-          if (progressPlan != null) {
-            val snapshot = progressPlan.snapshot
-            info.finished = snapshot.finished
-            info.downloaded = snapshot.downloaded
-            info.total = snapshot.total
-            info.legacy = snapshot.legacy
-            info.speed = snapshot.speedBytesPerSecond
-            info.remaining = snapshot.remainingMilliseconds
-            info.state = snapshot.state.toAndroidDownloadState()
-          } else {
-            info.finished = result.finished
-            info.downloaded = result.downloaded
-            info.total = result.total
-            info.legacy = result.total - result.finished
-          }
+    val completedInfo = completion?.let { result ->
+      val progressPlan = mCurrentTask?.let { info ->
+        val command =
+          DownloadProgressCommand.finish(
+            result.finished,
+            result.downloaded,
+            result.total,
+            failed = result.failed,
+          )
+        planDownloadProgress(DownloadProgressRequest(1, info.toDownloadProgressSnapshot(), command))
+      }
+      if (progressPlan != null) {
+        val expectedState = plan.snapshot.entries.single { it.galleryId == result.galleryId }.state
+        require(progressPlan.snapshot.state == expectedState) {
+          "Download progress state does not match queue finish state"
         }
       }
+      mSpeedReminder.onFinish()
+      checkNotNull(detachCurrentWorkerLocked(result.galleryId)).also { info ->
+        if (progressPlan != null) {
+          val snapshot = progressPlan.snapshot
+          info.finished = snapshot.finished
+          info.downloaded = snapshot.downloaded
+          info.total = snapshot.total
+          info.legacy = snapshot.legacy
+          info.speed = snapshot.speedBytesPerSecond
+          info.remaining = snapshot.remainingMilliseconds
+          info.state = snapshot.state.toAndroidDownloadState()
+        } else {
+          info.finished = result.finished
+          info.downloaded = result.downloaded
+          info.total = result.total
+          info.legacy = result.total - result.finished
+        }
+      }
+    }
 
     mWaitList.clear()
     plan.snapshot.waiting.forEach { galleryId ->
@@ -663,72 +663,49 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   suspend fun readMetadataFromLocal() {
-    val list =
-      sortMutex
-        .withLock {
-          allInfoList.mapNotNull {
-            val updateGallery = it.pages == 0 || it.simpleTags == null
-            val updateArtist = it.artistInfoList.isEmpty()
-            if (updateGallery || updateArtist) {
-              Triple(it, updateGallery, updateArtist)
-            } else {
-              null
-            }
-          }
-        }.parMapNotNull(concurrency = 5) { (info, updateGallery, updateArtist) ->
-          info.downloadDir?.run {
-            val comicInfo = find(COMIC_INFO_FILE)?.let { readComicInfo(it) }
-            if (comicInfo != null) {
-              val galleryInfo =
-                if (updateGallery) {
-                  info.pages = comicInfo.pageCount
-                  info.simpleTags = comicInfo.toSimpleTags()
-                  info.galleryInfo
-                } else {
-                  null
-                }
-
-              val artistList =
-                if (updateArtist && comicInfo.penciller != null) {
-                  info.artistInfoList = DownloadArtist.from(info.gid, comicInfo.penciller)
-                  info.gid to info.artistInfoList
-                } else {
-                  null
-                }
-
-              if (galleryInfo != null || artistList != null) {
-                galleryInfo to artistList
-              } else {
-                null
-              }
-            } else if (info.pages == 0) {
-              val galleryInfo =
-                find(SPIDER_INFO_FILENAME)?.let {
-                  readCompatFromPath(it)?.run {
-                    info.pages = pages
-                    info.galleryInfo
-                  }
-                }
-
-              galleryInfo?.let { it to null }
-            } else {
-              null
-            }
-          }
+    val pinned = sortMutex.withLock {
+      allInfoList.map { PinnedDownloadMetadata(it, it.downloadDir) }
+    }
+    for (batch in pinned.chunked(MAX_DOWNLOAD_METADATA_ROWS)) {
+      currentCoroutineContext().ensureActive()
+      val request =
+        DownloadMetadataRequest(
+          1,
+          DownloadMetadataPhase.OBSERVE,
+          batch.map { it.snapshot },
+          emptyList(),
+        )
+      val reads = planDownloadMetadata(request).reads
+      if (reads.isEmpty()) continue
+      val observations =
+        reads.parMap(concurrency = 5) { read ->
+          val directory = checkNotNull(batch[read.index].directory)
+          observeDownloadMetadata(
+            read,
+            readComic = { directory.find(COMIC_INFO_FILE)?.let { readComicInfo(it) } },
+            readSpiderPages = {
+              directory.find(SPIDER_INFO_FILENAME)?.let { readCompatFromPath(it)?.pages }
+            },
+          )
         }
-
-    val galleryInfoList =
-      buildList {
-        list.forEach { (info, artists) ->
-          info?.let {
-            add(it)
-          }
-          artists?.let { (gid, updateList) ->
-            EhDB.putDownloadArtist(gid, updateList)
-          }
-        }
+      val patches =
+        planDownloadMetadata(
+            request.copy(phase = DownloadMetadataPhase.PATCH, observations = observations)
+          )
+          .patches
+      val result = sortMutex.withLock {
+        applyDownloadMetadata(
+          batch,
+          patches,
+          current = { gid -> mAllInfoMap[gid]?.takeIf { row -> allInfoList.any { it === row } } },
+          persistArtists = EhDB::putDownloadArtist,
+          persistGalleries = EhDB::updateGalleryInfo,
+        )
       }
-    if (galleryInfoList.isNotEmpty()) EhDB.updateGalleryInfo(galleryInfoList)
+      if (result == DownloadMetadataApplyResult.STALE) {
+        logcat(TAG, LogPriority.INFO) { "Download metadata batch stale; no changes applied" }
+      }
+    }
   }
 
   val isIdle: Boolean
@@ -864,10 +841,9 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
       fun start() {
         if (currentJob == null) {
-          currentJob =
-            launch {
-              tracker.speedFlow().collect(::updateSpeed)
-            }
+          currentJob = launch {
+            tracker.speedFlow().collect(::updateSpeed)
+          }
         }
       }
 
@@ -921,15 +897,14 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
         }
       }
 
-      private suspend fun snapshotTransfers() =
-        mutex.withLock {
-          (0 until contentLengthMap.size).map { index ->
-            com.hippo.ehviewer.bridge.download.ActiveDownloadTransfer(
-              contentLengthMap.valueAt(index),
-              receivedSizeMap.valueAt(index),
-            )
-          }
+      private suspend fun snapshotTransfers() = mutex.withLock {
+        (0 until contentLengthMap.size).map { index ->
+          com.hippo.ehviewer.bridge.download.ActiveDownloadTransfer(
+            contentLengthMap.valueAt(index),
+            receivedSizeMap.valueAt(index),
+          )
         }
+      }
     }
 
   private const val TAG = "DownloadManager"
@@ -939,15 +914,15 @@ var downloadLocation: Path
   get() =
     with(Settings) {
       if (downloadScheme != null) {
-        Uri
-          .Builder()
+        Uri.Builder()
           .apply {
             scheme(downloadScheme)
             encodedAuthority(downloadAuthority)
             encodedPath(downloadPath)
             encodedQuery(downloadQuery)
             encodedFragment(downloadFragment)
-          }.build()
+          }
+          .build()
           .toOkioPath()
       } else {
         AppConfig.defaultDownloadDir?.toOkioPath() ?: "".toPath()

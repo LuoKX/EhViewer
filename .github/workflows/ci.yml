@@ -1,6 +1,7 @@
+---
 name: CI
 
-on:
+'on':
   push:
     branches:
       - '*'
@@ -12,12 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        # actions/checkout v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        # actions/setup-java v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: temurin
           java-version-file: .java-version
@@ -26,7 +29,8 @@ jobs:
         run: rustup target add aarch64-linux-android
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        # Swatinem/rust-cache v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: "./app/src/main/rust"
           shared-key: ${{ runner.os }}
@@ -47,11 +51,14 @@ jobs:
           test ! -e app/src/main/kotlin/com/hippo/ehviewer/util/RangeSets.kt
           test ! -e app/src/main/rust/src/parser.rs
           test ! -d app/src/main/rust/src/parser
-          if grep -R -n -E 'io\.github\.petertrr\.diffutils|nl\.adaptivity\.xmlutil' app/src/main/kotlin core/*/src; then
+          if grep -R -n -E \
+            'io\.github\.petertrr\.diffutils|nl\.adaptivity\.xmlutil' \
+            app/src/main/kotlin core/*/src; then
             echo 'Retired Kotlin diff/XML implementation found'
             exit 1
           fi
-          if grep -n -F 'io.github.pdvrieze.xmlutil:' gradle/libs.versions.toml; then
+          if grep -n -F 'io.github.pdvrieze.xmlutil:' \
+            gradle/libs.versions.toml; then
             echo 'Retired XML runtime dependency found'
             exit 1
           fi
@@ -62,11 +69,16 @@ jobs:
 
       - name: Android Clippy Check
         working-directory: ./app/src/main/rust
-        run: cargo clippy --package ehviewer_rust --target aarch64-linux-android --all-features -- -D warnings
+        run: |
+          cargo clippy --package ehviewer_rust --target aarch64-linux-android \
+            --all-features -- -D warnings
 
       - name: Rust Core Clippy Check
         working-directory: ./app/src/main/rust
-        run: cargo clippy --package eh_archive --package eh_domain --package eh_ffi --package eh_image --package eh_net --all-targets --all-features -- -D warnings
+        run: |
+          cargo clippy --package eh_archive --package eh_domain --package \
+            eh_ffi --package eh_image --package eh_net --all-targets \
+            --all-features -- -D warnings
 
       - name: Rustdoc Check
         working-directory: ./app/src/main/rust
@@ -102,15 +114,20 @@ jobs:
             > target/jvm-symbols.txt
           grep 'V1$' target/jvm-symbols.txt > target/jvm-v1-symbols.txt
           diff -u crates/ffi/jvm-v1-symbols.txt target/jvm-v1-symbols.txt
-          grep '^Java_com_hippo_ehviewer_jni_HashKt_sha1$' target/jvm-symbols.txt \
+          grep '^Java_com_hippo_ehviewer_jni_HashKt_sha1$' \
+            target/jvm-symbols.txt \
             > target/jvm-compat-symbols.txt
-          diff -u crates/ffi/jvm-compat-symbols.txt target/jvm-compat-symbols.txt
-          grep '^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_' target/jvm-symbols.txt \
+          diff -u crates/ffi/jvm-compat-symbols.txt \
+            target/jvm-compat-symbols.txt
+          grep '^Java_com_hippo_ehviewer_coil_AnimatedWebPDrawableKt_' \
+            target/jvm-symbols.txt \
             > target/jvm-webp-symbols.txt
           diff -u crates/ffi/jvm-webp-symbols.txt target/jvm-webp-symbols.txt
-          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' target/jvm-symbols.txt \
+          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' \
+            target/jvm-symbols.txt \
             > target/jvm-gif-symbols.txt
-          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' crates/ffi/android-image-symbols.txt \
+          grep '^Java_com_hippo_ehviewer_jni_GifUtilsKt_' \
+            crates/ffi/android-image-symbols.txt \
             > target/jvm-gif-symbols.expected.txt
           diff -u target/jvm-gif-symbols.expected.txt target/jvm-gif-symbols.txt
           cat \
@@ -121,8 +138,10 @@ jobs:
             | sort -u \
             > target/jvm-symbols.expected.txt
           diff -u target/jvm-symbols.expected.txt target/jvm-symbols.txt
-          grep '^JNI_OnLoad$' target/jvm-defined-symbols.txt > target/jvm-loader-symbols.txt
-          diff -u crates/ffi/jvm-loader-symbols.txt target/jvm-loader-symbols.txt
+          grep '^JNI_OnLoad$' target/jvm-defined-symbols.txt > \
+            target/jvm-loader-symbols.txt
+          diff -u crates/ffi/jvm-loader-symbols.txt \
+            target/jvm-loader-symbols.txt
           comm -12 \
             crates/ffi/jvm-retired-parser-symbols.txt \
             target/jvm-symbols.txt \
@@ -139,7 +158,8 @@ jobs:
           cc -shared -o target/jni-probe/libehviewer-host.so \
             -Wl,--whole-archive target/debug/libehviewer_rust.a \
             -Wl,--no-whole-archive -ldl -lpthread -lm
-          javac -d target/jni-probe ../../../../scripts/fixtures/BBCodeJniSmoke.java
+          javac -d target/jni-probe \
+            ../../../../scripts/fixtures/BBCodeJniSmoke.java
           java --enable-native-access=ALL-UNNAMED -cp target/jni-probe \
             com.hippo.ehviewer.bridge.text.BBCodeBridgeKt \
             target/jni-probe/libehviewer-host.so crates/domain/test_data
@@ -147,7 +167,8 @@ jobs:
       - name: ComicInfo Policy Host JNI Smoke Test
         working-directory: ./app/src/main/rust
         run: |
-          javac -d target/jni-probe ../../../../scripts/fixtures/ComicInfoPolicyJniSmoke.java
+          javac -d target/jni-probe \
+            ../../../../scripts/fixtures/ComicInfoPolicyJniSmoke.java
           java --enable-native-access=ALL-UNNAMED -cp target/jni-probe \
             com.hippo.ehviewer.bridge.archive.ComicInfoPolicyBridgeKt \
             target/jni-probe/libehviewer-host.so crates/domain/test_data
@@ -155,7 +176,8 @@ jobs:
       - name: Storage Rules and Recovery Scan Host JNI Smoke Test
         working-directory: ./app/src/main/rust
         run: |
-          javac -d target/jni-probe ../../../../scripts/fixtures/StorageRulesJniSmoke.java \
+          javac -d target/jni-probe \
+            ../../../../scripts/fixtures/StorageRulesJniSmoke.java \
             ../../../../scripts/fixtures/RecoveryScanJniSmoke.java
           java --enable-native-access=ALL-UNNAMED -cp target/jni-probe \
             com.hippo.ehviewer.bridge.files.StorageRulesBridgeKt \
@@ -182,8 +204,18 @@ jobs:
             com.hippo.ehviewer.bridge.download.BackupImportBridgeKt \
             target/jni-probe/libehviewer-host.so crates/domain/test_data
 
+      - name: Download Metadata Host JNI Smoke Test
+        working-directory: ./app/src/main/rust
+        run: |
+          javac -d target/jni-probe \
+            ../../../../scripts/fixtures/DownloadMetadataJniSmoke.java
+          java --enable-native-access=ALL-UNNAMED -cp target/jni-probe \
+            com.hippo.ehviewer.bridge.download.DownloadMetadataBridgeKt \
+            target/jni-probe/libehviewer-host.so crates/domain/test_data
+
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@v2
+        # taiki-e/install-action v2
+        uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad
         with:
           tool: cargo-llvm-cov@0.8.6
 
@@ -197,7 +229,19 @@ jobs:
           cargo llvm-cov --package eh_ffi \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/health\.rs$|/webp\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/health' \
+              '\.rs$|/webp\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-ffi-codec.lcov \
             --fail-under-lines 95 \
@@ -210,7 +254,19 @@ jobs:
           cargo llvm-cov --package eh_ffi \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec\.rs$|/webp\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec' \
+              '\.rs$|/webp\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-ffi-health.lcov \
             --fail-under-lines 95 \
@@ -230,7 +286,14 @@ jobs:
         run: python3 scripts/check_p4_coverage.py
 
       - name: Archive Recovery Batch Coverage
-        run: python3 -c "from scripts.check_p3_coverage import main; main((('eh_archive', 'recovery_batch', 'crates/archive/src/recovery_batch.rs'),), 'p5')"
+        run: |
+          python3 - <<'PY'
+          from scripts.check_p3_coverage import main
+          main((
+              ('eh_archive', 'recovery_batch',
+               'crates/archive/src/recovery_batch.rs'),
+          ), 'p5')
+          PY
 
       - name: Recovery Directory Coverage
         run: |
@@ -252,6 +315,14 @@ jobs:
           ), 'p5')
           PY
 
+      - name: Download Metadata Coverage
+        run: |
+          python3 - <<'PY'
+          from scripts.check_p3_coverage import main
+          main((('eh_domain', 'download_metadata',
+                 'crates/domain/src/download_metadata.rs'),), 'p5')
+          PY
+
       - name: Follow-up Coverage Mask Tests
         run: python3 -m unittest scripts.tests.test_coverage_masks -v
 
@@ -261,7 +332,20 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/download/tests\.rs$|/download/progress/tests\.rs$|/reader/fetch/tests\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/download/tests\.rs$|/d' \
+              'ownload/progress/tests\.rs$|/reader/fetch/tests' \
+              '\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain.lcov \
             --fail-under-lines 95 \
@@ -274,7 +358,25 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_rules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/comic_i' \
+              'nfo\.rs$|/contracts\.rs$|/daily\.rs$|/download/|' \
+              '/download\.rs$|/download_catalog\.rs$|/gallery_r' \
+              'ules\.rs$|/library\.rs$|/reader/|/reader\.rs$|/r' \
+              'ecovery\.rs$|/search\.rs$|/session/|/session\.rs' \
+              '$|/settings\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-gallery-filter.lcov \
             --fail-under-lines 95 \
@@ -288,7 +390,25 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/comic_info\.rs$|/contracts\.rs$|/daily\.rs$|/download/|/download\.rs$|/download_catalog\.rs$|/gallery_filter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/recovery\.rs$|/search\.rs$|/session/|/session\.rs$|/settings\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/comic_i' \
+              'nfo\.rs$|/contracts\.rs$|/daily\.rs$|/download/|' \
+              '/download\.rs$|/download_catalog\.rs$|/gallery_f' \
+              'ilter\.rs$|/library\.rs$|/reader/|/reader\.rs$|/' \
+              'recovery\.rs$|/search\.rs$|/session/|/session\.r' \
+              's$|/settings\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-gallery-rules.lcov \
             --fail-under-lines 95 \
@@ -302,7 +422,23 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/download/tests\.rs$|/download/progress/tests\.rs$|/download/progress\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/downloa' \
+              'd/tests\.rs$|/download/progress/tests\.rs$|/down' \
+              'load/progress\.rs$|/reader/|/reader\.rs$|/sessio' \
+              'n/|/session\.rs$|/contracts\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-download-queue.lcov \
             --fail-under-lines 95 \
@@ -315,7 +451,23 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/download/tests\.rs$|/download/progress/tests\.rs$|/download\.rs$|/reader/|/reader\.rs$|/session/|/session\.rs$|/contracts\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/downloa' \
+              'd/tests\.rs$|/download/progress/tests\.rs$|/down' \
+              'load\.rs$|/reader/|/reader\.rs$|/session/|/sessi' \
+              'on\.rs$|/contracts\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-download-progress.lcov \
             --fail-under-lines 95 \
@@ -328,7 +480,23 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/fetch\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/contrac' \
+              'ts\.rs$|/download/|/download\.rs$|/reader/fetch' \
+              '\.rs$|/reader/fetch/tests\.rs$|/session/|/sessio' \
+              'n\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-reader-schedule.lcov \
             --fail-under-lines 95 \
@@ -341,7 +509,23 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader\.rs$|/reader/fetch/tests\.rs$|/session/|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/contrac' \
+              'ts\.rs$|/download/|/download\.rs$|/reader\.rs$|/' \
+              'reader/fetch/tests\.rs$|/session/|/session\.rs$|' \
+              '/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-reader-fetch.lcov \
             --fail-under-lines 95 \
@@ -354,7 +538,22 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session/lifecycle\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/contrac' \
+              'ts\.rs$|/download/|/download\.rs$|/reader/|/read' \
+              'er\.rs$|/session/lifecycle\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-session-policy.lcov \
             --fail-under-lines 95 \
@@ -367,7 +566,22 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_domain \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/contracts\.rs$|/download/|/download\.rs$|/reader/|/reader\.rs$|/session\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/contrac' \
+              'ts\.rs$|/download/|/download\.rs$|/reader/|/read' \
+              'er\.rs$|/session\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-domain-session-lifecycle.lcov \
             --fail-under-lines 95 \
@@ -392,7 +606,19 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_archive \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$|/writer\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$|' \
+              '/writer\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-archive-recovery.lcov \
             --fail-under-lines 95 \
@@ -405,7 +631,18 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_archive \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/lib\.rs$|/writer\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/lib\.rs$|/writer\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-archive-reader.lcov \
             --fail-under-lines 95 \
@@ -418,7 +655,18 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_archive \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-archive-writer.lcov \
             --fail-under-lines 95 \
@@ -443,7 +691,19 @@ jobs:
           cargo llvm-cov --package eh_image \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/border\.rs$|/pixel\.rs$|/qr\.rs$|/region\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/border\.rs$|/pixel\.rs' \
+              '$|/qr\.rs$|/region\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-image-gif.lcov \
             --fail-under-lines 95 \
@@ -457,7 +717,19 @@ jobs:
           mkdir -p target/llvm-cov
           cargo llvm-cov --package eh_image \
             --lib \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/border\.rs$|/gif\.rs$|/pixel\.rs$|/qr\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/border\.rs$|/gif\.rs$|' \
+              '/pixel\.rs$|/qr\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-image-region.lcov \
             --fail-under-lines 95 \
@@ -470,7 +742,23 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/gallery/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/gallery' \
+              '/|/reader/|/gallery\.rs$|/reader\.rs$|/home\.rs$' \
+              '|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/htm' \
+              'l\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-auth.lcov \
             --fail-under-lines 95 \
@@ -483,7 +771,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorite_note\.rs$|/gallery/favorite_muta' \
+              'tion\.rs$|/gallery/favorites\.rs$|/gallery/favor' \
+              'ites_url\.rs$|/gallery/list_url\.rs$|/gallery/li' \
+              'st_url_parser\.rs$|/gallery/network_policy\.rs$|' \
+              '/gallery/navigation\.rs$|/gallery/metadata\.rs$|' \
+              '/gallery/rate\.rs$|/gallery/preview\.rs$|/galler' \
+              'y/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/toke' \
+              'n\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/ne' \
+              'ws\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.r' \
+              's$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list.lcov \
             --fail-under-lines 95 \
@@ -496,7 +810,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url_parser\.r' \
+              's$|/gallery/network_policy\.rs$|/gallery/navigat' \
+              'ion\.rs$|/gallery/metadata\.rs$|/gallery/rate\.r' \
+              's$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|' \
+              '/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/' \
+              'favorite_note\.rs$|/gallery/favorite_mutation\.r' \
+              's$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.' \
+              'rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/' \
+              'text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url.lcov \
             --fail-under-lines 95 \
@@ -509,7 +849,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/metadata\.rs$|/gallery/network_policy\.rs$|' \
+              '/gallery/navigation\.rs$|/gallery/rate\.rs$|/gal' \
+              'lery/preview\.rs$|/gallery/tag_vote\.rs$|/galler' \
+              'y/tags\.rs$|/gallery/token\.rs$|/gallery/favorit' \
+              'e_note\.rs$|/gallery/favorite_mutation\.rs$|/gal' \
+              'lery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/us' \
+              'er_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.r' \
+              's$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-list-url-parser.lcov \
             --fail-under-lines 95 \
@@ -522,7 +888,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/reader\.rs$|/gallery/archive' \
+              '\.rs$|/gallery/archive_request\.rs$|/gallery/com' \
+              'ment_vote\.rs$|/gallery/comments\.rs$|/gallery/d' \
+              'etail\.rs$|/gallery/favorites\.rs$|/gallery/favo' \
+              'rites_url\.rs$|/gallery/list\.rs$|/gallery/list_' \
+              'url\.rs$|/gallery/list_url_parser\.rs$|/gallery/' \
+              'metadata\.rs$|/gallery/network_policy\.rs$|/gall' \
+              'ery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag' \
+              '_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs' \
+              '$|/gallery/favorite_note\.rs$|/gallery/favorite_' \
+              'mutation\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs' \
+              '$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/te' \
+              'xt\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-navigation.lcov \
             --fail-under-lines 95 \
@@ -535,7 +927,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery/favorites\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorite_note\.rs$|/gallery/favorite_muta' \
+              'tion\.rs$|/gallery/favorites\.rs$|/gallery/list' \
+              '\.rs$|/gallery/list_url\.rs$|/gallery/list_url_p' \
+              'arser\.rs$|/gallery/network_policy\.rs$|/gallery' \
+              '/navigation\.rs$|/gallery/metadata\.rs$|/gallery' \
+              '/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vo' \
+              'te\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/' \
+              'gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|' \
+              '/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text' \
+              '\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-favorites-url.lcov \
             --fail-under-lines 95 \
@@ -548,7 +966,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites_url\.rs$|/gallery/list\.rs$|/ga' \
+              'llery/list_url\.rs$|/gallery/list_url_parser\.rs' \
+              '$|/gallery/network_policy\.rs$|/gallery/navigati' \
+              'on\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs' \
+              '$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/' \
+              'gallery/tags\.rs$|/gallery/token\.rs$|/gallery/f' \
+              'avorite_note\.rs$|/gallery/favorite_mutation\.rs' \
+              '$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.r' \
+              's$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/t' \
+              'ext\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorites.lcov \
             --fail-under-lines 95 \
@@ -563,7 +1007,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/metadat' \
+              'a\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|' \
+              '/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/galle' \
+              'ry/token\.rs$|/gallery/favorite_mutation\.rs$|/g' \
+              'allery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/' \
+              'user_config\.rs$|/torrent\.rs$|/html\.rs$|/lib\.' \
+              'rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-favorite-note.lcov \
             --fail-under-lines 95 \
@@ -577,9 +1047,36 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorite_note\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/metadata\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/reader\.rs$|/gallery/archive' \
+              '\.rs$|/gallery/archive_request\.rs$|/gallery/com' \
+              'ment_vote\.rs$|/gallery/comments\.rs$|/gallery/d' \
+              'etail\.rs$|/gallery/favorite_note\.rs$|/gallery/' \
+              'favorites\.rs$|/gallery/favorites_url\.rs$|/gall' \
+              'ery/list\.rs$|/gallery/list_url\.rs$|/gallery/li' \
+              'st_url_parser\.rs$|/gallery/metadata\.rs$|/galle' \
+              'ry/network_policy\.rs$|/gallery/navigation\.rs$|' \
+              '/gallery/preview\.rs$|/gallery/rate\.rs$|/galler' \
+              'y/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/toke' \
+              'n\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user' \
+              '_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$' \
+              '|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
-            --output-path target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
+            --output-path \
+              target/llvm-cov/eh-net-gallery-favorite-mutation.lcov \
             --fail-under-lines 95 \
             --fail-under-functions 95 \
             -- gallery::favorite_mutation::tests::
@@ -591,7 +1088,28 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/reader\.rs$|/gallery/(archive|comment_vote|comments|detail|favorite_note|favorite_mutation|favorites|favorites_url|list|list_url|list_url_parser|metadata|network_policy|navigation|preview|rate|tag_vote|tags|token)\.rs$|/gallery\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/reader\.rs$|/gallery/(archiv' \
+              'e|comment_vote|comments|detail|favorite_note|fav' \
+              'orite_mutation|favorites|favorites_url|list|list' \
+              '_url|list_url_parser|metadata|network_policy|nav' \
+              'igation|preview|rate|tag_vote|tags|token)\.rs$|/' \
+              'gallery\.rs$|/home\.rs$|/news\.rs$|/user_config' \
+              '\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.' \
+              'rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive-request.lcov \
             --fail-under-lines 95 \
@@ -604,7 +1122,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive_request\.rs$' \
+              '|/gallery/comment_vote\.rs$|/gallery/comments\.r' \
+              's$|/gallery/detail\.rs$|/gallery/favorites\.rs$|' \
+              '/gallery/favorites_url\.rs$|/gallery/list\.rs$|/' \
+              'gallery/list_url\.rs$|/gallery/list_url_parser\.' \
+              'rs$|/gallery/network_policy\.rs$|/gallery/naviga' \
+              'tion\.rs$|/gallery/metadata\.rs$|/gallery/rate\.' \
+              'rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$' \
+              '|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery' \
+              '/favorite_note\.rs$|/gallery/favorite_mutation\.' \
+              'rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news' \
+              '\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$' \
+              '|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-archive.lcov \
             --fail-under-lines 95 \
@@ -617,7 +1161,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/' \
+              'gallery/favorites_url\.rs$|/gallery/list\.rs$|/g' \
+              'allery/list_url\.rs$|/gallery/list_url_parser\.r' \
+              's$|/gallery/network_policy\.rs$|/gallery/navigat' \
+              'ion\.rs$|/gallery/metadata\.rs$|/gallery/rate\.r' \
+              's$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|' \
+              '/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/' \
+              'favorite_note\.rs$|/gallery/favorite_mutation\.r' \
+              's$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.' \
+              'rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/' \
+              'text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comments.lcov \
             --fail-under-lines 95 \
@@ -630,7 +1200,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comments\.rs$|/g' \
+              'allery/detail\.rs$|/gallery/favorites\.rs$|/gall' \
+              'ery/favorites_url\.rs$|/gallery/list\.rs$|/galle' \
+              'ry/list_url\.rs$|/gallery/list_url_parser\.rs$|/' \
+              'gallery/network_policy\.rs$|/gallery/navigation' \
+              '\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|' \
+              '/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/ga' \
+              'llery/tags\.rs$|/gallery/token\.rs$|/gallery/fav' \
+              'orite_note\.rs$|/gallery/favorite_mutation\.rs$|' \
+              '/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$' \
+              '|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/tex' \
+              't\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-comment-vote.lcov \
             --fail-under-lines 95 \
@@ -643,7 +1239,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/favorites\.rs$' \
+              '|/gallery/favorites_url\.rs$|/gallery/list\.rs$|' \
+              '/gallery/list_url\.rs$|/gallery/list_url_parser' \
+              '\.rs$|/gallery/network_policy\.rs$|/gallery/navi' \
+              'gation\.rs$|/gallery/metadata\.rs$|/gallery/rate' \
+              '\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.r' \
+              's$|/gallery/tags\.rs$|/gallery/token\.rs$|/galle' \
+              'ry/favorite_note\.rs$|/gallery/favorite_mutation' \
+              '\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/new' \
+              's\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs' \
+              '$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-detail.lcov \
             --fail-under-lines 95 \
@@ -656,7 +1278,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/metadat' \
+              'a\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$' \
+              '|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery' \
+              '/favorite_note\.rs$|/gallery/favorite_mutation\.' \
+              'rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news' \
+              '\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$' \
+              '|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-preview.lcov \
             --fail-under-lines 95 \
@@ -669,7 +1317,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/metadat' \
+              'a\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|' \
+              '/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/galle' \
+              'ry/favorite_note\.rs$|/gallery/favorite_mutation' \
+              '\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/new' \
+              's\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs' \
+              '$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-token.lcov \
             --fail-under-lines 95 \
@@ -682,7 +1356,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/metadat' \
+              'a\.rs$|/gallery/rate\.rs$|/gallery/preview\.rs$|' \
+              '/gallery/token\.rs$|/gallery/favorite_note\.rs$|' \
+              '/gallery/favorite_mutation\.rs$|/gallery\.rs$|/r' \
+              'eader\.rs$|/home\.rs$|/news\.rs$|/user_config\.r' \
+              's$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$' \
+              '|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-tag-vote.lcov \
             --fail-under-lines 95 \
@@ -695,7 +1395,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/metadata\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/metadat' \
+              'a\.rs$|/gallery/preview\.rs$|/gallery/tag_vote\.' \
+              'rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gall' \
+              'ery/favorite_note\.rs$|/gallery/favorite_mutatio' \
+              'n\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/ne' \
+              'ws\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.r' \
+              's$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-rate.lcov \
             --fail-under-lines 95 \
@@ -708,7 +1434,33 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/reader/|/auth\.rs$|/gallery/archive\.rs$|/gallery/archive_request\.rs$|/gallery/comment_vote\.rs$|/gallery/comments\.rs$|/gallery/detail\.rs$|/gallery/favorites\.rs$|/gallery/favorites_url\.rs$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gallery/list_url_parser\.rs$|/gallery/network_policy\.rs$|/gallery/navigation\.rs$|/gallery/preview\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/favorite_note\.rs$|/gallery/favorite_mutation\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'reader/|/auth\.rs$|/gallery/archive\.rs$|/galler' \
+              'y/archive_request\.rs$|/gallery/comment_vote\.rs' \
+              '$|/gallery/comments\.rs$|/gallery/detail\.rs$|/g' \
+              'allery/favorites\.rs$|/gallery/favorites_url\.rs' \
+              '$|/gallery/list\.rs$|/gallery/list_url\.rs$|/gal' \
+              'lery/list_url_parser\.rs$|/gallery/network_polic' \
+              'y\.rs$|/gallery/navigation\.rs$|/gallery/preview' \
+              '\.rs$|/gallery/rate\.rs$|/gallery/tag_vote\.rs$|' \
+              '/gallery/tags\.rs$|/gallery/token\.rs$|/gallery/' \
+              'favorite_note\.rs$|/gallery/favorite_mutation\.r' \
+              's$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.' \
+              'rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/' \
+              'text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-gallery-metadata.lcov \
             --fail-under-lines 95 \
@@ -721,7 +1473,24 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/auth\.rs$|/gallery\.rs$|/reader/mpv\.r' \
+              's$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_conf' \
+              'ig\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib' \
+              '\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-reader-page.lcov \
             --fail-under-lines 95 \
@@ -734,7 +1503,24 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/auth\.rs$|/gallery\.rs$|/reader/page\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/auth\.rs$|/gallery\.rs$|/reader/page\.' \
+              'rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent' \
+              '\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/l' \
+              'ib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-reader-mpv.lcov \
             --fail-under-lines 95 \
@@ -747,7 +1533,24 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/read' \
+              'er\.rs$|/news\.rs$|/user_config\.rs$|/torrent\.r' \
+              's$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support' \
+              '\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-image-limits.lcov \
             --fail-under-lines 95 \
@@ -760,7 +1563,24 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/user_config\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/read' \
+              'er\.rs$|/home\.rs$|/user_config\.rs$|/torrent\.r' \
+              's$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support' \
+              '\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-news.lcov \
             --fail-under-lines 95 \
@@ -773,7 +1593,23 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/read' \
+              'er\.rs$|/home\.rs$|/news\.rs$|/torrent\.rs$|/htm' \
+              'l\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-user-config.lcov \
             --fail-under-lines 95 \
@@ -786,7 +1622,24 @@ jobs:
           cargo llvm-cov --package eh_net \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_translation(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/reader\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/gallery_enrichment(/|' \
+              '\.rs$)|/recovery_eh_lookup(/|\.rs$)|/tag_transla' \
+              'tion(/|\.rs$)|/gallery/request(/|\.rs$)|/auth/|/' \
+              'gallery/|/reader/|/auth\.rs$|/gallery\.rs$|/read' \
+              'er\.rs$|/home\.rs$|/news\.rs$|/user_config\.rs$|' \
+              '/html\.rs$|/text\.rs$|/lib\.rs$|/test_support\.r' \
+              's$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-net-torrent.lcov \
             --fail-under-lines 95 \
@@ -800,7 +1653,19 @@ jobs:
           cargo llvm-cov --package eh_ffi \
             --lib \
             --all-features \
-            --ignore-filename-regex '(/recovery_directory(/|\.rs$)|/backup_import(/|\.rs$)|/recovery_scan(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_limits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)|/archive_filters(/|\.rs$)|/production_zip(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec\.rs$|/health\.rs$|/lib\.rs$)' \
+            --ignore-filename-regex "$(printf '%s' \
+              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '\.rs$)|/download_metadata(/|\.rs$)|/recovery_sca' \
+              'n(/|\.rs$)|/storage_rules(/|\.rs$)|/comic_info_p' \
+              'olicy(/|\.rs$)|/bbcode(/|\.rs$)|/crates/codec_li' \
+              'mits/|/vendor/|/webp(/|\.rs$)|/production_tar(/|' \
+              '\.rs$)|/archive_filters(/|\.rs$)|/production_zip' \
+              '(/|\.rs$)|/file_rules(/|\.rs$)|/text_spans(/|\.r' \
+              's$)|/recovery_batch(/|\.rs$)|/reader_policy(/|\.' \
+              'rs$)|/transfer_speed(/|\.rs$)|/recovery_search(/' \
+              '|\.rs$)|/spider_info(/|\.rs$)|/local_pages(/|\.r' \
+              's$)|/cache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec' \
+              '\.rs$|/health\.rs$|/lib\.rs$)')" \
             --lcov \
             --output-path target/llvm-cov/eh-ffi-webp.lcov \
             --fail-under-lines 95 \
@@ -819,14 +1684,17 @@ jobs:
 
       - name: Upload Rust Core Coverage
         if: ${{ always() }}
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: rust-core-coverage-${{ github.sha }}
           path: app/src/main/rust/target/llvm-cov/*.lcov
           if-no-files-found: warn
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        # gradle/actions/setup-gradle v6
+        uses: "gradle/actions/setup-gradle@\
+          3f5f9adaf7d9fecd50b5935e54106014257a94e6"
         with:
           cache-read-only: true
 
@@ -850,12 +1718,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        # actions/checkout v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        # actions/setup-java v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: temurin
           java-version-file: .java-version
@@ -873,32 +1743,43 @@ jobs:
         run: rustup target add aarch64-linux-android x86_64-linux-android
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        # Swatinem/rust-cache v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: "./app/src/main/rust"
           shared-key: ${{ runner.os }}-image-device
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        # gradle/actions/setup-gradle v6
+        uses: "gradle/actions/setup-gradle@\
+          3f5f9adaf7d9fecd50b5935e54106014257a94e6"
         with:
           cache-read-only: true
 
       - name: CMake Cache
-        uses: actions/cache@v5
+        # actions/cache v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: app/.cxx
-          key: cmake-image-device-${{ hashFiles('rust-toolchain.toml', 'settings.gradle.kts', 'app/src/main/cpp/CMakeLists.txt', 'app/src/main/rust/Cargo.lock') }}
+          key: "cmake-image-device-${{ hashFiles('rust-toolchain\
+            .toml', 'settings.gradle.kts', 'app/src/main/cpp\
+            /CMakeLists.txt', 'app/src/main/rust/Cargo.lock'\
+            ) }}"
           restore-keys: cmake-image-device-
 
       - name: Enable KVM
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+          printf '%s%s\n' \
+            'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS' \
+            '+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
       - name: Rust MVP Device and Native Boundary Tests
-        uses: reactivecircus/android-emulator-runner@v2
+        # reactivecircus/android-emulator-runner v2
+        uses: "reactivecircus/android-emulator-runner@\
+          a421e43855164a8197daf9d8d40fe71c6996bb0d"
         with:
           api-level: 35
           target: google_apis
@@ -906,30 +1787,46 @@ jobs:
           profile: pixel_2
           ndk: 29.0.14206865
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
-          script: ./gradlew :app:connectedDefaultDebugAndroidTest --no-daemon -PtargetAbis=x86_64 -Pandroid.injected.build.abi=x86_64
+          emulator-options: "-no-window -no-audio -no-boot-anim -gpu swiftsha\
+            der_indirect"
+          script: "./gradlew :app:connectedDefaultDebugAndroidTest \
+            --no-daemon -PtargetAbis=x86_64 -Pandroid.inject\
+            ed.build.abi=x86_64"
 
       - name: Android JNI Symbol Check
         run: |
-          native_library=app/build/intermediates/stripped_native_libs/defaultDebug/stripDefaultDebugDebugSymbols/out/lib/x86_64/libehviewer.so
-          unstripped_native_library=app/build/intermediates/cmake/defaultDebug/obj/x86_64/libehviewer.so
+          native_library="$(printf '%s' \
+              'app/build/intermediates/stripped_native_libs/def' \
+              'aultDebug/stripDefaultDebugDebugSymbols/out/lib/' \
+              'x86_64/libehviewer.so')"
+          unstripped_native_library="$(printf '%s' \
+              'app/build/intermediates/cmake/defaultDebug/obj/x' \
+              '86_64/libehviewer.so')"
           nm -D --defined-only "$native_library" \
             | awk '$2 == "T" { print $3 }' \
             | sort -u \
             > app/build/android-dynamic-symbols.txt
-          grep '^Java_com_hippo_ehviewer_' app/build/android-dynamic-symbols.txt \
+          grep '^Java_com_hippo_ehviewer_' \
+            app/build/android-dynamic-symbols.txt \
             > app/build/android-java-symbols.txt
-          grep 'V1$' app/build/android-java-symbols.txt > app/build/android-v1-symbols.txt
+          grep 'V1$' app/build/android-java-symbols.txt > \
+            app/build/android-v1-symbols.txt
           diff -u \
             app/src/main/rust/crates/ffi/jvm-v1-symbols.txt \
             app/build/android-v1-symbols.txt
-          grep '^Java_com_hippo_ehviewer_bridge_archive_ArchiveReaderBridgeKt_.*V2$' \
+          grep \
+            "$(printf '%s' \
+              '^Java_com_hippo_ehviewer_bridge_archive_ArchiveR' \
+              'eaderBridgeKt_.*V2$')" \
             app/build/android-java-symbols.txt \
             > app/build/android-archive-v2-symbols.txt
           diff -u \
             app/src/main/rust/crates/ffi/archive-v2-symbols.txt \
             app/build/android-archive-v2-symbols.txt
-          grep '^Java_com_hippo_ehviewer_bridge_archive_ArchiveReaderBridgeKt_.*V3$' \
+          grep \
+            "$(printf '%s' \
+              '^Java_com_hippo_ehviewer_bridge_archive_ArchiveR' \
+              'eaderBridgeKt_.*V3$')" \
             app/build/android-java-symbols.txt \
             > app/build/android-archive-v3-symbols.txt
           diff -u \
@@ -941,7 +1838,10 @@ jobs:
           diff -u \
             app/src/main/rust/crates/ffi/jvm-compat-symbols.txt \
             app/build/android-compat-symbols.txt
-          grep -E '^Java_com_hippo_ehviewer_(coil_AnimatedWebPDrawableKt_|image_ImageKt_|jni_GifUtilsKt_)' \
+          grep -E \
+            "$(printf '%s' \
+              '^Java_com_hippo_ehviewer_(coil_AnimatedWebPDrawa' \
+              'bleKt_|image_ImageKt_|jni_GifUtilsKt_)')" \
             app/build/android-java-symbols.txt \
             > app/build/android-image-symbols.txt
           diff -u \
@@ -1004,10 +1904,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        # actions/checkout v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        # actions/setup-java v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: temurin
           java-version-file: .java-version
@@ -1016,54 +1918,67 @@ jobs:
         run: rustup target add aarch64-linux-android
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        # Swatinem/rust-cache v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: "./app/src/main/rust"
           shared-key: ${{ runner.os }}
           save-if: "false"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        # gradle/actions/setup-gradle v6
+        uses: "gradle/actions/setup-gradle@\
+          3f5f9adaf7d9fecd50b5935e54106014257a94e6"
         with:
           cache-encryption-key: ${{ secrets.GradleEncryptionKey }}
 
       - name: CMake Cache
-        uses: actions/cache@v5
+        # actions/cache v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: app/.cxx
-          key: cmake-default-${{ hashFiles('rust-toolchain.toml', 'settings.gradle.kts', 'app/src/main/cpp/CMakeLists.txt', 'app/src/main/rust/Cargo.lock') }}
+          key: "cmake-default-${{ hashFiles('rust-toolchain.toml\
+            ', 'settings.gradle.kts', 'app/src/main/cpp/CMak\
+            eLists.txt', 'app/src/main/rust/Cargo.lock') }}"
           restore-keys: cmake-default-
 
       - name: Build
         run: ./gradlew assembleDefaultRelease
 
       - name: Upload ARM64
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: default-arm64-v8a-${{ github.sha }}
-          path: app/build/outputs/apk/default/release/app-default-arm64-v8a-release.apk
+          path: "app/build/outputs/apk/default/release/app-defaul\
+            t-arm64-v8a-release.apk"
 
       - name: Upload mapping
         if: always()
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: default-mapping-${{ github.sha }}
           path: app/build/outputs/mapping/defaultRelease/*.txt
 
       - name: Upload native debug symbols
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: default-native-debug-symbols-${{ github.sha }}
-          path: app/build/outputs/native-debug-symbols/defaultRelease/native-debug-symbols.zip
+          path: "app/build/outputs/native-debug-symbols/defaultRe\
+            lease/native-debug-symbols.zip"
 
   marshmallow:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        # actions/checkout v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        # actions/setup-java v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: temurin
           java-version-file: .java-version
@@ -1072,42 +1987,54 @@ jobs:
         run: rustup target add aarch64-linux-android
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        # Swatinem/rust-cache v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: "./app/src/main/rust"
           shared-key: ${{ runner.os }}
           save-if: "false"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        # gradle/actions/setup-gradle v6
+        uses: "gradle/actions/setup-gradle@\
+          3f5f9adaf7d9fecd50b5935e54106014257a94e6"
         with:
           cache-encryption-key: ${{ secrets.GradleEncryptionKey }}
 
       - name: CMake Cache
-        uses: actions/cache@v5
+        # actions/cache v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
         with:
           path: app/.cxx
-          key: cmake-marshmallow-${{ hashFiles('rust-toolchain.toml', 'settings.gradle.kts', 'app/src/main/cpp/CMakeLists.txt', 'app/src/main/rust/Cargo.lock') }}
+          key: "cmake-marshmallow-${{ hashFiles('rust-toolchain.\
+            toml', 'settings.gradle.kts', 'app/src/main/cpp/\
+            CMakeLists.txt', 'app/src/main/rust/Cargo.lock')\
+            \u0020}}"
           restore-keys: cmake-marshmallow-
 
       - name: Build
         run: ./gradlew assembleMarshmallowRelease
 
       - name: Upload ARM64
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: marshmallow-arm64-v8a-${{ github.sha }}
-          path: app/build/outputs/apk/marshmallow/release/app-marshmallow-arm64-v8a-release.apk
+          path: "app/build/outputs/apk/marshmallow/release/app-ma\
+            rshmallow-arm64-v8a-release.apk"
 
       - name: Upload mapping
         if: always()
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: marshmallow-mapping-${{ github.sha }}
           path: app/build/outputs/mapping/marshmallowRelease/*.txt
 
       - name: Upload native debug symbols
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: marshmallow-native-debug-symbols-${{ github.sha }}
-          path: app/build/outputs/native-debug-symbols/marshmallowRelease/native-debug-symbols.zip
+          path: "app/build/outputs/native-debug-symbols/marshmall\
+            owRelease/native-debug-symbols.zip"
