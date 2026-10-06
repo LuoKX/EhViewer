@@ -95,8 +95,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -183,7 +183,6 @@ private val navItems =
   )
 
 class MainActivity : AppCompatActivity() {
-
   private var shareUrl: String? = null
 
   @Composable
@@ -222,13 +221,13 @@ class MainActivity : AppCompatActivity() {
     }
     setMD3Content {
       if (!initialized) return@setMD3Content
-      val configuration = LocalConfiguration.current
       val navDrawerState = rememberDrawerState(DrawerValue.Closed)
       val sideSheetState = rememberDrawerState2(DrawerValue.Closed)
       val snackbarState = remember { SnackbarHostState() }
       val scope = rememberCoroutineScope()
       val navController = rememberNavController()
       val navigator = navController.rememberDestinationsNavigator()
+
       fun closeDrawer(callback: () -> Unit = {}) = scope.launch {
         navDrawerState.close()
         callback()
@@ -285,12 +284,18 @@ class MainActivity : AppCompatActivity() {
       LaunchedEffect(Unit) {
         intentFlow.collect { intent ->
           when (intent.action) {
-            Intent.ACTION_VIEW ->
+            Intent.ACTION_VIEW -> {
               with(navigator) {
                 val uri = intent.data ?: return@collect
                 when (uri.scheme) {
-                  SCHEME_FILE -> navToReader(uri.path!!)
-                  SCHEME_CONTENT -> navToReader(uri.toString())
+                  SCHEME_FILE -> {
+                    navToReader(uri.path!!)
+                  }
+
+                  SCHEME_CONTENT -> {
+                    navToReader(uri.toString())
+                  }
+
                   else -> {
                     val url = uri.toString()
                     if (!navWithUrl(url)) {
@@ -300,7 +305,9 @@ class MainActivity : AppCompatActivity() {
                   }
                 }
               }
-            Intent.ACTION_SEND ->
+            }
+
+            Intent.ACTION_SEND -> {
               with(navigator) {
                 val type = intent.type
                 if ("text/plain" == type) {
@@ -322,6 +329,8 @@ class MainActivity : AppCompatActivity() {
                   }
                 }
               }
+            }
+
             DownloadService.ACTION_START_DOWNLOADSCENE -> {
               val args = intent.getBundleExtra(DownloadService.ACTION_START_DOWNLOADSCENE_ARGS)!!
               if (
@@ -395,6 +404,10 @@ class MainActivity : AppCompatActivity() {
       var snackbarFabPadding by remember { mutableStateOf(0.dp) }
       val drawerEnabled = drawerHandle.isNotEmpty()
       val density = LocalDensity.current
+      val windowWidth =
+        with(density) {
+          LocalWindowInfo.current.containerSize.width.toDp()
+        }
       val adaptiveInfo = currentWindowAdaptiveInfoV2()
       val needSignIn by Settings.needSignIn.collectAsState()
       val launchPage by Settings.launchPage.collectAsState()
@@ -428,7 +441,7 @@ class MainActivity : AppCompatActivity() {
               ModalDrawerSheet(
                 drawerState = navDrawerState,
                 modifier =
-                  Modifier.widthIn(max = (configuration.screenWidthDp - 56).dp).onSizeChanged {
+                  Modifier.widthIn(max = (windowWidth - 56.dp).coerceAtLeast(0.dp)).onSizeChanged {
                     minOffset = -it.width.toFloat()
                   },
                 windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Start),
@@ -567,7 +580,10 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  fun showTip(message: String, useToast: Boolean = false) {
+  fun showTip(
+    message: String,
+    useToast: Boolean = false,
+  ) {
     if (useToast || !tipFlow.tryEmit(message)) {
       Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }

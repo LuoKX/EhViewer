@@ -99,6 +99,7 @@ import com.hippo.ehviewer.util.AppConfig
 import com.hippo.ehviewer.util.ReadableTime
 import com.hippo.ehviewer.util.bodyAsUtf8Text
 import com.hippo.ehviewer.util.ensureSuccess
+import com.hippo.ehviewer.util.readToBuffer
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.HttpStatement
 import io.ktor.client.statement.bodyAsChannel
@@ -107,7 +108,6 @@ import io.ktor.http.Url
 import io.ktor.util.moveToByteArray
 import io.ktor.utils.io.pool.DirectByteBufferPool
 import io.ktor.utils.io.pool.useInstance
-import io.ktor.utils.io.readAvailable
 import java.io.File
 import java.nio.ByteBuffer
 import kotlin.system.measureTimeMillis
@@ -173,8 +173,11 @@ private fun buildSessionFailureSnapshot(
     }
   return SessionFailureSnapshot(
     site =
-      if (response.request.url.host == EhUrl.DOMAIN_EX) SessionGallerySite.EX_HENTAI
-      else SessionGallerySite.PUBLIC,
+      if (response.request.url.host == EhUrl.DOMAIN_EX) {
+        SessionGallerySite.EX_HENTAI
+      } else {
+        SessionGallerySite.PUBLIC
+      },
     cloudflareChallenge = cloudflareChallenge,
     emptyBody = emptyBody,
     domainError = domainError,
@@ -195,7 +198,10 @@ private fun applySessionFailurePlan(
   cause: Throwable,
 ): Nothing =
   when (plan.decision.kind) {
-    SessionFailureDecisionKind.CLOUDFLARE_CHALLENGE -> throw CloudflareBypassException()
+    SessionFailureDecisionKind.CLOUDFLARE_CHALLENGE -> {
+      throw CloudflareBypassException()
+    }
+
     SessionFailureDecisionKind.EMPTY_BODY_IP_BANNED -> {
       val message =
         if (plan.decision.site == SessionGallerySite.EX_HENTAI) {
@@ -205,19 +211,28 @@ private fun applySessionFailurePlan(
         }
       throw IpBannedException(message)
     }
-    SessionFailureDecisionKind.DOMAIN ->
+
+    SessionFailureDecisionKind.DOMAIN -> {
       throwLegacyDomainError(checkNotNull(plan.decision.error).toLegacyError())
+    }
+
     SessionFailureDecisionKind.HTTP_STATUS -> {
       response.status.ensureSuccess()
       error("Session Policy selected HTTP failure for a successful status")
     }
-    SessionFailureDecisionKind.NON_HTML_TEXT_IP_BANNED ->
+
+    SessionFailureDecisionKind.NON_HTML_TEXT_IP_BANNED -> {
       throw IpBannedException(checkNotNull(body.leftOrNull()))
+    }
+
     SessionFailureDecisionKind.PARSE_FAILURE -> {
       if (Settings.saveParseErrorBody.value) body.saveParseError(cause)
       throw EhException(appCtx.getString(R.string.error_parse_error), cause)
     }
-    SessionFailureDecisionKind.RETHROW -> throw cause
+
+    SessionFailureDecisionKind.RETHROW -> {
+      throw cause
+    }
   }
 
 private fun throwLegacyDomainError(error: EhError): Nothing =
@@ -239,7 +254,7 @@ private suspend inline fun <T> HttpStatement.fetchUsingAsByteBuffer(
 ) = executeSafely { response ->
   if (response.request.url.isLogin) throw NotLoggedInException()
   httpContentPool.useInstance { buffer ->
-    with(response.bodyAsChannel()) { while (!isClosedForRead) readAvailable(buffer) }
+    response.bodyAsChannel().readToBuffer(buffer)
     buffer.flip()
     runSuspendCatching {
       block(buffer)
@@ -253,7 +268,10 @@ private suspend inline fun <T> HttpStatement.fetchUsingAsByteBuffer(
 }
 
 object EhEngine {
-  suspend fun getOriginalImageUrl(url: String, referer: String?) =
+  suspend fun getOriginalImageUrl(
+    url: String,
+    referer: String?,
+  ) =
     noRedirectEhRequest(url, referer).executeSafely { response ->
       val location =
         response.headers["Location"]
@@ -265,12 +283,18 @@ object EhEngine {
       location
     }
 
-  suspend fun getPTokenListFromMpv(gid: Long, token: String): List<String> {
+  suspend fun getPTokenListFromMpv(
+    gid: Long,
+    token: String,
+  ): List<String> {
     val request = ehRequest(EhUrl.getGalleryMultiPageViewerUrl(gid, token), EhUrl.referer)
     return request.fetchUsingAsByteBuffer(GalleryMultiPageViewerPTokenParser::parseV1)
   }
 
-  suspend fun getTorrentList(gid: Long, token: String): TorrentResult {
+  suspend fun getTorrentList(
+    gid: Long,
+    token: String,
+  ): TorrentResult {
     val url = EhUrl.getTorrentUrl(gid, token)
     val referer = EhUrl.getGalleryDetailUrl(gid, token)
     return ehRequest(url, referer).fetchUsingAsByteBuffer(TorrentParser::parse)
@@ -282,7 +306,10 @@ object EhEngine {
       "${id}x$key"
     }
 
-  suspend fun getArchiveList(gid: Long, token: String): ArchiveParser.Result {
+  suspend fun getArchiveList(
+    gid: Long,
+    token: String,
+  ): ArchiveParser.Result {
     val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
     val plan =
       planGalleryArchiveRequest(
@@ -330,7 +357,11 @@ object EhEngine {
       }
   }
 
-  suspend fun getGalleryPage(url: String, gid: Long, token: String): GalleryPageParser.Result {
+  suspend fun getGalleryPage(
+    url: String,
+    gid: Long,
+    token: String,
+  ): GalleryPageParser.Result {
     val referer = EhUrl.getGalleryDetailUrl(gid, token)
     val request = ehRequest(url, referer)
     return request.fetchUsingAsByteBuffer(GalleryPageParser::parseV1)
@@ -369,7 +400,10 @@ object EhEngine {
       galleryInfoList.fillInfo(url)
     }
 
-  suspend fun signIn(username: String, password: String): String {
+  suspend fun signIn(
+    username: String,
+    password: String,
+  ): String {
     val referer = "https://forums.e-hentai.org/index.php?act=Login&CODE=00"
     val url = EhUrl.API_SIGN_IN
     val origin = "https://forums.e-hentai.org"
@@ -411,7 +445,12 @@ object EhEngine {
       }
   }
 
-  suspend fun modifyFavorites(gid: Long, token: String, dstCat: Int = -1, note: String = "") {
+  suspend fun modifyFavorites(
+    gid: Long,
+    token: String,
+    dstCat: Int = -1,
+    note: String = "",
+  ) {
     if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
     val selectedPlan =
       planFavoriteMutation(
@@ -430,11 +469,19 @@ object EhEngine {
       .executeSafely {}
   }
 
-  suspend fun getFavoriteNote(gid: Long, token: String) =
+  suspend fun getFavoriteNote(
+    gid: Long,
+    token: String,
+  ) =
     ehRequest(EhUrl.getAddFavorites(gid, token), EhUrl.getGalleryDetailUrl(gid, token))
       .fetchUsingAsByteBuffer(FavoritesParser::parseNote)
 
-  suspend fun downloadArchive(gid: Long, token: String, res: String, isHath: Boolean): String? {
+  suspend fun downloadArchive(
+    gid: Long,
+    token: String,
+    res: String,
+    isHath: Boolean,
+  ): String? {
     val site = if (EhUtils.isExHentai) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
     val plan =
       planGalleryArchiveRequest(
@@ -466,9 +513,13 @@ object EhEngine {
       }
     }
     return when (networkPolicy.exhaustedNullOutcome) {
-      GalleryArchiveNullOutcome.RETURN_NULL -> null
-      GalleryArchiveNullOutcome.ARCHIVE_UNAVAILABLE ->
+      GalleryArchiveNullOutcome.RETURN_NULL -> {
+        null
+      }
+
+      GalleryArchiveNullOutcome.ARCHIVE_UNAVAILABLE -> {
         throw EhException(GALLERY_ARCHIVE_UNAVAILABLE_MESSAGE)
+      }
     }
   }
 
@@ -480,7 +531,11 @@ object EhEngine {
       }
       .fetchUsingAsByteBuffer(HomeParser::parseResetLimits)
 
-  suspend fun modifyFavorites(gidArray: LongArray, srcCat: Int, dstCat: Int): FavParserResult {
+  suspend fun modifyFavorites(
+    gidArray: LongArray,
+    srcCat: Int,
+    dstCat: Int,
+  ): FavParserResult {
     if (dstCat != -1 && dstCat !in 0..9) throw EhException("Invalid dstCat: $dstCat")
     val selectedPlan =
       planFavoriteMutation(
@@ -629,7 +684,11 @@ object EhEngine {
       .fetchUsingAsByteBuffer(VoteTagParser::parseV1)
   }
 
-  suspend fun getGalleryToken(gid: Long, gtoken: String, page: Int): String {
+  suspend fun getGalleryToken(
+    gid: Long,
+    gtoken: String,
+    page: Int,
+  ): String {
     val plan =
       planGalleryRequest(
         GalleryRequest(
@@ -645,7 +704,10 @@ object EhEngine {
       .fetchUsingAsByteBuffer(GalleryTokenApiParser::parseV1)
   }
 
-  private suspend fun MutableList<BaseGalleryInfo>.fillInfo(url: String, filter: Boolean = false) {
+  private suspend fun MutableList<BaseGalleryInfo>.fillInfo(
+    url: String,
+    filter: Boolean = false,
+  ) {
     val needsTags = filter && EhFilter.filterPreEnrichment(this)
     val hasTags = any { !it.simpleTags.isNullOrEmpty() }
     val hasPages = any { it.pages != 0 }
@@ -671,7 +733,10 @@ object EhEngine {
     }
   }
 
-  suspend fun addFavorites(galleryList: List<Pair<Long, String>>, dstCat: Int) {
+  suspend fun addFavorites(
+    galleryList: List<Pair<Long, String>>,
+    dstCat: Int,
+  ) {
     galleryList.forEach { (gid, token) ->
       // https://github.com/FooIbar/EhViewer/issues/1190
       // Workaround for duplicate items when sorting by favorited time

@@ -101,7 +101,7 @@ def main():
         (root / (name + ".rgba")).write_bytes(b"".join(f["rgba"] for f in frames))
         (root / (name + ".json")).write_text(json.dumps({"width": info.width, "height": info.height, "loops": info.loops, "frames": [{k: v for k, v in f.items() if k != "rgba"} for f in frames]}, indent=2) + "\n")
     original = Path("app/src/main/rust/test_data/animated.webp.hex")
-    info, frames = oracle(bytes.fromhex(original.read_text()))
+    _, frames = oracle(bytes.fromhex(original.read_text()))
     (root / "animated.sha256").write_text("\n".join(f["sha256"] for f in frames) + "\n")
     print("Pinned C 1.6.0 oracles generated; runtime uses only checked-in results.")
 
