@@ -1862,13 +1862,15 @@ jobs:
 
       - name: Android JNI Symbol Check
         run: |
+          export LC_ALL=C
           native_library="$(printf '%s' \
               'app/build/intermediates/stripped_native_libs/def' \
               'aultDebug/stripDefaultDebugDebugSymbols/out/lib/' \
               'x86_64/libehviewer.so')"
           unstripped_native_library="$(printf '%s' \
-              'app/build/intermediates/cmake/defaultDebug/obj/x' \
-              '86_64/libehviewer.so')"
+              'app/build/intermediates/merged_native_libs/def' \
+              'aultDebug/mergeDefaultDebugNativeLibs/out/lib/' \
+              'x86_64/libehviewer.so')"
           nm -D --defined-only "$native_library" \
             | awk '$2 == "T" { print $3 }' \
             | sort -u \
