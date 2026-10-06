@@ -35,6 +35,8 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.archive.ComicInfoPolicyRequest
+import com.hippo.ehviewer.bridge.archive.planComicInfoPolicy
 import com.hippo.ehviewer.bridge.archive.validateDownloadedCbzV1
 import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzDescriptorV1
 import com.hippo.ehviewer.client.EhEngine
@@ -58,7 +60,6 @@ import java.util.Locale
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlinx.coroutines.CancellationException
 import moe.tarsin.coroutines.runSuspendCatching
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -346,7 +347,6 @@ class SpiderDen(val info: GalleryInfo) {
     expectedPages: Int,
     fetchMetadata: suspend (List<GalleryInfo>) -> Unit,
   ) = resourceScope {
-    require(expectedPages > 0) { "Archive expected page count must be positive" }
     val comicInfo = closeable {
       prepareComicInfo(expectedPages, fetchMetadata).openFileDescriptor("r")
     }
@@ -369,43 +369,38 @@ class SpiderDen(val info: GalleryInfo) {
     expectedPages: Int,
     fetchMetadata: suspend (List<GalleryInfo>) -> Unit,
   ): Path {
-    val file = requireNotNull(downloadDir) / COMIC_INFO_FILE
-    val current = file.takeIf { it.exists() }?.let(::readComicInfo)
-    when {
-      current == null -> {
-        if (info !is GalleryDetail) {
-          try {
-            fetchMetadata(listOf(info))
-          } catch (e: CancellationException) {
-            throw e
-          } catch (e: Exception) {
-            logcat(e)
-          }
-        }
-        info.pages = expectedPages
-        writeComicInfo(fetchMetadata = false)
-      }
-      current.pageCount != expectedPages -> {
-        info.pages = expectedPages
-        writeComicInfo(current.copy(pageCount = expectedPages), file)
-      }
-      else -> info.pages = expectedPages
-    }
+    val dir = downloadDir
+    val observed =
+      observeComicInfoPolicy(
+        ComicInfoPolicyRequest.prepare(expectedPages, info is GalleryDetail, dir != null),
+        readMetadata = {
+          (checkNotNull(dir) / COMIC_INFO_FILE).takeIf { it.exists() }?.let(::readComicInfo)
+        },
+      )
+    val file = checkNotNull(dir) / COMIC_INFO_FILE
+    executeComicInfoPolicy(
+      observed.plan,
+      fetchMetadata = { fetchMetadata(listOf(info)) },
+      logFetchFailure = { logcat(it) },
+      setGalleryPages = { info.pages = it },
+      create = { persistNewComicInfo(file) },
+      rewrite = { pages ->
+        writeComicInfo(checkNotNull(observed.current).copy(pageCount = pages), file)
+      },
+    )
     return file
   }
 
   private fun resolveExportPageCount(): Int {
-    val pages =
-      info.pages.takeIf { it > 0 }
-        ?: downloadDir
-          ?.resolve(COMIC_INFO_FILE)
-          ?.takeIf { it.exists() }
-          ?.let(::readComicInfo)
-          ?.pageCount
-    return requireNotNull(pages?.takeIf { it > 0 }) {
-        "Archive expected page count must be positive"
-      }
-      .also { info.pages = it }
+    val dir = downloadDir
+    val observed =
+      observeComicInfoPolicy(
+        ComicInfoPolicyRequest.resolveExport(info.pages, dir != null),
+        readMetadata = {
+          (checkNotNull(dir) / COMIC_INFO_FILE).takeIf { it.exists() }?.let(::readComicInfo)
+        },
+      )
+    return checkNotNull(observed.plan.pageCount).also { info.pages = it }
   }
 
   suspend fun initDownloadDirIfExist() {
@@ -418,18 +413,27 @@ class SpiderDen(val info: GalleryInfo) {
   }
 
   suspend fun writeComicInfo(fetchMetadata: Boolean = true) {
-    downloadDir?.run {
-      resolve(COMIC_INFO_FILE).also {
-        if (info !is GalleryDetail && fetchMetadata) {
-          EhEngine.fillGalleryListByApi(listOf(info))
-        }
-        info.getComicInfo().apply {
-          writeComicInfo(this, it)
-          DownloadManager.getDownloadInfo(gid)?.let { downloadInfo ->
-            downloadInfo.artistInfoList = DownloadArtist.from(gid, penciller.orEmpty())
-            EhDB.putDownloadArtist(gid, downloadInfo.artistInfoList)
-          }
-        }
+    val dir = downloadDir
+    val plan =
+      planComicInfoPolicy(
+        ComicInfoPolicyRequest.write(dir != null, info is GalleryDetail, fetchMetadata)
+      )
+    executeComicInfoPolicy(
+      plan,
+      fetchMetadata = { EhEngine.fillGalleryListByApi(listOf(info)) },
+      logFetchFailure = { logcat(it) },
+      setGalleryPages = { info.pages = it },
+      create = { persistNewComicInfo(checkNotNull(dir) / COMIC_INFO_FILE) },
+      rewrite = { error("Unexpected ComicInfo write rewrite") },
+    )
+  }
+
+  private suspend fun persistNewComicInfo(file: Path) {
+    info.getComicInfo().apply {
+      writeComicInfo(this, file)
+      DownloadManager.getDownloadInfo(gid)?.let { downloadInfo ->
+        downloadInfo.artistInfoList = DownloadArtist.from(gid, penciller.orEmpty())
+        EhDB.putDownloadArtist(gid, downloadInfo.artistInfoList)
       }
     }
   }

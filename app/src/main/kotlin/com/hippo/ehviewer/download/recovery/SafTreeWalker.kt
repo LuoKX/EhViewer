@@ -4,6 +4,14 @@ import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
 import android.provider.DocumentsContract
+import com.hippo.ehviewer.bridge.download.RecoveryScanBackend
+import com.hippo.ehviewer.bridge.download.RecoveryScanOptions
+import com.hippo.ehviewer.bridge.download.RecoveryScanSession
+import com.hippo.ehviewer.bridge.files.StorageNameInput
+import com.hippo.ehviewer.bridge.files.StorageOperation
+import com.hippo.ehviewer.bridge.files.StorageRulesRequest
+import com.hippo.ehviewer.bridge.files.planStorageRules
+import com.hippo.ehviewer.bridge.files.toUtf16LeBytes
 import java.io.File
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -38,14 +46,6 @@ internal data class RecoveryTreeSnapshot(
 )
 
 internal object SafTreeWalker {
-  private data class PendingDocument(
-    val uri: Uri,
-    val documentId: String,
-    val sourceId: String,
-    val relativePath: String,
-    val depth: Int,
-  )
-
   suspend fun walk(
     context: Context,
     rootUri: Uri,
@@ -69,7 +69,6 @@ internal object SafTreeWalker {
     require(root.isDirectory) { "Recovery root is not a directory" }
     val rootKey = "file:${root.path}"
     val nodes = ArrayList<RecoveryDocumentNode>()
-    val pending = ArrayDeque<Pair<File, RecoveryDocumentNode>>()
     val rootNode =
       RecoveryDocumentNode(
         rootKey = rootKey,
@@ -86,54 +85,63 @@ internal object SafTreeWalker {
         isDirectory = true,
       )
     nodes += rootNode
-    pending += root to rootNode
     onDiscovered(nodes.size)
-    val deadline = SystemClock.elapsedRealtime() + limits.maxDurationMillis
-    var limitExceeded = false
-
-    while (pending.isNotEmpty()) {
-      currentCoroutineContext().ensureActive()
-      if (SystemClock.elapsedRealtime() >= deadline || nodes.size >= limits.maxNodes) {
-        limitExceeded = true
-        break
-      }
-      val (directory, parent) = pending.removeFirst()
-      val children = directory.listFiles()?.sortedBy { it.name } ?: emptyList()
-      for (child in children) {
+    return RecoveryScanSession.open(limits.options(RecoveryScanBackend.PHYSICAL)).use { planner ->
+      while (true) {
         currentCoroutineContext().ensureActive()
-        if (nodes.size >= limits.maxNodes || SystemClock.elapsedRealtime() >= deadline) {
-          limitExceeded = true
+        val ticket = planner.poll(SystemClock.elapsedRealtime()) ?: break
+        val parent = nodes[ticket.index]
+        check(parent.isDirectory && parent.depth == ticket.depth) {
+          "Invalid recovery parent ticket"
+        }
+        val children = File(parent.sourceId).listFiles().orEmpty()
+        // listFiles remains a platform effect; bound native/name working sets before encoding.
+        if (
+          children.size > 100_000 ||
+            children.sumOf { it.name.length.toLong() * 2 } > 16 * 1024 * 1024
+        ) {
+          planner.stop()
+          planner.finishDirectory()
           break
         }
-        if (child.isSymbolicLinkCompat()) continue
-        val isDirectory = child.isDirectory
-        val depth = parent.depth + 1
-        if (isDirectory && depth > limits.maxDepth) {
-          limitExceeded = true
-          continue
+        val order =
+          planStorageRules(
+              StorageRulesRequest(
+                operation = StorageOperation.NAMES,
+                names = children.map { StorageNameInput(it.name.toUtf16LeBytes()) },
+              )
+            )
+            .indices
+        for (index in order) {
+          currentCoroutineContext().ensureActive()
+          if (!planner.gate(SystemClock.elapsedRealtime())) break
+          val child = children[index]
+          val symbolicLink = child.isSymbolicLinkCompat()
+          val isDirectory = !symbolicLink && child.isDirectory
+          val childTicket = planner.accept(isDirectory, symbolicLink) ?: continue
+          check(childTicket.index == nodes.size) { "Invalid recovery child ticket" }
+          val relativePath = parent.relativePath.joinRelative(child.name)
+          nodes +=
+            RecoveryDocumentNode(
+              rootKey = rootKey,
+              sourceId = child.absolutePath,
+              parentSourceId = parent.sourceId,
+              uri = Uri.fromFile(child),
+              displayName = child.name,
+              mimeType = if (isDirectory) DocumentsContract.Document.MIME_TYPE_DIR else null,
+              size = child.length().takeIf { !isDirectory },
+              modifiedAtMillis = child.lastModified().takeIf { it > 0 },
+              flags = 0,
+              relativePath = relativePath,
+              depth = childTicket.depth,
+              isDirectory = isDirectory,
+            )
+          onDiscovered(nodes.size)
         }
-        val relativePath = parent.relativePath.joinRelative(child.name)
-        val node =
-          RecoveryDocumentNode(
-            rootKey = rootKey,
-            sourceId = child.absolutePath,
-            parentSourceId = parent.sourceId,
-            uri = Uri.fromFile(child),
-            displayName = child.name,
-            mimeType = if (isDirectory) DocumentsContract.Document.MIME_TYPE_DIR else null,
-            size = child.length().takeIf { !isDirectory },
-            modifiedAtMillis = child.lastModified().takeIf { it > 0 },
-            flags = 0,
-            relativePath = relativePath,
-            depth = depth,
-            isDirectory = isDirectory,
-          )
-        nodes += node
-        onDiscovered(nodes.size)
-        if (isDirectory) pending += child to node
+        planner.finishDirectory()
       }
+      RecoveryTreeSnapshot(rootKey, nodes, planner.limitExceeded)
     }
-    return RecoveryTreeSnapshot(rootKey, nodes, limitExceeded)
   }
 
   private suspend fun walkDocuments(
@@ -166,76 +174,80 @@ internal object SafTreeWalker {
       )
     onDiscovered(nodes.size)
 
-    val pending =
-      ArrayDeque<PendingDocument>().apply {
-        add(PendingDocument(rootDocumentUri, rootDocumentId, rootSourceId, "", 0))
-      }
-    val seen = hashSetOf(rootDocumentId)
-    val deadline = SystemClock.elapsedRealtime() + limits.maxDurationMillis
-    var limitExceeded = false
-
-    while (pending.isNotEmpty()) {
-      currentCoroutineContext().ensureActive()
-      if (SystemClock.elapsedRealtime() >= deadline || nodes.size >= limits.maxNodes) {
-        limitExceeded = true
-        break
-      }
-      val parent = pending.removeFirst()
-      val childrenUri =
-        DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parent.documentId)
-      resolver.query(childrenUri, DOCUMENT_PROJECTION, null, null, null)?.use { cursor ->
-        val idColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-        val nameColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        val mimeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
-        val sizeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
-        val modifiedColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
-        val flagsColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_FLAGS)
-        while (cursor.moveToNext()) {
+    return RecoveryScanSession.open(
+        limits.options(RecoveryScanBackend.DOCUMENTS, rootDocumentId.toUtf16LeBytes())
+      )
+      .use { planner ->
+        while (true) {
           currentCoroutineContext().ensureActive()
-          if (nodes.size >= limits.maxNodes || SystemClock.elapsedRealtime() >= deadline) {
-            limitExceeded = true
-            break
+          val ticket = planner.poll(SystemClock.elapsedRealtime()) ?: break
+          val parent = nodes[ticket.index]
+          check(parent.isDirectory && parent.depth == ticket.depth) {
+            "Invalid recovery parent ticket"
           }
-          val documentId = cursor.getString(idColumn)
-          if (!seen.add(documentId)) continue
-          val displayName =
-            nameColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
-              ?: documentId.substringAfterLast('/')
-          val mimeType = mimeColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
-          val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
-          val depth = parent.depth + 1
-          if (isDirectory && depth > limits.maxDepth) {
-            limitExceeded = true
-            continue
+          val parentDocumentId = parent.sourceId.substring(authority.length + 1)
+          val childrenUri =
+            DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId)
+          resolver.query(childrenUri, DOCUMENT_PROJECTION, null, null, null)?.use { cursor ->
+            val idColumn =
+              cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+            val nameColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            val mimeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+            val sizeColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+            val modifiedColumn =
+              cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+            val flagsColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_FLAGS)
+            while (cursor.moveToNext()) {
+              currentCoroutineContext().ensureActive()
+              if (!planner.gate(SystemClock.elapsedRealtime())) break
+              val documentId = cursor.getString(idColumn)
+              if (!planner.observeDocument(documentId)) continue
+              val displayName =
+                nameColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
+                  ?: documentId.substringAfterLast('/')
+              val mimeType =
+                mimeColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
+              val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
+              val childTicket = planner.accept(isDirectory) ?: continue
+              check(childTicket.index == nodes.size) { "Invalid recovery child ticket" }
+              val sourceId = "$authority:$documentId"
+              val relativePath = parent.relativePath.joinRelative(displayName)
+              nodes +=
+                RecoveryDocumentNode(
+                  rootKey = rootKey,
+                  sourceId = sourceId,
+                  parentSourceId = parent.sourceId,
+                  uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId),
+                  displayName = displayName,
+                  mimeType = mimeType,
+                  size = sizeColumn.longOrNull(cursor),
+                  modifiedAtMillis = modifiedColumn.longOrNull(cursor),
+                  flags = flagsColumn.intOrZero(cursor),
+                  relativePath = relativePath,
+                  depth = childTicket.depth,
+                  isDirectory = isDirectory,
+                )
+              onDiscovered(nodes.size)
+            }
           }
-          val sourceId = "$authority:$documentId"
-          val relativePath = parent.relativePath.joinRelative(displayName)
-          val childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
-          val node =
-            RecoveryDocumentNode(
-              rootKey = rootKey,
-              sourceId = sourceId,
-              parentSourceId = parent.sourceId,
-              uri = childUri,
-              displayName = displayName,
-              mimeType = mimeType,
-              size = sizeColumn.longOrNull(cursor),
-              modifiedAtMillis = modifiedColumn.longOrNull(cursor),
-              flags = flagsColumn.intOrZero(cursor),
-              relativePath = relativePath,
-              depth = depth,
-              isDirectory = isDirectory,
-            )
-          nodes += node
-          onDiscovered(nodes.size)
-          if (isDirectory) {
-            pending += PendingDocument(childUri, documentId, sourceId, relativePath, depth)
-          }
+          planner.finishDirectory()
         }
+        RecoveryTreeSnapshot(rootKey, nodes, planner.limitExceeded)
       }
-    }
-    return RecoveryTreeSnapshot(rootKey, nodes, limitExceeded)
   }
+
+  private fun RecoveryScanLimits.options(
+    backend: RecoveryScanBackend,
+    rootDocumentId: ByteArray = byteArrayOf(),
+  ) =
+    RecoveryScanOptions(
+      backend = backend,
+      maxDepth = maxDepth,
+      maxNodes = maxNodes,
+      startedAtMillis = SystemClock.elapsedRealtime(),
+      maxDurationMillis = maxDurationMillis,
+      rootDocumentId = rootDocumentId,
+    )
 
   private fun Int.longOrNull(cursor: android.database.Cursor): Long? = takeIf {
     it >= 0 && !cursor.isNull(it)

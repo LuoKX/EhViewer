@@ -84,9 +84,18 @@ class AnimatedWebPDrawableDeviceTest {
     val create = method("nativeCreateDecoder", ByteBuffer::class.java)
     val info = method("nativeGetImageInfo", java.lang.Long.TYPE)
     val decode =
-      method("nativeDecodeNextFrame", java.lang.Long.TYPE, java.lang.Boolean.TYPE, Bitmap::class.java)
+      method(
+        "nativeDecodeNextFrame",
+        java.lang.Long.TYPE,
+        java.lang.Boolean.TYPE,
+        Bitmap::class.java,
+      )
     val destroy = method("nativeDestroyDecoder", java.lang.Long.TYPE)
-    val source = ByteBuffer.allocateDirect(encoded.size).apply { put(encoded); flip() }
+    val source =
+      ByteBuffer.allocateDirect(encoded.size).apply {
+        put(encoded)
+        flip()
+      }
     val handle = (create.invoke(null, source) as Number).toLong()
     val bitmap = Bitmap.createBitmap(6, 4, Bitmap.Config.ARGB_8888)
     try {
@@ -96,7 +105,10 @@ class AnimatedWebPDrawableDeviceTest {
       assertEquals(3L, packed and 0xFFFF)
       val timestamps = intArrayOf(13, 50, 50, 79, 86, 105)
       for (index in timestamps.indices) {
-        assertEquals(timestamps[index], (decode.invoke(null, handle, false, bitmap) as Number).toInt())
+        assertEquals(
+          timestamps[index],
+          (decode.invoke(null, handle, false, bitmap) as Number).toInt(),
+        )
         val actual = ByteBuffer.allocate(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(actual)
         assertArrayEquals(expected.copyOfRange(index * 96, (index + 1) * 96), actual.array())

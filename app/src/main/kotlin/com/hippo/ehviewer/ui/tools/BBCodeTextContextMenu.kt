@@ -25,76 +25,61 @@ import androidx.compose.ui.text.input.getTextBeforeSelection
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import com.ehviewer.core.i18n.R
-import com.ehviewer.core.util.unreachable
+import com.hippo.ehviewer.bridge.text.BBCodeAction
+import com.hippo.ehviewer.bridge.text.BBCodeOperation
+import com.hippo.ehviewer.bridge.text.BBCodeRequest
 import com.hippo.ehviewer.bridge.text.TextSpan
 import com.hippo.ehviewer.bridge.text.TextSpansRequest
+import com.hippo.ehviewer.bridge.text.planBBCode
 import com.hippo.ehviewer.bridge.text.planTextSpans
-import io.github.petertrr.diffutils.diffInline
-import io.github.petertrr.diffutils.patch.DeleteDelta
-import io.github.petertrr.diffutils.patch.InsertDelta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.tarsin.string
 
 fun TextFieldValue.updateSpan(origin: TextFieldValue): TextFieldValue {
-  val oriSpan = origin.annotatedString.spanStyles
-  val annoStr = origin.annotatedString
-  val len = origin.text.length
-  if (oriSpan.isEmpty()) {
-    // User have no spanned comment, just update
-    return this
-  }
-  // Hacky: BasicTextField would clear text spans
-  val diff = diffInline(origin.text, text).deltas
-  if (diff.isNotEmpty()) {
-    if (diff.size == 1) {
-      val str =
-        when (val delta = diff.first()) {
-          is DeleteDelta -> {
-            val pos = delta.source.position
-            val toIns = delta.source.lines.first()
-            val end = pos + toIns.length // Exclusive
-            buildAnnotatedString {
-              append(annoStr.subSequence(0, pos))
-              append(annoStr.subSequence(end, len))
-            }
+  if (origin.annotatedString.spanStyles.isEmpty()) return this
+  val plan =
+    planBBCode(
+      BBCodeRequest(
+        operation = BBCodeOperation.EDIT,
+        units = text.map { it.code },
+        originUnits = origin.text.map { it.code },
+        spans = emptyList(),
+      )
+    )
+  return when (plan.action) {
+    BBCodeAction.ORIGINAL -> copy(annotatedString = origin.annotatedString)
+    BBCodeAction.TARGET -> this
+    BBCodeAction.SPLICE -> {
+      val edit = checkNotNull(plan.edit)
+      // Rust owns slice positions; Compose preserves every opaque annotation on those slices.
+      copy(
+        annotatedString =
+          buildAnnotatedString {
+            append(origin.annotatedString.subSequence(0, edit.sourceStart))
+            append(text.substring(edit.targetStart, edit.targetEnd))
+            append(origin.annotatedString.subSequence(edit.sourceEnd, origin.text.length))
           }
-          is InsertDelta -> {
-            val pos = delta.source.position
-            val toIns = delta.target.lines.first()
-            buildAnnotatedString {
-              append(annoStr.subSequence(0, pos))
-              append(toIns)
-              append(annoStr.subSequence(pos, len))
-            }
-          }
-          else -> unreachable()
-        }
-      // Update span range for updated comment
-      return copy(annotatedString = str)
-    } else {
-      // Cannot handle diff, override directly
-      return this
+      )
     }
-  } else {
-    // Raw Text not changed, copy annotatedString
-    return copy(annotatedString = origin.annotatedString)
+    BBCodeAction.EXPORT -> error("Unexpected BBCode export action")
   }
+}
+
+private fun AnnotatedString.observeSpans(): List<TextSpan> = spanStyles.map {
+  val style = it.item
+  val flags =
+    (if (style.fontWeight == FontWeight.Bold) 1 else 0) or
+      (if (style.fontStyle == FontStyle.Italic) 2 else 0) or
+      (if (style.textDecoration == TextDecoration.Underline) 4 else 0) or
+      (if (style.textDecoration == TextDecoration.LineThrough) 8 else 0)
+  TextSpan(it.start, it.end, flags)
 }
 
 fun AnnotatedString.normalizeSpan(): AnnotatedString {
   if (spanStyles.isEmpty()) return this
-  val observations = spanStyles.map {
-    val style = it.item
-    val flags =
-      (if (style.fontWeight == FontWeight.Bold) 1 else 0) or
-        (if (style.fontStyle == FontStyle.Italic) 2 else 0) or
-        (if (style.textDecoration == TextDecoration.Underline) 4 else 0) or
-        (if (style.textDecoration == TextDecoration.LineThrough) 8 else 0)
-    TextSpan(it.start, it.end, flags)
-  }
   val spans =
-    planTextSpans(TextSpansRequest(textLength = text.length, spans = observations)).map {
+    planTextSpans(TextSpansRequest(textLength = text.length, spans = observeSpans())).map {
       val style =
         when (it.flags) {
           1 -> SpanStyle(fontWeight = FontWeight.Bold)
@@ -108,43 +93,20 @@ fun AnnotatedString.normalizeSpan(): AnnotatedString {
   return AnnotatedString(text, spans)
 }
 
-// Overlapped SpanStyle is support through stack based builder
-// Does BBCode allow interlaced tags? If not, split interlaced span first?
-fun AnnotatedString.toBBCode() = buildString {
-  val len = text.length
-  fun SpanStyle.push() =
-    when {
-      fontWeight == FontWeight.Bold -> append("[b]")
-      fontStyle == FontStyle.Italic -> append("[i]")
-      textDecoration == TextDecoration.Underline -> append("[u]")
-      textDecoration == TextDecoration.LineThrough -> append("[s]")
-      else -> this@buildString
-    }
-  fun SpanStyle.pop() =
-    when {
-      fontWeight == FontWeight.Bold -> append("[/b]")
-      fontStyle == FontStyle.Italic -> append("[/i]")
-      textDecoration == TextDecoration.Underline -> append("[/u]")
-      textDecoration == TextDecoration.LineThrough -> append("[/s]")
-      else -> this@buildString
-    }
-  var current = 0
-  val stack = ArrayDeque<AnnotatedString.Range<SpanStyle>>()
-  val spans = spanStyles.groupBy { it.start }
-  while (true) {
-    while (stack.lastOrNull()?.end == current) {
-      stack.removeLast().item.pop()
-    }
-    if (current == len) break
-    spans[current]
-      ?.sortedByDescending { it.end }
-      ?.forEach {
-        it.item.push()
-        stack.addLast(it)
-      }
-    append(text[current])
-    current++
-  }
+/** Tag order, stack traversal and UTF-16 serialization are Rust-owned. */
+fun AnnotatedString.toBBCode(): String {
+  val spans = observeSpans()
+  val plan =
+    planBBCode(
+      BBCodeRequest(
+        operation = BBCodeOperation.EXPORT,
+        units = text.map { it.code },
+        originUnits = null,
+        spans = spans,
+      )
+    )
+  val units = checkNotNull(plan.units)
+  return CharArray(units.size) { units[it].toChar() }.concatToString()
 }
 
 @Composable

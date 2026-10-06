@@ -23,6 +23,9 @@ mod codec;
 
 pub mod health;
 
+#[cfg(any(feature = "jvm", test))]
+mod recovery_scan;
+
 #[cfg(feature = "jvm")]
 pub mod jvm;
 

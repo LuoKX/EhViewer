@@ -29,6 +29,13 @@ import com.hippo.ehviewer.bridge.download.RecoveryStatus
 import com.hippo.ehviewer.bridge.download.extractDownloadRecoveryPageToken
 import com.hippo.ehviewer.bridge.download.inspectDownloadRecoveryCandidate
 import com.hippo.ehviewer.bridge.download.planDownloadRecoveryConflicts
+import com.hippo.ehviewer.bridge.files.RecoveryFileKind
+import com.hippo.ehviewer.bridge.files.RecoveryFileObservation
+import com.hippo.ehviewer.bridge.files.StorageCandidateInput
+import com.hippo.ehviewer.bridge.files.StorageOperation
+import com.hippo.ehviewer.bridge.files.StorageRulesRequest
+import com.hippo.ehviewer.bridge.files.planStorageRules
+import com.hippo.ehviewer.bridge.files.toUtf16LeBytes
 import com.hippo.ehviewer.download.DownloadManager
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -76,31 +83,56 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       tree.nodes.asSequence().filterNot(RecoveryDocumentNode::isDirectory).groupBy {
         it.parentSourceId
       }
-    val directoryCandidates =
-      tree.nodes
-        .asSequence()
-        .filter { it.isDirectory && it.relativePath.isNotEmpty() }
-        .filter { directory ->
-          filesByParent[directory.sourceId].orEmpty().any { child ->
-            STRICT_PAGE.matches(child.displayName)
-          }
+    val candidateFacts = ArrayList<StorageCandidateInput>()
+    var candidateIdentityBytes = 0L
+    var candidateObservationLimitExceeded = false
+    classification@ for (chunk in tree.nodes.withIndex().asSequence().chunked(1024)) {
+      currentCoroutineContext().ensureActive()
+      val observations = chunk.map { (index, node) ->
+        RecoveryFileObservation(
+          index = index,
+          directory = node.isDirectory,
+          root = node.relativePath.isEmpty(),
+          // Platform Regex observation preserves device case-folding; Rust owns eligibility.
+          hasStrictPage =
+            node.isDirectory &&
+              filesByParent[node.sourceId].orEmpty().any {
+                STRICT_PAGE.matches(it.displayName)
+              },
+          suffixUtf16 = node.displayName.takeLast(7).toUtf16LeBytes(),
+        )
+      }
+      val classified =
+        planStorageRules(
+          StorageRulesRequest(
+            operation = StorageOperation.CLASSIFY,
+            observations = observations,
+          )
+        )
+      for (candidate in classified.candidates) {
+        val node = tree.nodes[candidate.index]
+        candidateIdentityBytes += node.sourceId.length.toLong() * 2
+        if (candidateIdentityBytes > 16 * 1024 * 1024) {
+          candidateObservationLimitExceeded = true
+          break@classification
         }
-        .toList()
-    val archiveCandidates =
-      tree.nodes
-        .asSequence()
-        .filterNot(RecoveryDocumentNode::isDirectory)
-        .filter {
-          archiveKind(it.displayName) != null
-        }
-        .toList()
+        candidateFacts +=
+          StorageCandidateInput(candidate.index, candidate.kind, node.sourceId.toUtf16LeBytes())
+      }
+    }
+    val candidatePlan =
+      planStorageRules(
+        StorageRulesRequest(
+          operation = StorageOperation.CANDIDATES,
+          candidates = candidateFacts,
+          maxItems = limits.maxCandidates,
+        )
+      )
     val allCandidates =
-      (directoryCandidates.map { it to DownloadRecoverySourceKind.DIRECTORY } +
-          archiveCandidates.map { it to requireNotNull(archiveKind(it.displayName)) })
-        .sortedBy { it.first.sourceId }
-        .take(limits.maxCandidates)
-    val candidateLimitExceeded =
-      directoryCandidates.size + archiveCandidates.size > limits.maxCandidates
+      candidatePlan.candidates.map {
+        tree.nodes[it.index] to it.kind.toRoomKind()
+      }
+    val candidateLimitExceeded = candidateObservationLimitExceeded || candidatePlan.limitExceeded
     progress = progress.copy(candidates = allCandidates.size)
     onProgress(progress)
 
@@ -492,19 +524,17 @@ internal fun recoveryPromotionPath(
   return relativePath.substringBeforeLast('/', "").takeIf(String::isNotBlank)
 }
 
-private fun archiveKind(name: String): DownloadRecoverySourceKind? {
-  val lower = name.lowercase()
-  return when {
-    lower.endsWith(".tar.gz") -> DownloadRecoverySourceKind.TAR_GZ
-    lower.endsWith(".tar.xz") -> DownloadRecoverySourceKind.TAR_XZ
-    lower.endsWith(".cbz") -> DownloadRecoverySourceKind.CBZ
-    lower.endsWith(".zip") -> DownloadRecoverySourceKind.ZIP
-    lower.endsWith(".rar") -> DownloadRecoverySourceKind.RAR
-    lower.endsWith(".7z") -> DownloadRecoverySourceKind.SEVEN_ZIP
-    lower.endsWith(".tar") -> DownloadRecoverySourceKind.TAR
-    else -> null
+private fun RecoveryFileKind.toRoomKind(): DownloadRecoverySourceKind =
+  when (this) {
+    RecoveryFileKind.DIRECTORY -> DownloadRecoverySourceKind.DIRECTORY
+    RecoveryFileKind.CBZ -> DownloadRecoverySourceKind.CBZ
+    RecoveryFileKind.ZIP -> DownloadRecoverySourceKind.ZIP
+    RecoveryFileKind.RAR -> DownloadRecoverySourceKind.RAR
+    RecoveryFileKind.SEVEN_ZIP -> DownloadRecoverySourceKind.SEVEN_ZIP
+    RecoveryFileKind.TAR -> DownloadRecoverySourceKind.TAR
+    RecoveryFileKind.TAR_GZ -> DownloadRecoverySourceKind.TAR_GZ
+    RecoveryFileKind.TAR_XZ -> DownloadRecoverySourceKind.TAR_XZ
   }
-}
 
 private fun sha256(value: String): String =
   MessageDigest.getInstance("SHA-256").digest(value.encodeToByteArray()).joinToString("") {

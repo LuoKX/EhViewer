@@ -4,16 +4,18 @@
 
 1. Filename rules and production text-range normalization: implemented.
 2. Replace remaining libarchive ZIP/TAR and gzip/xz paths, then retire libarchive,
-   liblzma and nettle: in progress. Ordinary ZIP/CBZ production reading is Rust;
-   TAR and outer gzip/xz filters, including filtered ZIP, still use libarchive.
-3. Replace libwebp/webpdemux decoding after animation parity and ARM64 memory/
-   performance validation: pending.
+   liblzma and nettle: implemented; stage 2a/2b below retain historical evidence.
+3. Replace libwebp/webpdemux decoding: implemented after host animation parity.
+   Real ARM64 memory/performance and device acceptance remain UNRUN.
 4. Evaluate HTTP execution, database access and other image codecs separately.
    No transport, credential, database-engine or Android platform change is made
    by the first stage.
 
 RAR and 7z already use rars and sevenz-rust2. Stage 2 adds production ZIP reading
 without changing the historical bounded ZIP V1 characterization or CBZ writing.
+
+BBCode editing/tag emission follow-up lives in `p4-migration.md`. Stage notes
+below describe their original acceptance boundary, not the current Kotlin owner.
 
 ## Stage 1 production owners
 

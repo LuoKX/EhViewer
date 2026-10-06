@@ -17,20 +17,20 @@ OWNERS = (
 )
 
 
-def main():
+def main(owners=OWNERS, prefix="p3"):
     sources = sorted(RUST_ROOT.glob("crates/*/src/**/*.rs"))
     sources += sorted((RUST_ROOT / "src").rglob("*.rs"))
     sources += sorted((RUST_ROOT / "vendor").rglob("*.rs"))
     output = RUST_ROOT / "target/llvm-cov"
     output.mkdir(parents=True, exist_ok=True)
-    for package, module, relative_path in OWNERS:
+    for package, module, relative_path in owners:
         owned = RUST_ROOT / relative_path
         excluded = "|".join(re.escape(str(path)) + "$" for path in sources if path != owned)
         name = module.replace("::", "-") if module else "decoder-limits"
-        if module == "webp":
-            name = f"{package}-{module}"
+        if sum(owner_module == module for _, owner_module, _ in owners) > 1:
+            name = f"{package}-{name}"
         selector = f"{module}::tests::" if module else "tests::"
-        artifact = output / f"p3-{name}.lcov"
+        artifact = output / f"{prefix}-{name}.lcov"
         subprocess.run(["cargo", "llvm-cov", "clean", "--workspace"], cwd=RUST_ROOT, check=True)
         subprocess.run([
             "cargo", "llvm-cov", "--package", package, "--lib",

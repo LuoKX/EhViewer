@@ -257,8 +257,6 @@ dependencies {
 
   implementation(libs.logcat)
 
-  implementation(libs.diff)
-
   implementation(libs.aboutlibraries.core)
   implementation(libs.aboutlibraries.compose.m3)
   implementation(libs.accompanist.drawable.painter)

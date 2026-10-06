@@ -75,6 +75,68 @@ class SpiderDenArchiveDeviceTest {
     }
   }
 
+  @Test
+  fun preservesStoredMetadataAndPinsOperationPagesAfterRefresh() = runBlocking {
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    val testRoot = File(context.cacheDir, "spider-den-policy-${System.nanoTime()}")
+    check(testRoot.mkdir())
+    val previousSaveAsCbz = Settings.snapshot()[Settings.saveAsCbz]
+    try {
+      Settings.withMutableSnapshot { it[Settings.saveAsCbz] = true }
+      val storedDir = File(testRoot, "stored").apply { check(mkdir()) }
+      repeat(2) { writePage(storedDir, it) }
+      val metadata = storedDir.resolve(COMIC_INFO_FILE).toOkioPath()
+      writeComicInfo(
+        ComicInfo(
+          series = "stored",
+          alternateSeries = "alternate",
+          writer = listOf("group"),
+          penciller = listOf("artist"),
+          genre = listOf("genre"),
+          web = "stored-web",
+          pageCount = 1,
+          languageISO = "en",
+          characters = listOf("character"),
+          teams = listOf("parody"),
+          communityRating = "4.5",
+        ),
+        metadata,
+      )
+      val before = checkNotNull(readComicInfo(metadata))
+      val storedInfo = galleryInfo(8_888_883L, -1)
+      val storedDen = SpiderDen(storedInfo, storedDir.toOkioPath())
+      assertFalse(storedDen.archive(2) { error("Existing metadata triggered network") })
+      assertEquals(before.copy(pageCount = 2), readComicInfo(metadata))
+      val keptBytes = storedDir.resolve(COMIC_INFO_FILE).readBytes()
+      storedInfo.pages = 99
+      assertFalse(storedDen.archive(2) { error("Matching metadata triggered network") })
+      assertTrue(keptBytes.contentEquals(storedDir.resolve(COMIC_INFO_FILE).readBytes()))
+      assertEquals(2, storedInfo.pages)
+
+      val corruptDir = File(testRoot, "corrupt").apply { check(mkdir()) }
+      repeat(2) { writePage(corruptDir, it) }
+      corruptDir.resolve(COMIC_INFO_FILE).writeText("malformed XML")
+      val corruptInfo = galleryInfo(8_888_884L, 1)
+      val corruptDen = SpiderDen(corruptInfo, corruptDir.toOkioPath())
+      var refreshes = 0
+      assertFalse(
+        corruptDen.archive(2) {
+          refreshes++
+          corruptInfo.pages = 77
+        }
+      )
+      assertEquals(1, refreshes)
+      assertEquals(2, corruptInfo.pages)
+      assertEquals(
+        2,
+        checkNotNull(readComicInfo(corruptDir.resolve(COMIC_INFO_FILE).toOkioPath())).pageCount,
+      )
+    } finally {
+      Settings.withMutableSnapshot { it[Settings.saveAsCbz] = previousSaveAsCbz }
+      check(testRoot.deleteRecursively() || !testRoot.exists())
+    }
+  }
+
   private fun writePage(directory: File, index: Int) {
     directory.resolve(perFilename(index, "jpg")).writeBytes("page-$index".encodeToByteArray())
   }

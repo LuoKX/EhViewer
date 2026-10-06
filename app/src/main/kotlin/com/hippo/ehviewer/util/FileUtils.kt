@@ -17,7 +17,10 @@ package com.hippo.ehviewer.util
 
 import com.ehviewer.core.files.write
 import com.hippo.ehviewer.bridge.files.FileRuleKind
+import com.hippo.ehviewer.bridge.files.StorageOperation
+import com.hippo.ehviewer.bridge.files.StorageRulesRequest
 import com.hippo.ehviewer.bridge.files.planFileRules
+import com.hippo.ehviewer.bridge.files.planStorageRules
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.InternalAPI
 import io.ktor.utils.io.rethrowCloseCauseIfNeeded
@@ -47,10 +50,16 @@ object FileUtils {
 
   fun cleanupDirectory(dir: File?, maxFiles: Int = 10) {
     dir?.listFiles()?.let { files ->
-      files.sortByDescending { it.lastModified() }
-      files.forEachIndexed { index, file ->
-        if (index >= maxFiles) file.delete()
-      }
+      val plan =
+        planStorageRules(
+          StorageRulesRequest(
+            operation = StorageOperation.CLEANUP,
+            modified = files.map { it.lastModified() },
+            maxItems = maxFiles,
+          )
+        )
+      // Rust selects original array slots; Android retains non-recursive delete semantics.
+      plan.indices.forEach { files[it].delete() }
     }
   }
 

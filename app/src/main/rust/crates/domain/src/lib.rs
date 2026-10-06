@@ -11,7 +11,9 @@
 //! catalog sorting/filtering, [`gallery_filter`] owns Gallery list/comment filter
 //! decisions, [`gallery_rules`] owns category and similar-title compatibility,
 //! [`library`] owns Android-persistence-facing plans, [`file_rules`] owns filename
-//! compatibility, [`text_spans`] owns batched text interval normalization, [`search`] owns query
+//! compatibility, [`storage_rules`] owns recovery candidate ordering and retention,
+//! [`recovery_scan`] owns bounded BFS and provider identity deduplication,
+//! [`text_spans`] owns batched text interval normalization, [`search`] owns query
 //! normalization, [`settings`] owns portable repair rules, [`reader`] plans page
 //! scheduling and deterministic image-fetch transitions, and [`session`] plans
 //! sanitized lifecycle transitions and classifies response failures without
@@ -37,7 +39,9 @@
 //! assert!(response.is_ok());
 //! ```
 
+pub mod bbcode;
 pub mod comic_info;
+pub mod comic_info_policy;
 pub mod contracts;
 pub mod daily;
 pub mod download;
@@ -52,10 +56,12 @@ pub mod reader;
 pub mod reader_policy;
 pub mod recovery;
 pub mod recovery_eh_lookup;
+pub mod recovery_scan;
 pub mod recovery_search;
 pub mod search;
 pub mod session;
 pub mod settings;
 pub mod spider_info;
+pub mod storage_rules;
 pub mod text_spans;
 pub mod transfer_speed;

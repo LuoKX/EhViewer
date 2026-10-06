@@ -1,10 +1,12 @@
 //! JVM direct-buffer transport and exported V1 adapters.
 
 mod archive;
+mod bbcode;
 #[cfg(all(feature = "android", target_os = "android"))]
 mod bitmap;
 mod cache_keys;
 mod comic_info;
+mod comic_info_policy;
 mod file_rules;
 mod gallery_enrichment;
 mod gallery_filter;
@@ -22,8 +24,10 @@ mod plan;
 mod reader_policy;
 mod recovery_eh_lookup;
 mod recovery_metadata;
+mod recovery_scan;
 mod recovery_search;
 mod spider_info;
+mod storage_rules;
 mod tag_translation;
 mod text_spans;
 mod transfer_speed;
