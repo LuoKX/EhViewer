@@ -97,9 +97,6 @@ object EhDB {
 
   suspend fun getDownloadRecoveryCandidates() = db.downloadRecoveryDao().list()
 
-  suspend fun getDownloadRecoveryCandidate(candidateId: Long) =
-    db.downloadRecoveryDao().load(candidateId)
-
   suspend fun putDownloadRecoveryCandidate(candidate: DownloadRecoveryCandidate) {
     db.downloadRecoveryDao().upsertBySourceKey(candidate)
   }

@@ -31,20 +31,12 @@ object EhUrl {
   const val DOMAIN_EX = "exhentai.org"
   const val DOMAIN_E = "e-hentai.org"
   const val HOST_EX = "https://$DOMAIN_EX/"
-  const val API_EX = "https://s.exhentai.org/api.php"
-  const val FAV_PATH = "favorites.php"
-  const val WATCHED_PATH = "watched"
   const val URL_UCONFIG_EX = HOST_EX + "uconfig.php"
   const val URL_MY_TAGS_EX = HOST_EX + "mytags"
   const val HOST_E = "https://$DOMAIN_E/"
-  const val API_E = "https://api.e-hentai.org/api.php"
   const val URL_UCONFIG_E = HOST_E + "uconfig.php"
   const val URL_MY_TAGS_E = HOST_E + "mytags"
   const val API_SIGN_IN = "https://forums.e-hentai.org/index.php?act=Login&CODE=01"
-  const val URL_POPULAR_E = "https://e-hentai.org/popular"
-  const val URL_POPULAR_EX = "https://exhentai.org/popular"
-  const val URL_IMAGE_SEARCH_E = "https://upload.e-hentai.org/image_lookup.php"
-  const val URL_IMAGE_SEARCH_EX = "https://exhentai.org/upload/image_lookup.php"
   const val URL_SIGN_IN = "https://forums.e-hentai.org/index.php?act=Login"
   const val URL_REGISTER = "https://forums.e-hentai.org/index.php?act=Reg&CODE=00"
   const val URL_FORUMS = "https://forums.e-hentai.org/"
@@ -62,14 +54,6 @@ object EhUrl {
         SITE_E -> DOMAIN_E
         SITE_EX -> DOMAIN_EX
         else -> DOMAIN_E
-      }
-
-  val apiUrl: String
-    get() =
-      when (Settings.gallerySite.value) {
-        SITE_E -> API_E
-        SITE_EX -> API_EX
-        else -> API_E
       }
 
   val referer: String
@@ -101,22 +85,6 @@ object EhUrl {
         SITE_E -> URL_MY_TAGS_E
         SITE_EX -> URL_MY_TAGS_EX
         else -> URL_MY_TAGS_E
-      }
-
-  val popularUrl: String
-    get() =
-      when (Settings.gallerySite.value) {
-        SITE_E -> URL_POPULAR_E
-        SITE_EX -> URL_POPULAR_EX
-        else -> URL_POPULAR_E
-      }
-
-  val imageSearchUrl: String
-    get() =
-      when (Settings.gallerySite.value) {
-        SITE_E -> URL_IMAGE_SEARCH_E
-        SITE_EX -> URL_IMAGE_SEARCH_EX
-        else -> URL_IMAGE_SEARCH_E
       }
 
   internal val requestSite: GalleryUrlSite
@@ -162,13 +130,6 @@ object EhUrl {
         addQueryParameter("gid", "$gid")
         addQueryParameter("t", token)
         addQueryParameter("act", "addfav")
-      }
-      .buildString()
-
-  fun getArchiveUrl(gid: Long, token: String) =
-    ehUrl("archiver.php") {
-        addQueryParameter("gid", "$gid")
-        addQueryParameter("token", token)
       }
       .buildString()
 
@@ -222,9 +183,5 @@ fun ehUrl(
     pathSegments = path,
     parameters = parameters,
   )
-
-fun ParametersBuilder.addQueryParameterIfNotBlank(name: String, value: String?) = apply {
-  if (!value.isNullOrBlank()) append(name, value)
-}
 
 fun ParametersBuilder.addQueryParameter(name: String, value: String) = append(name, value)

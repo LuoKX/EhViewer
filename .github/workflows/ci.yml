@@ -47,8 +47,12 @@ jobs:
           test ! -e app/src/main/kotlin/com/hippo/ehviewer/util/RangeSets.kt
           test ! -e app/src/main/rust/src/parser.rs
           test ! -d app/src/main/rust/src/parser
-          if grep -R -n 'io.github.petertrr.diffutils' app/src/main/kotlin; then
-            echo 'Retired Kotlin diff implementation found'
+          if grep -R -n -E 'io\.github\.petertrr\.diffutils|nl\.adaptivity\.xmlutil' app/src/main/kotlin core/*/src; then
+            echo 'Retired Kotlin diff/XML implementation found'
+            exit 1
+          fi
+          if grep -n -F 'io.github.pdvrieze.xmlutil:' gradle/libs.versions.toml; then
+            echo 'Retired XML runtime dependency found'
             exit 1
           fi
 

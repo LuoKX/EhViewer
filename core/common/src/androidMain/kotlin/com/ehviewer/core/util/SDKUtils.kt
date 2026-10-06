@@ -4,9 +4,6 @@ import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.ChecksSdkIntAtLeast
 
-@ChecksSdkIntAtLeast(Build.VERSION_CODES.N)
-val isAtLeastN = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-
 @ChecksSdkIntAtLeast(Build.VERSION_CODES.O)
 val isAtLeastO = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
 
@@ -32,4 +29,5 @@ val isAtLeastT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 val isAtLeastU = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
 @ChecksSdkIntAtLeast(api = 7, extension = Build.VERSION_CODES.S)
-val isAtLeastSExtension7 = isAtLeastR && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7
+val isAtLeastSExtension7 =
+  isAtLeastR && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 7

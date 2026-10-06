@@ -154,4 +154,3 @@ private external fun nativePlanLocalFavoriteMutationV1(
 internal const val LIBRARY_RULE_API_VERSION = 1
 internal const val LIBRARY_RULE_MODULE = "libraryRule"
 private const val NOT_FAVORITED_SLOT = -2
-private const val LOCAL_FAVORITED_SLOT = -1

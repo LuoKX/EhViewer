@@ -154,25 +154,6 @@ internal object DownloadRecoveryEhLookup {
     return true
   }
 
-  suspend fun markQueryFailed(candidate: DownloadRecoveryCandidate, failure: Throwable? = null) {
-    val plan =
-      planRecoveryEhLookup(
-        RecoveryEhRequest(
-          1,
-          RecoveryEhKind.QUERY_FAILURE,
-          issues = candidate.issues,
-          causeTypes = failure.causeTypes(),
-        )
-      )
-    EhDB.putDownloadRecoveryCandidate(
-      candidate.copy(
-        status = DownloadRecoveryStatus.valueOf(checkNotNull(plan.status)),
-        issues = checkNotNull(plan.issues),
-        updatedAt = System.currentTimeMillis(),
-      )
-    )
-  }
-
   suspend fun markFailure(candidate: DownloadRecoveryCandidate, failure: Throwable) {
     Log.e("DownloadRecoveryEhLookup", "Recovery lookup/apply failed", failure)
     val latest =

@@ -505,8 +505,6 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
         "^[0-9]{8}\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$",
         RegexOption.IGNORE_CASE,
       )
-    val IMAGE_ENTRY =
-      Regex("^.+\\.(?:jpeg|jpg|png|gif|webp|bmp|ico|wbmp|heic|heif|avif)$", RegexOption.IGNORE_CASE)
   }
 }
 

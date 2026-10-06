@@ -58,7 +58,5 @@ data class FavListUrlBuilder(
   companion object {
     const val FAV_CAT_ALL = -1
     const val FAV_CAT_LOCAL = -2
-
-    fun isValidFavCat(favCat: Int) = favCat in 0..9
   }
 }

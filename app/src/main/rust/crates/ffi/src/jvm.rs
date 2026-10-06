@@ -185,15 +185,6 @@ where
     }
 }
 
-/// Validates a positive byte length and UTF-8 direct-buffer prefix.
-///
-/// # Errors
-///
-/// Returns an error for non-positive or out-of-capacity lengths and invalid UTF-8.
-pub fn input_body(buffer: &[u8], limit: jint) -> Result<&str> {
-    codec::input_text(buffer, limit)
-}
-
 /// Serializes one value atomically into a caller-owned direct-buffer slice.
 ///
 /// An undersized output remains unchanged.

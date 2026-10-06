@@ -26,9 +26,6 @@ import com.hippo.ehviewer.bridge.gallery.planCacheKey
 // ExHentai v2 Cover: https://s.exhentai.org/**.webp
 // E-Hentai v2 Cover: https://ehgt.org/**.webp
 
-const val URL_PREFIX_THUMB_E = "https://ehgt.org/"
-const val URL_PREFIX_THUMB_EX = "https://s.exhentai.org/"
-
 fun getImageKey(gid: Long, index: Int): String =
   planCacheKey(CacheKeyRequest(kind = CacheKeyKind.IMAGE, gid = gid, index = index))
 
