@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 CI = Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
-OWNERS = ("reader_policy", "transfer_speed", "recovery_search", "spider_info", "local_pages", "cache_keys", "file_rules", "text_spans", "bbcode", "comic_info_policy", "recovery_scan", "storage_rules", "production_zip", "production_tar", "archive_filters", "webp", "recovery_batch", "recovery_directory")
+OWNERS = ("reader_policy", "transfer_speed", "recovery_search", "spider_info", "local_pages", "cache_keys", "file_rules", "text_spans", "bbcode", "comic_info_policy", "recovery_scan", "storage_rules", "production_zip", "production_tar", "archive_filters", "webp", "recovery_batch", "recovery_directory", "backup_import")
 
 
 class CoverageMaskTest(unittest.TestCase):

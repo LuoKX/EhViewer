@@ -1,6 +1,7 @@
 //! JVM direct-buffer transport and exported V1 adapters.
 
 mod archive;
+mod backup_import;
 mod bbcode;
 #[cfg(all(feature = "android", target_os = "android"))]
 mod bitmap;

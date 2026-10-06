@@ -195,17 +195,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   suspend fun addDownload(downloadInfoList: List<DownloadInfo>) {
     sortMutex.withLock {
-      val additions =
-        downloadInfoList
-          .filterNot { containDownloadInfo(it.gid) }
-          .distinctBy { it.gid }
-          .onEach { info ->
-            if (
-              DownloadInfo.STATE_WAIT == info.state || DownloadInfo.STATE_DOWNLOAD == info.state
-            ) {
-              info.state = DownloadInfo.STATE_NONE
-            }
-          }
+      val additions = planDownloadImport(mAllInfoMap.keys, downloadInfoList)
       if (additions.isEmpty()) return@withLock
       val ordered = orderDownloadInfos(allInfoList + additions, sortMode)
       additions.forEach { info ->

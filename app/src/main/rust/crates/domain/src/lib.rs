@@ -39,6 +39,7 @@
 //! assert!(response.is_ok());
 //! ```
 
+pub mod backup_import;
 pub mod bbcode;
 pub mod comic_info;
 pub mod comic_info_policy;
