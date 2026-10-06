@@ -75,148 +75,148 @@ internal interface ArchiveReaderNativeApi {
  * releasing the duplicated source descriptor.
  */
 internal class RustArchiveReaderV2
-  private constructor(
-    private val readerHandle: Long,
-    private val nativeApi: ArchiveReaderNativeApi,
-  ) : AutoCloseable {
-    private val closed = AtomicBoolean(false)
+private constructor(
+  private val readerHandle: Long,
+  private val nativeApi: ArchiveReaderNativeApi,
+) : AutoCloseable {
+  private val closed = AtomicBoolean(false)
 
-    val needsPassword: Boolean
-      get() {
-        checkOpen()
-        return nativeApi.needsPassword(readerHandle)
-      }
-
-    val entryCount: Int
-      get() {
-        checkOpen()
-        return nativeApi.entryCount(readerHandle).also { count ->
-          check(count > 0) { "Rust archive reader returned no image entries" }
-        }
-      }
-
-    val hasUnsafePath: Boolean
-      get() {
-        checkOpen()
-        return nativeApi.hasUnsafePath(readerHandle)
-      }
-
-    fun providePassword(password: String): Boolean {
+  val needsPassword: Boolean
+    get() {
       checkOpen()
-      val encodedPassword = password.encodeToByteArray()
-      return try {
-        nativeApi.providePassword(readerHandle, encodedPassword).also { accepted ->
-          if (accepted) entryCount
-        }
-      } finally {
-        encodedPassword.fill(0)
-      }
+      return nativeApi.needsPassword(readerHandle)
     }
 
-    /** Returns one filtered image entry's lowercase extension. */
-    fun extension(index: Int): String {
-      validateIndex(index)
-      return nativeApi.extension(readerHandle, index).also { extension ->
-        check(extension.isNotEmpty()) { "Rust archive reader returned an empty extension" }
-      }
-    }
-
-    fun name(index: Int): String {
-      validateIndex(index)
-      return nativeApi.name(readerHandle, index).also { name ->
-        check(name.isNotEmpty()) { "Rust archive reader returned an empty entry name" }
-      }
-    }
-
-    fun size(index: Int): Long {
-      validateIndex(index)
-      return nativeApi.entrySize(readerHandle, index).also { size ->
-        check(size > 0) { "Rust archive reader returned an invalid entry size" }
-      }
-    }
-
-    fun verify(index: Int): Boolean {
-      validateIndex(index)
-      return nativeApi.verify(readerHandle, index)
-    }
-
-    fun recoveryMetadata(kind: RecoveryArchiveMetadataKind): ByteArray? {
+  val entryCount: Int
+    get() {
       checkOpen()
-      return nativeApi.recoveryMetadata(readerHandle, kind.nativeId)
-    }
-
-    /** Inspects one validated V3 batch without per-entry JNI calls. */
-    fun inspectRecovery(request: ArchiveRecoveryRequest): ArchiveRecoveryBatch {
-      checkOpen()
-      return inspectArchiveRecovery(request) { buffer, size ->
-        nativeApi.inspectRecovery(readerHandle, buffer, size)
+      return nativeApi.entryCount(readerHandle).also { count ->
+        check(count > 0) { "Rust archive reader returned no image entries" }
       }
     }
 
-    /** Extracts one image into a Java-owned direct buffer after CRC verification. */
-    fun extract(index: Int): ByteBuffer {
-      validateIndex(index)
-      val size = nativeApi.entrySize(readerHandle, index)
-      check(size in 1..Int.MAX_VALUE.toLong()) { "Rust archive entry size is outside Java range" }
-      val output = ByteBuffer.allocateDirect(size.toInt())
-      val extracted = nativeApi.extract(readerHandle, index, output)
-      check(extracted == size.toInt()) { "Rust archive extraction size does not match metadata" }
-      output.position(0)
-      output.limit(extracted)
-      return output
+  val hasUnsafePath: Boolean
+    get() {
+      checkOpen()
+      return nativeApi.hasUnsafePath(readerHandle)
     }
 
-    /** Streams one image into an Android-owned output descriptor after CRC verification. */
-    fun extractToFileDescriptor(
-      index: Int,
+  fun providePassword(password: String): Boolean {
+    checkOpen()
+    val encodedPassword = password.encodeToByteArray()
+    return try {
+      nativeApi.providePassword(readerHandle, encodedPassword).also { accepted ->
+        if (accepted) entryCount
+      }
+    } finally {
+      encodedPassword.fill(0)
+    }
+  }
+
+  /** Returns one filtered image entry's lowercase extension. */
+  fun extension(index: Int): String {
+    validateIndex(index)
+    return nativeApi.extension(readerHandle, index).also { extension ->
+      check(extension.isNotEmpty()) { "Rust archive reader returned an empty extension" }
+    }
+  }
+
+  fun name(index: Int): String {
+    validateIndex(index)
+    return nativeApi.name(readerHandle, index).also { name ->
+      check(name.isNotEmpty()) { "Rust archive reader returned an empty entry name" }
+    }
+  }
+
+  fun size(index: Int): Long {
+    validateIndex(index)
+    return nativeApi.entrySize(readerHandle, index).also { size ->
+      check(size > 0) { "Rust archive reader returned an invalid entry size" }
+    }
+  }
+
+  fun verify(index: Int): Boolean {
+    validateIndex(index)
+    return nativeApi.verify(readerHandle, index)
+  }
+
+  fun recoveryMetadata(kind: RecoveryArchiveMetadataKind): ByteArray? {
+    checkOpen()
+    return nativeApi.recoveryMetadata(readerHandle, kind.nativeId)
+  }
+
+  /** Inspects one validated V3 batch without per-entry JNI calls. */
+  fun inspectRecovery(request: ArchiveRecoveryRequest): ArchiveRecoveryBatch {
+    checkOpen()
+    return inspectArchiveRecovery(request) { buffer, size ->
+      nativeApi.inspectRecovery(readerHandle, buffer, size)
+    }
+  }
+
+  /** Extracts one image into a Java-owned direct buffer after CRC verification. */
+  fun extract(index: Int): ByteBuffer {
+    validateIndex(index)
+    val size = nativeApi.entrySize(readerHandle, index)
+    check(size in 1..Int.MAX_VALUE.toLong()) { "Rust archive entry size is outside Java range" }
+    val output = ByteBuffer.allocateDirect(size.toInt())
+    val extracted = nativeApi.extract(readerHandle, index, output)
+    check(extracted == size.toInt()) { "Rust archive extraction size does not match metadata" }
+    output.position(0)
+    output.limit(extracted)
+    return output
+  }
+
+  /** Streams one image into an Android-owned output descriptor after CRC verification. */
+  fun extractToFileDescriptor(
+    index: Int,
+    fileDescriptor: Int,
+  ): Boolean {
+    validateIndex(index)
+    require(fileDescriptor >= 0) { "Archive output file descriptor must be non-negative" }
+    return nativeApi.extractToFileDescriptor(readerHandle, index, fileDescriptor)
+  }
+
+  override fun close() {
+    if (closed.compareAndSet(false, true)) {
+      nativeApi.close(readerHandle)
+    }
+  }
+
+  private fun validateIndex(index: Int) {
+    checkOpen()
+    require(index in 0 until entryCount) { "Archive image index is outside the reader" }
+  }
+
+  private fun checkOpen() {
+    check(!closed.get()) { "Rust archive reader is closed" }
+  }
+
+  companion object {
+    /**
+     * Opens one supported archive and validates its initial handle/count atomically from Kotlin's
+     * view.
+     *
+     * A handle is closed immediately if count validation fails after native open succeeds.
+     */
+    fun open(
       fileDescriptor: Int,
-    ): Boolean {
-      validateIndex(index)
-      require(fileDescriptor >= 0) { "Archive output file descriptor must be non-negative" }
-      return nativeApi.extractToFileDescriptor(readerHandle, index, fileDescriptor)
-    }
-
-    override fun close() {
-      if (closed.compareAndSet(false, true)) {
-        nativeApi.close(readerHandle)
-      }
-    }
-
-    private fun validateIndex(index: Int) {
-      checkOpen()
-      require(index in 0 until entryCount) { "Archive image index is outside the reader" }
-    }
-
-    private fun checkOpen() {
-      check(!closed.get()) { "Rust archive reader is closed" }
-    }
-
-    companion object {
-      /**
-       * Opens one supported archive and validates its initial handle/count atomically from Kotlin's
-       * view.
-       *
-       * A handle is closed immediately if count validation fails after native open succeeds.
-       */
-      fun open(
-        fileDescriptor: Int,
-        sortEntries: Boolean,
-        nativeApi: ArchiveReaderNativeApi = JniArchiveReaderNativeApi,
-      ): RustArchiveReaderV2 {
-        require(fileDescriptor >= 0) { "Archive source file descriptor must be non-negative" }
-        val readerHandle = nativeApi.open(fileDescriptor, sortEntries)
-        check(readerHandle > 0) { "Rust archive reader returned an invalid handle" }
-        return try {
-          RustArchiveReaderV2(readerHandle, nativeApi).also { reader ->
-            if (!reader.needsPassword) reader.entryCount
-          }
-        } catch (error: Throwable) {
-          runCatching { nativeApi.close(readerHandle) }
-          throw error
+      sortEntries: Boolean,
+      nativeApi: ArchiveReaderNativeApi = JniArchiveReaderNativeApi,
+    ): RustArchiveReaderV2 {
+      require(fileDescriptor >= 0) { "Archive source file descriptor must be non-negative" }
+      val readerHandle = nativeApi.open(fileDescriptor, sortEntries)
+      check(readerHandle > 0) { "Rust archive reader returned an invalid handle" }
+      return try {
+        RustArchiveReaderV2(readerHandle, nativeApi).also { reader ->
+          if (!reader.needsPassword) reader.entryCount
         }
+      } catch (error: Throwable) {
+        runCatching { nativeApi.close(readerHandle) }
+        throw error
       }
     }
   }
+}
 
 private object JniArchiveReaderNativeApi : ArchiveReaderNativeApi {
   override fun open(
@@ -350,9 +350,7 @@ private external fun nativeExtractArchiveEntryToFdV2(
 /** Idempotently closes one opaque Rust archive reader handle. */
 private external fun nativeCloseArchiveV2(readerHandle: Long): Boolean
 
-internal enum class RecoveryArchiveMetadataKind(
-  internal val nativeId: Int,
-) {
+internal enum class RecoveryArchiveMetadataKind(internal val nativeId: Int) {
   SPIDER_INFO(0),
   COMIC_INFO(1),
 }

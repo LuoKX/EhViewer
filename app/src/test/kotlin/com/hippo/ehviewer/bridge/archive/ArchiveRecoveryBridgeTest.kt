@@ -55,27 +55,20 @@ class ArchiveRecoveryBridgeTest {
       }
     assertEquals(payload, result)
     assertEquals(1, calls)
-    assertTrue(
-      result.entries
-        .first()
-        .toRecoveryEntry()
-        .regular,
-    )
+    assertTrue(result.entries.first().toRecoveryEntry().regular)
   }
 
   @Test
   fun rejectsInvalidRequestsBeforeNativeCalls() {
-    for (
-    bad in
-    listOf(
-      request.copy(version = 2),
-      request.copy(startIndex = -1),
-      request.copy(maxEntries = 0),
-      request.copy(maxEntries = 33),
-      request.copy(maximumEntries = 0),
-      request.copy(allReadable = false),
-    )
-    ) {
+    for (bad in
+      listOf(
+        request.copy(version = 2),
+        request.copy(startIndex = -1),
+        request.copy(maxEntries = 0),
+        request.copy(maxEntries = 33),
+        request.copy(maximumEntries = 0),
+        request.copy(allReadable = false),
+      )) {
       assertFailsWith<IllegalArgumentException> {
         inspectArchiveRecovery(bad) { _, _ -> error("Invalid request reached native") }
       }
@@ -98,7 +91,7 @@ class ArchiveRecoveryBridgeTest {
         payload.copy(entries = payload.entries.map { it.copy(name = "x".repeat(65_537)) }),
         payload.copy(issues = listOf(RecoveryIssue.MISSING_GID)),
         payload.copy(
-          issues = listOf(RecoveryIssue.UNSAFE_ARCHIVE_PATH, RecoveryIssue.UNSAFE_ARCHIVE_PATH),
+          issues = listOf(RecoveryIssue.UNSAFE_ARCHIVE_PATH, RecoveryIssue.UNSAFE_ARCHIVE_PATH)
         ),
         payload.copy(issues = listOf(RecoveryIssue.ENCRYPTED_ARCHIVE)),
         payload.copy(issues = listOf(RecoveryIssue.LIMIT_EXCEEDED)),
@@ -157,7 +150,7 @@ class ArchiveRecoveryBridgeTest {
           3,
           "archiveRecovery",
           error = RustError(RustErrorKind.ERROR, "batch failed"),
-        ),
+        )
       )
     assertFailsWith<RustFailureException> { inspectArchiveRecovery(request) { _, _ -> bytes } }
     val failure = UnsatisfiedLinkError("batch JNI unavailable")
@@ -170,95 +163,91 @@ class ArchiveRecoveryBridgeTest {
   }
 
   @Test
-  fun collectorCarriesRustStateAndNeverRecomputesCompletion() =
-    runBlocking {
-      val requests = ArrayList<ArchiveRecoveryRequest>()
-      val first =
-        payload.copy(
-          nextIndex = 1,
-          allReadable = false,
-          complete = false,
-          entries = listOf(payload.entries.first().copy(readable = false)),
-        )
-      val last =
-        payload.copy(
-          allReadable = false,
-          complete = false,
-          entries = payload.entries.takeLast(1),
-        )
-      val result =
-        collectArchiveRecoveryBatches(100_000, { false }) { next ->
-          requests.add(next)
-          if (next.startIndex == 0) first else last
-        }
-      assertEquals(listOf(0, 1), requests.map { it.startIndex })
-      assertEquals(listOf(true, false), requests.map { it.allReadable })
-      assertEquals(2, result.entries.size)
-      assertFalse(result.complete)
-    }
-
-  @Test
-  fun collectorStopsAtDeadlinesBeforeAndBetweenBatches() =
-    runBlocking {
-      val expired =
-        collectArchiveRecoveryBatches(1, { true }) { error("Expired scan must not inspect") }
-      assertEquals(listOf(RecoveryIssue.LIMIT_EXCEEDED), expired.issues)
-      var calls = 0
-      val partial = payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
-      val result =
-        collectArchiveRecoveryBatches(100_000, { calls > 0 }) {
-          calls += 1
-          partial
-        }
-      assertEquals(1, calls)
-      assertEquals(1, result.entries.size)
-      assertFalse(result.complete)
-      val finalExpired =
-        collectArchiveRecoveryBatches(100_000, { calls > 1 }) {
-          calls += 1
-          payload
-        }
-      assertFalse(finalExpired.complete)
-    }
-
-  @Test
-  fun collectorRejectsChangingIndexesAndStopsOnNativeFailure() =
-    runBlocking {
-      val partial = payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
-      assertFailsWith<IllegalStateException> {
-        collectArchiveRecoveryBatches(100_000, { false }) { next ->
-          if (next.startIndex == 0) partial else payload.copy(entryCount = 3)
-        }
+  fun collectorCarriesRustStateAndNeverRecomputesCompletion() = runBlocking {
+    val requests = ArrayList<ArchiveRecoveryRequest>()
+    val first =
+      payload.copy(
+        nextIndex = 1,
+        allReadable = false,
+        complete = false,
+        entries = listOf(payload.entries.first().copy(readable = false)),
+      )
+    val last =
+      payload.copy(
+        allReadable = false,
+        complete = false,
+        entries = payload.entries.takeLast(1),
+      )
+    val result =
+      collectArchiveRecoveryBatches(100_000, { false }) { next ->
+        requests.add(next)
+        if (next.startIndex == 0) first else last
       }
-      var calls = 0
-      assertFailsWith<UnsatisfiedLinkError> {
-        collectArchiveRecoveryBatches(100_000, { false }) {
-          calls += 1
-          throw UnsatisfiedLinkError("missing")
-        }
-      }
-      assertEquals(1, calls)
-    }
+    assertEquals(listOf(0, 1), requests.map { it.startIndex })
+    assertEquals(listOf(true, false), requests.map { it.allReadable })
+    assertEquals(2, result.entries.size)
+    assertFalse(result.complete)
+  }
 
   @Test
-  fun collectorObservesCancellationBeforeAnotherNativeCall() =
-    runBlocking {
-      var calls = 0
-      val job =
-        launch(start = CoroutineStart.UNDISPATCHED) {
-          val context = currentCoroutineContext()
-          assertFailsWith<CancellationException> {
-            collectArchiveRecoveryBatches(100_000, { false }) {
-              calls += 1
-              context.cancel()
-              payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
-            }
+  fun collectorStopsAtDeadlinesBeforeAndBetweenBatches() = runBlocking {
+    val expired =
+      collectArchiveRecoveryBatches(1, { true }) { error("Expired scan must not inspect") }
+    assertEquals(listOf(RecoveryIssue.LIMIT_EXCEEDED), expired.issues)
+    var calls = 0
+    val partial = payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
+    val result =
+      collectArchiveRecoveryBatches(100_000, { calls > 0 }) {
+        calls += 1
+        partial
+      }
+    assertEquals(1, calls)
+    assertEquals(1, result.entries.size)
+    assertFalse(result.complete)
+    val finalExpired =
+      collectArchiveRecoveryBatches(100_000, { calls > 1 }) {
+        calls += 1
+        payload
+      }
+    assertFalse(finalExpired.complete)
+  }
+
+  @Test
+  fun collectorRejectsChangingIndexesAndStopsOnNativeFailure() = runBlocking {
+    val partial = payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
+    assertFailsWith<IllegalStateException> {
+      collectArchiveRecoveryBatches(100_000, { false }) { next ->
+        if (next.startIndex == 0) partial else payload.copy(entryCount = 3)
+      }
+    }
+    var calls = 0
+    assertFailsWith<UnsatisfiedLinkError> {
+      collectArchiveRecoveryBatches(100_000, { false }) {
+        calls += 1
+        throw UnsatisfiedLinkError("missing")
+      }
+    }
+    assertEquals(1, calls)
+  }
+
+  @Test
+  fun collectorObservesCancellationBeforeAnotherNativeCall() = runBlocking {
+    var calls = 0
+    val job =
+      launch(start = CoroutineStart.UNDISPATCHED) {
+        val context = currentCoroutineContext()
+        assertFailsWith<CancellationException> {
+          collectArchiveRecoveryBatches(100_000, { false }) {
+            calls += 1
+            context.cancel()
+            payload.copy(nextIndex = 1, complete = false, entries = payload.entries.take(1))
           }
         }
-      job.join()
-      assertTrue(job.isCancelled)
-      assertEquals(1, calls)
-    }
+      }
+    job.join()
+    assertTrue(job.isCancelled)
+    assertEquals(1, calls)
+  }
 
   private fun response(
     value: ArchiveRecoveryBatch,

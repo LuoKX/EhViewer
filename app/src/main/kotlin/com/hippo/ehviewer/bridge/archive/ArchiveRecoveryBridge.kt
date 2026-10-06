@@ -72,7 +72,7 @@ internal fun inspectArchiveRecovery(
           RecoveryIssue.LIMIT_EXCEEDED,
           RecoveryIssue.UNSAFE_ARCHIVE_PATH,
         )
-    },
+    }
   )
   val encrypted = RecoveryIssue.ENCRYPTED_ARCHIVE in batch.issues
   val limited = RecoveryIssue.LIMIT_EXCEEDED in batch.issues
@@ -89,16 +89,16 @@ internal fun inspectArchiveRecovery(
       it.name.isNotEmpty() &&
         it.name.encodeToByteArray().size <= 65_536 &&
         it.size in 1..512L * 1024 * 1024
-    },
+    }
   )
   require(batch.allReadable == (request.allReadable && batch.entries.all { it.readable }))
   require(
     batch.complete ==
-      (!encrypted && !limited && batch.nextIndex == batch.entryCount && batch.allReadable),
+      (!encrypted && !limited && batch.nextIndex == batch.entryCount && batch.allReadable)
   )
   require(
     RecoveryIssue.UNSAFE_ARCHIVE_PATH !in batch.issues ||
-      (!encrypted && !limited && batch.nextIndex == batch.entryCount),
+      (!encrypted && !limited && batch.nextIndex == batch.entryCount)
   )
   return batch
 }
@@ -138,7 +138,7 @@ internal suspend fun collectArchiveRecoveryBatches(
     entries.addAll(batch.entries.map { it.toRecoveryEntry() })
     if (
       RecoveryIssue.ENCRYPTED_ARCHIVE in batch.issues ||
-      RecoveryIssue.LIMIT_EXCEEDED in batch.issues
+        RecoveryIssue.LIMIT_EXCEEDED in batch.issues
     ) {
       return ArchiveRecoveryInspection(entries, batch.complete, batch.issues)
     }

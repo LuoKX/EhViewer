@@ -298,8 +298,7 @@ class ArchiveReaderDeviceTest {
     suffix: String,
   ): File =
     temporaryFile("reader-fixture", suffix).also { output ->
-      ApplicationProvider
-        .getApplicationContext<android.content.Context>()
+      ApplicationProvider.getApplicationContext<android.content.Context>()
         .assets
         .open(assetName)
         .use { input -> output.outputStream().use(input::copyTo) }
