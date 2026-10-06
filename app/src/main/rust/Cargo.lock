@@ -414,6 +414,7 @@ dependencies = [
  "quick-xml 0.40.1",
  "regex-lite",
  "serde",
+ "serde_bytes",
  "serde_cbor",
  "serde_json",
  "tl",

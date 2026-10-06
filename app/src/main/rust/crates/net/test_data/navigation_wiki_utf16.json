@@ -1,0 +1,7 @@
+[
+  {"name": "wiki_high", "units": [55296]},
+  {"name": "wiki_low", "units": [56320]},
+  {"name": "wiki_pair_high", "units": [55357, 56832, 55296]},
+  {"name": "wiki_pair_low", "units": [55357, 56832, 56320]},
+  {"name": "wiki_delimiters_space", "units": [32, 97, 47, 43, 37, 35, 63, 55296, 32, 56320, 32]}
+]

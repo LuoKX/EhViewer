@@ -16,9 +16,11 @@
 package com.hippo.ehviewer.client
 
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.files.toUtf16LeBytes
 import com.hippo.ehviewer.bridge.gallery.GalleryRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryRequestKind
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
+import com.hippo.ehviewer.bridge.gallery.galleryRequestSite
 import com.hippo.ehviewer.bridge.gallery.planGalleryRequest
 import io.ktor.http.Parameters
 import io.ktor.http.ParametersBuilder
@@ -88,10 +90,14 @@ object EhUrl {
       }
 
   internal val requestSite: GalleryUrlSite
-    get() =
-      if (Settings.gallerySite.value == SITE_EX) GalleryUrlSite.EX_HENTAI else GalleryUrlSite.PUBLIC
+    get() = galleryRequestSite(Settings.gallerySite.value)
 
-  fun getGalleryDetailUrl(gid: Long, token: String, index: Int = 0, allComment: Boolean = false) =
+  fun getGalleryDetailUrl(
+    gid: Long,
+    token: String,
+    index: Int = 0,
+    allComment: Boolean = false,
+  ) =
     planGalleryRequest(
         GalleryRequest(
           1,
@@ -105,13 +111,21 @@ object EhUrl {
       )
       .url
 
-  fun getGalleryMultiPageViewerUrl(gid: Long, token: String) =
+  fun getGalleryMultiPageViewerUrl(
+    gid: Long,
+    token: String,
+  ) =
     planGalleryRequest(
         GalleryRequest(1, requestSite, GalleryRequestKind.MPV_URL, gid = gid, token = token)
       )
       .url
 
-  fun getPageUrl(gid: Long, index: Int, pToken: String, nl: String? = null) =
+  fun getPageUrl(
+    gid: Long,
+    index: Int,
+    pToken: String,
+    nl: String? = null,
+  ) =
     planGalleryRequest(
         GalleryRequest(
           1,
@@ -125,29 +139,55 @@ object EhUrl {
       )
       .url
 
-  fun getAddFavorites(gid: Long, token: String) =
-    ehUrl("gallerypopups.php") {
-        addQueryParameter("gid", "$gid")
-        addQueryParameter("t", token)
-        addQueryParameter("act", "addfav")
-      }
-      .buildString()
-
-  fun getTorrentUrl(gid: Long, token: String) =
-    ehUrl("gallerytorrents.php") {
-        addQueryParameter("gid", "$gid")
-        addQueryParameter("t", token)
-      }
-      .buildString()
-
-  fun getTagDefinitionUrl(tag: String) = "https://ehwiki.org/wiki/" + tag.replace(' ', '_')
-
-  fun getTrackerUrl(gid: Long, key: String?) =
-    ehUrl(
-        path = listOfNotNull("$gid", key, "announce"),
-        host = "ehtracker.org",
+  fun getAddFavorites(
+    gid: Long,
+    token: String,
+  ) =
+    planGalleryRequest(
+        GalleryRequest(
+          1,
+          requestSite,
+          GalleryRequestKind.ADD_FAVORITES_URL,
+          gid = gid,
+          token = token,
+        )
       )
-      .buildString()
+      .url
+
+  fun getTorrentUrl(
+    gid: Long,
+    token: String,
+  ) =
+    planGalleryRequest(
+        GalleryRequest(1, requestSite, GalleryRequestKind.TORRENT_URL, gid = gid, token = token)
+      )
+      .url
+
+  fun getTagDefinitionUrl(tag: String) =
+    planGalleryRequest(
+        GalleryRequest(
+          1,
+          GalleryUrlSite.PUBLIC,
+          GalleryRequestKind.TAG_DEFINITION_URL,
+          wikiTagUtf16 = tag.toUtf16LeBytes(),
+        )
+      )
+      .url
+
+  fun getTrackerUrl(
+    gid: Long,
+    key: String?,
+  ) =
+    planGalleryRequest(
+        GalleryRequest(
+          1,
+          GalleryUrlSite.PUBLIC,
+          GalleryRequestKind.TRACKER_URL,
+          gid = gid,
+          key = key,
+        )
+      )
+      .url
 }
 
 inline fun ehUrl(
@@ -184,4 +224,7 @@ fun ehUrl(
     parameters = parameters,
   )
 
-fun ParametersBuilder.addQueryParameter(name: String, value: String) = append(name, value)
+fun ParametersBuilder.addQueryParameter(
+  name: String,
+  value: String,
+) = append(name, value)

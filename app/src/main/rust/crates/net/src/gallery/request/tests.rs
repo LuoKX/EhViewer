@@ -21,6 +21,176 @@ fn exact_shared_cbor_goldens_match_kotlin() {
     );
 }
 
+#[test]
+fn remaining_navigation_exact_urls_and_cbor_match_shared_fixtures() {
+    let fixtures: Vec<Value> =
+        serde_json::from_str(include_str!("../../../test_data/navigation_urls.json")).unwrap();
+    for fixture in fixtures {
+        let name = fixture["name"].as_str().unwrap();
+        let mut input: GalleryRequest = serde_json::from_value(fixture["request"].clone()).unwrap();
+        if input.kind == RequestKind::TagDefinitionUrl {
+            input.wiki_tag_utf16 = Some(utf16_bytes(fixture["tag"].as_str().unwrap()));
+        }
+        let envelope = build_envelope(&input);
+        let plan = envelope.payload.as_ref().unwrap();
+        if input.kind == RequestKind::TagDefinitionUrl {
+            assert!(plan.url.is_empty());
+            assert_eq!(
+                plan.wiki_url_utf16,
+                Some(utf16_bytes(fixture["url"].as_str().unwrap()))
+            );
+            assert_eq!(plan.wiki_source_index, Some(0));
+        } else {
+            assert_eq!(plan.url, fixture["url"].as_str().unwrap(), "{name}");
+            assert_eq!(plan.wiki_url_utf16, None);
+            assert_eq!(plan.wiki_source_index, None);
+        }
+        assert_eq!(plan.kind, input.kind);
+        assert_eq!(plan.referer, None);
+        assert_eq!(plan.origin, None);
+        assert!(plan.form.is_empty());
+        assert_eq!(plan.body, None);
+        assert!(!plan.credentials);
+        if matches!(
+            name,
+            "favorites" | "torrent" | "tracker_null" | "tracker_empty" | "tracker_key" | "wiki"
+        ) {
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_data");
+            for (suffix, bytes) in [
+                ("request", serde_cbor::to_vec(&input).unwrap()),
+                ("response", serde_cbor::to_vec(&envelope).unwrap()),
+            ] {
+                let hex = bytes.iter().fold(String::new(), |mut text, byte| {
+                    write!(text, "{byte:02x}").unwrap();
+                    text
+                });
+                assert_eq!(
+                    hex,
+                    std::fs::read_to_string(
+                        root.join(format!("navigation_{name}_{suffix}.cbor.hex"))
+                    )
+                    .unwrap()
+                    .trim(),
+                    "{name}/{suffix}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn remaining_navigation_text_budget_is_utf8_bounded_and_errors_are_fixed() {
+    let mut input = request(RequestKind::TrackerUrl);
+    input.token.clear();
+    input.key = Some("😀".repeat(NAVIGATION_TEXT_BUDGET / 4));
+    assert!(build_envelope(&input).error.is_none());
+    input.token = "secret-token".into();
+    assert_eq!(
+        build_envelope(&input).error.unwrap(),
+        RustError::Error("Gallery navigation exceeds text budget".into())
+    );
+    input.kind = RequestKind::TagDefinitionUrl;
+    input.token.clear();
+    input.key = None;
+    input.wiki_tag_utf16 = Some(ByteBuf::from([b'a', 0].repeat(NAVIGATION_TEXT_BUDGET)));
+    assert!(build_envelope(&input).error.is_none());
+    input.wiki_tag_utf16.as_mut().unwrap().extend([b'a', 0]);
+    assert!(build_envelope(&input).error.is_some());
+    input.version = 2;
+    assert_eq!(
+        build_envelope(&input).error.unwrap(),
+        RustError::Error("Unsupported gallery request version".into())
+    );
+}
+
+fn utf16_bytes(text: &str) -> ByteBuf {
+    ByteBuf::from(
+        text.encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect::<Vec<_>>(),
+    )
+}
+
+#[test]
+fn wiki_raw_units_and_exact_wire_goldens_preserve_lone_surrogates() {
+    let fixtures: Vec<Value> = serde_json::from_str(include_str!(
+        "../../../test_data/navigation_wiki_utf16.json"
+    ))
+    .unwrap();
+    for fixture in fixtures {
+        let name = fixture["name"].as_str().unwrap();
+        let units: Vec<u16> = serde_json::from_value(fixture["units"].clone()).unwrap();
+        let mut input = request(RequestKind::TagDefinitionUrl);
+        input.gid = 0;
+        input.token.clear();
+        input.wiki_tag_utf16 = Some(ByteBuf::from(
+            units
+                .iter()
+                .flat_map(|unit| unit.to_le_bytes())
+                .collect::<Vec<_>>(),
+        ));
+        let envelope = build_envelope(&input);
+        let plan = envelope.payload.as_ref().unwrap();
+        let mut expected = WIKI_PREFIX.encode_utf16().collect::<Vec<_>>();
+        expected.extend(
+            units
+                .iter()
+                .map(|unit| if *unit == 32 { 95 } else { *unit }),
+        );
+        assert_eq!(
+            plan.wiki_url_utf16,
+            Some(ByteBuf::from(
+                expected
+                    .iter()
+                    .flat_map(|unit| unit.to_le_bytes())
+                    .collect::<Vec<_>>()
+            ))
+        );
+        assert_eq!(plan.wiki_source_index, Some(0));
+        assert!(plan.url.is_empty());
+        for (suffix, value) in [
+            ("request", serde_cbor::to_vec(&input).unwrap()),
+            ("response", serde_cbor::to_vec(&envelope).unwrap()),
+        ] {
+            let hex = value.iter().fold(String::new(), |mut text, byte| {
+                write!(text, "{byte:02x}").unwrap();
+                text
+            });
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_data");
+            assert_eq!(
+                hex,
+                std::fs::read_to_string(root.join(format!("navigation_{name}_{suffix}.cbor.hex")))
+                    .unwrap()
+                    .trim(),
+                "{name}/{suffix}"
+            );
+        }
+    }
+}
+
+#[test]
+fn wiki_raw_request_shapes_and_closed_source_contract_are_fixed() {
+    let mut input = request(RequestKind::TagDefinitionUrl);
+    input.token.clear();
+    assert_eq!(
+        build_envelope(&input).error.unwrap(),
+        RustError::Error("Invalid gallery wiki request shape".into())
+    );
+    input.wiki_tag_utf16 = Some(ByteBuf::from(vec![0, 0xd8]));
+    assert!(build_envelope(&input).error.is_none());
+    input.wiki_tag_utf16 = Some(ByteBuf::from(vec![0]));
+    assert!(build_envelope(&input).error.is_some());
+    input.wiki_tag_utf16 = Some(ByteBuf::from(vec![]));
+    input.key = Some("secret-key".into());
+    assert!(build_envelope(&input).error.is_some());
+    input.key = None;
+    input.token = "secret-token".into();
+    assert!(build_envelope(&input).error.is_some());
+    input.token.clear();
+    input.kind = RequestKind::TorrentUrl;
+    assert!(build_envelope(&input).error.is_some());
+}
+
 fn request(kind: RequestKind) -> GalleryRequest {
     serde_json::from_value(json!({"version":1,"site":"public","kind":kind,"gid":7,"token":"abc"}))
         .unwrap()

@@ -1,9 +1,10 @@
-//! Portable comment/API request shapes and detail/reader URL construction.
+//! Portable comment/API request shapes and complete gallery/navigation URL construction.
 //! Android supplies the site snapshot, attaches credentials, and performs HTTP.
 
 use super::{FormField, GallerySite};
 use eh_domain::contracts::{ApiEnvelope, RustError};
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use serde_json::{Value, json};
 use std::fmt::Write as _;
 
@@ -11,6 +12,11 @@ use std::fmt::Write as _;
 pub const API_VERSION: u8 = 1;
 /// Stable request-planning envelope discriminator.
 pub const MODULE: &str = "galleryRequest";
+/// Combined UTF-8 token and tracker key budget for encoded navigation kinds.
+pub const NAVIGATION_TEXT_BUDGET: usize = 64 * 1024;
+/// Wiki raw UTF-16LE byte budget, retaining up to 65,536 Java code units.
+pub const WIKI_UTF16_BYTE_BUDGET: usize = 2 * NAVIGATION_TEXT_BUDGET;
+const WIKI_PREFIX: &str = "https://ehwiki.org/wiki/";
 
 /// Selected complete request operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -36,6 +42,14 @@ pub enum RequestKind {
     PageUrl,
     /// Multi-page-viewer navigation URL.
     MpvUrl,
+    /// Add-favorites popup URL.
+    AddFavoritesUrl,
+    /// Torrent-list URL.
+    TorrentUrl,
+    /// Tracker announce URL; missing and empty keys are distinct.
+    TrackerUrl,
+    /// Wiki tag definition; only ASCII spaces become underscores.
+    TagDefinitionUrl,
 }
 
 /// Ordered gallery identity in one metadata batch.
@@ -99,6 +113,12 @@ pub struct GalleryRequest {
     /// Exact submitted tag string.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub tags: String,
+    /// Optional tracker path key; never an API credential.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    /// Raw wiki tag UTF-16LE bytes, including unpaired Java surrogate units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wiki_tag_utf16: Option<ByteBuf>,
 }
 
 /// Complete credential-free plan; JSON field order matches the removed Kotlin builder.
@@ -119,6 +139,12 @@ pub struct GalleryRequestPlan {
     pub body: Option<String>,
     /// Android inserts apiuid/apikey immediately after method when true.
     pub credentials: bool,
+    /// Wiki-only raw UTF-16LE target; the text URL slot is empty for this kind.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wiki_url_utf16: Option<ByteBuf>,
+    /// Reference to the sole wiki source slot, always zero; absent for all other kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wiki_source_index: Option<u8>,
 }
 
 /// Builds one complete immutable plan or a fixed, input-free typed failure.
@@ -130,6 +156,27 @@ pub fn build_envelope(request: &GalleryRequest) -> ApiEnvelope<GalleryRequestPla
     if request.identities.len() > 250 {
         return error("Gallery request exceeds batch budget");
     }
+    if matches!(
+        request.kind,
+        RequestKind::AddFavoritesUrl | RequestKind::TorrentUrl | RequestKind::TrackerUrl
+    ) && request.token.len() + request.key.as_ref().map_or(0, String::len)
+        > NAVIGATION_TEXT_BUDGET
+    {
+        return error("Gallery navigation exceeds text budget");
+    }
+    if request.kind == RequestKind::TagDefinitionUrl {
+        let Some(tag) = &request.wiki_tag_utf16 else {
+            return error("Invalid gallery wiki request shape");
+        };
+        if tag.len() > WIKI_UTF16_BYTE_BUDGET {
+            return error("Gallery wiki exceeds raw byte budget");
+        }
+        if tag.len() % 2 != 0 || !request.token.is_empty() || request.key.is_some() {
+            return error("Invalid gallery wiki request shape");
+        }
+    } else if request.wiki_tag_utf16.is_some() {
+        return error("Invalid gallery wiki request shape");
+    }
     match plan(request) {
         Some(plan) => ApiEnvelope::ok(API_VERSION, MODULE, plan),
         None => error("Invalid gallery request shape"),
@@ -139,21 +186,26 @@ fn error(message: &str) -> ApiEnvelope<GalleryRequestPlan> {
     ApiEnvelope::err(API_VERSION, MODULE, RustError::Error(message.to_owned()))
 }
 
-fn plan(request: &GalleryRequest) -> Option<GalleryRequestPlan> {
-    let origin = format!("https://{}", request.site.host());
-    let mut plan = GalleryRequestPlan {
+fn base_plan(request: &GalleryRequest, origin: &str) -> GalleryRequestPlan {
+    GalleryRequestPlan {
         kind: request.kind,
         url: match request.site {
             GallerySite::Public => "https://api.e-hentai.org/api.php",
             GallerySite::ExHentai => "https://s.exhentai.org/api.php",
         }
         .to_owned(),
-        referer: Some(origin.clone()),
-        origin: Some(origin.clone()),
+        referer: Some(origin.to_owned()),
+        origin: Some(origin.to_owned()),
         form: Vec::new(),
         body: None,
         credentials: false,
-    };
+        wiki_url_utf16: None,
+        wiki_source_index: None,
+    }
+}
+fn plan(request: &GalleryRequest) -> Option<GalleryRequestPlan> {
+    let origin = format!("https://{}", request.site.host());
+    let mut plan = base_plan(request, &origin);
     let text = |value: &str| Value::String(value.to_owned());
     let gid = json!(request.gid);
     let token = text(&request.token);
@@ -230,13 +282,45 @@ fn plan(request: &GalleryRequest) -> Option<GalleryRequestPlan> {
                 ),
             ]));
         }
-        RequestKind::DetailUrl | RequestKind::PageUrl | RequestKind::MpvUrl => {
-            plan.url = navigation_url(request, &origin);
-            plan.referer = None;
-            plan.origin = None;
-        }
+        RequestKind::DetailUrl
+        | RequestKind::PageUrl
+        | RequestKind::MpvUrl
+        | RequestKind::AddFavoritesUrl
+        | RequestKind::TorrentUrl
+        | RequestKind::TrackerUrl
+        | RequestKind::TagDefinitionUrl => return navigation_plan(plan, request, &origin),
     }
     Some(plan)
+}
+fn navigation_plan(
+    mut plan: GalleryRequestPlan,
+    request: &GalleryRequest,
+    origin: &str,
+) -> Option<GalleryRequestPlan> {
+    if request.kind == RequestKind::TagDefinitionUrl {
+        plan.url.clear();
+        plan.wiki_url_utf16 = Some(wiki_url_utf16(request.wiki_tag_utf16.as_ref()?));
+        plan.wiki_source_index = Some(0);
+    } else {
+        plan.url = navigation_url(request, origin);
+    }
+    plan.referer = None;
+    plan.origin = None;
+    Some(plan)
+}
+fn wiki_url_utf16(tag: &[u8]) -> ByteBuf {
+    let mut result = Vec::with_capacity(WIKI_PREFIX.len() * 2 + tag.len());
+    for byte in WIKI_PREFIX.bytes() {
+        result.extend_from_slice(&[byte, 0]);
+    }
+    for unit in tag.chunks_exact(2) {
+        if unit == [b' ', 0] {
+            result.extend_from_slice(&[b'_', 0]);
+        } else {
+            result.extend_from_slice(unit);
+        }
+    }
+    ByteBuf::from(result)
 }
 fn metadata_body(request: &GalleryRequest) -> String {
     let rows: Vec<Value> = request
@@ -266,6 +350,31 @@ fn navigation_url(request: &GalleryRequest, origin: &str) -> String {
             &request.token,
             request.nl.as_deref(),
         ),
+        RequestKind::AddFavoritesUrl | RequestKind::TorrentUrl => {
+            let script = if request.kind == RequestKind::AddFavoritesUrl {
+                "gallerypopups.php"
+            } else {
+                "gallerytorrents.php"
+            };
+            let mut url = format!(
+                "{origin}/{script}?gid={}&t={}",
+                request.gid,
+                encode(&request.token, false)
+            );
+            if request.kind == RequestKind::AddFavoritesUrl {
+                url.push_str("&act=addfav");
+            }
+            url
+        }
+        RequestKind::TrackerUrl => {
+            let mut url = format!("https://ehtracker.org/{}/", request.gid);
+            if let Some(key) = &request.key {
+                url.push_str(&encode(key, true));
+                url.push('/');
+            }
+            url.push_str("announce");
+            url
+        }
         _ => format!(
             "{origin}/mpv/{}/{}",
             request.gid,

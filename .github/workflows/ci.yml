@@ -225,6 +225,15 @@ jobs:
       - name: Preview Tokens Host JNI Smoke Test
         run: bash scripts/test_preview_tokens_jni.sh
 
+      - name: Gallery Navigation Host JNI Smoke Test
+        working-directory: ./app/src/main/rust
+        run: |
+          javac -d target/jni-probe \
+            ../../../../scripts/fixtures/GalleryNavigationJniSmoke.java
+          java --enable-native-access=ALL-UNNAMED -cp target/jni-probe \
+            com.hippo.ehviewer.bridge.gallery.GalleryRequestBridgeKt \
+            target/jni-probe/libehviewer-host.so crates/net/test_data
+
       - name: Install cargo-llvm-cov
         # taiki-e/install-action v2
         uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad

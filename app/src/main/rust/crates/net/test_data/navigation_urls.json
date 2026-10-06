@@ -1,0 +1,65 @@
+[
+  {
+    "name": "favorites",
+    "request": {"version": 1, "site": "exHentai", "kind": "addFavoritesUrl", "gid": -9223372036854775808, "token": "a b/+%#?中文😀"},
+    "url": "https://exhentai.org/gallerypopups.php?gid=-9223372036854775808&t=a+b%2F%2B%25%23%3F%E4%B8%AD%E6%96%87%F0%9F%98%80&act=addfav"
+  },
+  {
+    "name": "torrent",
+    "request": {"version": 1, "site": "public", "kind": "torrentUrl", "gid": 9223372036854775807, "token": "a b/+%#?中文😀"},
+    "url": "https://e-hentai.org/gallerytorrents.php?gid=9223372036854775807&t=a+b%2F%2B%25%23%3F%E4%B8%AD%E6%96%87%F0%9F%98%80"
+  },
+  {
+    "name": "tracker_null",
+    "request": {"version": 1, "site": "public", "kind": "trackerUrl", "gid": -7},
+    "url": "https://ehtracker.org/-7/announce"
+  },
+  {
+    "name": "tracker_empty",
+    "request": {"version": 1, "site": "exHentai", "kind": "trackerUrl", "gid": -7, "key": ""},
+    "url": "https://ehtracker.org/-7//announce"
+  },
+  {
+    "name": "tracker_key",
+    "request": {"version": 1, "site": "public", "kind": "trackerUrl", "gid": -9223372036854775808, "key": "a b/+%#?中文😀"},
+    "url": "https://ehtracker.org/-9223372036854775808/a%20b%2F+%25%23%3F%E4%B8%AD%E6%96%87%F0%9F%98%80/announce"
+  },
+  {
+    "name": "wiki",
+    "request": {"version": 1, "site": "public", "kind": "tagDefinitionUrl"},
+    "tag": "a b/+%#?中文😀\t\n",
+    "url": "https://ehwiki.org/wiki/a_b/+%#?中文😀\t\n"
+  },
+  {
+    "name": "favorites_empty",
+    "request": {"version": 1, "site": "public", "kind": "addFavoritesUrl"},
+    "url": "https://e-hentai.org/gallerypopups.php?gid=0&t=&act=addfav"
+  },
+  {
+    "name": "torrent_empty",
+    "request": {"version": 1, "site": "exHentai", "kind": "torrentUrl", "gid": -1},
+    "url": "https://exhentai.org/gallerytorrents.php?gid=-1&t="
+  },
+  {
+    "name": "query_alphabet",
+    "request": {"version": 1, "site": "public", "kind": "torrentUrl", "gid": 7, "token": ":@!$&'()*+,;=-._~[]\\\r\n"},
+    "url": "https://e-hentai.org/gallerytorrents.php?gid=7&t=%3A%40%21%24%26%27%28%29%2A%2B%2C%3B%3D-._~%5B%5D%5C%0D%0A"
+  },
+  {
+    "name": "path_alphabet",
+    "request": {"version": 1, "site": "exHentai", "kind": "trackerUrl", "gid": 9223372036854775807, "key": ":@!$&'()*+,;=-._~[]\\\r\n"},
+    "url": "https://ehtracker.org/9223372036854775807/:@!$&'()*+,;=-._~%5B%5D%5C%0D%0A/announce"
+  },
+  {
+    "name": "wiki_empty",
+    "request": {"version": 1, "site": "exHentai", "kind": "tagDefinitionUrl"},
+    "tag": "",
+    "url": "https://ehwiki.org/wiki/"
+  },
+  {
+    "name": "wiki_spaces",
+    "request": {"version": 1, "site": "public", "kind": "tagDefinitionUrl"},
+    "tag": "  a\u00a0b\u3000c  ",
+    "url": "https://ehwiki.org/wiki/__a\u00a0b\u3000c__"
+  }
+]
