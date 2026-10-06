@@ -59,9 +59,7 @@ internal data class RecoveryScanResult(
   val limitExceeded: Boolean,
 )
 
-internal class DownloadRecoveryCoordinator(
-  private val context: Context,
-) {
+internal class DownloadRecoveryCoordinator(private val context: Context) {
   private data class InspectedCandidate(
     val node: RecoveryDocumentNode,
     val roomKind: DownloadRecoverySourceKind,
@@ -89,32 +87,28 @@ internal class DownloadRecoveryCoordinator(
     val candidateFacts = ArrayList<StorageCandidateInput>()
     var candidateIdentityBytes = 0L
     var candidateObservationLimitExceeded = false
-    classification@ for (chunk in tree.nodes
-      .withIndex()
-      .asSequence()
-      .chunked(1024)) {
+    classification@ for (chunk in tree.nodes.withIndex().asSequence().chunked(1024)) {
       currentCoroutineContext().ensureActive()
-      val observations =
-        chunk.map { (index, node) ->
-          RecoveryFileObservation(
-            index = index,
-            directory = node.isDirectory,
-            root = node.relativePath.isEmpty(),
-            // Platform Regex observation preserves device case-folding; Rust owns eligibility.
-            hasStrictPage =
-              node.isDirectory &&
-                filesByParent[node.sourceId].orEmpty().any {
-                  STRICT_PAGE.matches(it.displayName)
-                },
-            suffixUtf16 = node.displayName.takeLast(7).toUtf16LeBytes(),
-          )
-        }
+      val observations = chunk.map { (index, node) ->
+        RecoveryFileObservation(
+          index = index,
+          directory = node.isDirectory,
+          root = node.relativePath.isEmpty(),
+          // Platform Regex observation preserves device case-folding; Rust owns eligibility.
+          hasStrictPage =
+            node.isDirectory &&
+              filesByParent[node.sourceId].orEmpty().any {
+                STRICT_PAGE.matches(it.displayName)
+              },
+          suffixUtf16 = node.displayName.takeLast(7).toUtf16LeBytes(),
+        )
+      }
       val classified =
         planStorageRules(
           StorageRulesRequest(
             operation = StorageOperation.CLASSIFY,
             observations = observations,
-          ),
+          )
         )
       for (candidate in classified.candidates) {
         val node = tree.nodes[candidate.index]
@@ -133,7 +127,7 @@ internal class DownloadRecoveryCoordinator(
           operation = StorageOperation.CANDIDATES,
           candidates = candidateFacts,
           maxItems = limits.maxCandidates,
-        ),
+        )
       )
     val allCandidates =
       candidatePlan.candidates.map {
@@ -171,35 +165,36 @@ internal class DownloadRecoveryCoordinator(
       }
     }
 
+    val inspectedPaths =
+      recoveryPromotionPaths(
+        inspected.map { RecoveryPromotionInput(it.node.relativePath, it.roomKind, it.plan.gid) }
+      )
+    val promotionPaths =
+      inspected.indices.associate { inspected[it].plan.sourceKey to inspectedPaths[it] }
     val existingDownloads = EhDB.getAllDownloadInfo()
-    val mappings =
-      existingDownloads.map { download ->
-        val matched =
-          inspected.firstOrNull { candidate ->
-            candidate.plan.status == RecoveryStatus.READY &&
-              candidate.plan.gid == download.gid &&
-              recoveryPromotionPath(
-                candidate.node.relativePath,
-                candidate.roomKind,
-                candidate.plan.gid,
-              ) == download.dirname
-          }
-        ExistingRecoveryMapping(
-          gid = download.gid,
-          sourceKey =
-            matched?.plan?.sourceKey
-              ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
-          complete = download.state == DownloadInfo.STATE_FINISH,
-        )
+    val mappings = existingDownloads.map { download ->
+      val matched = inspected.firstOrNull { candidate ->
+        candidate.plan.status == RecoveryStatus.READY &&
+          candidate.plan.gid == download.gid &&
+          promotionPaths[candidate.plan.sourceKey] == download.dirname
       }
+      ExistingRecoveryMapping(
+        gid = download.gid,
+        sourceKey =
+          matched?.plan?.sourceKey
+            ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
+        complete = download.state == DownloadInfo.STATE_FINISH,
+      )
+    }
     val decisions =
       planDownloadRecoveryConflicts(
-        RecoveryConflictRequest(
-          version = DOWNLOAD_RECOVERY_API_VERSION,
-          candidates = inspected.map(InspectedCandidate::plan),
-          existing = mappings,
-        ),
-      ).decisions
+          RecoveryConflictRequest(
+            version = DOWNLOAD_RECOVERY_API_VERSION,
+            candidates = inspected.map(InspectedCandidate::plan),
+            existing = mappings,
+          )
+        )
+        .decisions
         .associateBy { it.sourceKey }
     val oldRows = EhDB.getDownloadRecoveryCandidates().associateBy { it.sourceKey }
     val now = System.currentTimeMillis()
@@ -220,8 +215,7 @@ internal class DownloadRecoveryCoordinator(
           issues = (candidate.plan.issues + listOfNotNull(decision.issue)).distinct(),
         )
       val old = oldRows[plan.sourceKey]
-      val promotionPath =
-        recoveryPromotionPath(candidate.node.relativePath, candidate.roomKind, plan.gid)
+      val promotionPath = promotionPaths[candidate.plan.sourceKey]
       val pathBlocked =
         plan.action == RecoveryPersistenceAction.PROMOTE_FINISHED && promotionPath == null
       val row =
@@ -243,10 +237,9 @@ internal class DownloadRecoveryCoordinator(
           localPageCount = plan.localPageCount,
           evidence = plan.evidence.joinToString(",") { it.kind.name },
           issues =
-            (
-              plan.issues.map { it.name } +
-                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList()
-            ).distinct()
+            (plan.issues.map { it.name } +
+                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList())
+              .distinct()
               .joinToString(","),
           status = if (pathBlocked) DownloadRecoveryStatus.PATH_CONFLICT else plan.toRoomStatus(),
           fingerprint = plan.fingerprint,
@@ -264,13 +257,11 @@ internal class DownloadRecoveryCoordinator(
       val decision = requireNotNull(decisions[candidate.plan.sourceKey])
       if (
         decision.action != RecoveryPersistenceAction.PROMOTE_FINISHED ||
-        decision.status != RecoveryStatus.READY
+          decision.status != RecoveryStatus.READY
       ) {
         continue
       }
-      val path =
-        recoveryPromotionPath(candidate.node.relativePath, candidate.roomKind, candidate.plan.gid)
-          ?: continue
+      val path = promotionPaths[candidate.plan.sourceKey] ?: continue
       val row = staged[candidate.plan.sourceKey] ?: continue
       val gid = candidate.plan.gid ?: continue
       val token = candidate.plan.token ?: continue
@@ -313,7 +304,7 @@ internal class DownloadRecoveryCoordinator(
                 .distinct()
                 .joinToString(","),
             updatedAt = System.currentTimeMillis(),
-          ),
+          )
         )
       }
     }
@@ -336,29 +327,12 @@ internal class DownloadRecoveryCoordinator(
     directory: RecoveryDocumentNode,
     children: List<RecoveryDocumentNode>,
   ): RecoveryCandidateRequest {
-    val ordered = children.sortedBy { it.sourceId }
-    val spider = ordered.firstOrNull { it.displayName.equals(".ehviewer", true) }
-    val comic = ordered.firstOrNull { it.displayName.equals("ComicInfo.xml", true) }
-    return RecoveryCandidateRequest(
-      version = DOWNLOAD_RECOVERY_API_VERSION,
-      source = RecoverySourceKeyInput(rootKey, directory.sourceId, RecoverySourceKind.DIRECTORY),
-      fingerprint =
-        RecoveryFingerprintInput(
-          size = ordered.sumOf { it.size ?: 0L },
-          modifiedAtMillis = ordered.mapNotNull { it.modifiedAtMillis }.maxOrNull(),
-        ),
-      displayName = directory.displayName,
-      spiderInfo = spider?.let { runCatching { readBounded(it) }.getOrNull() },
-      comicInfo = comic?.let { runCatching { readBounded(it) }.getOrNull() },
-      entries =
-        ordered.map { child ->
-          RecoveryEntryInput(
-            name = child.displayName,
-            size = child.size ?: 0,
-            regular = !child.isDirectory,
-            readable = child.size != 0L && canRead(child),
-          )
-        },
+    return observeRecoveryDirectory(
+      rootKey,
+      directory,
+      children,
+      ::readBounded,
+      ::canRead,
     )
   }
 
@@ -390,7 +364,7 @@ internal class DownloadRecoveryCoordinator(
           archive = archive.copy(issues = inspection.issues)
           if (
             RecoveryIssue.ENCRYPTED_ARCHIVE !in inspection.issues &&
-            RecoveryIssue.LIMIT_EXCEEDED !in inspection.issues
+              RecoveryIssue.LIMIT_EXCEEDED !in inspection.issues
           ) {
             currentCoroutineContext().ensureActive()
             spiderInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.SPIDER_INFO)
@@ -468,10 +442,10 @@ internal class DownloadRecoveryCoordinator(
       output.toByteArray()
     }
 
-  private fun canRead(node: RecoveryDocumentNode): Boolean =
-    runCatching {
-      openInput(node).use { it.read() >= 0 }
-    }.getOrDefault(false)
+  private fun canRead(node: RecoveryDocumentNode): Boolean = runCatching {
+    openInput(node).use { it.read() >= 0 }
+  }
+    .getOrDefault(false)
 
   private fun openInput(node: RecoveryDocumentNode) =
     if (node.uri.scheme == "file") {
@@ -498,20 +472,6 @@ internal class DownloadRecoveryCoordinator(
         RegexOption.IGNORE_CASE,
       )
   }
-}
-
-internal fun recoveryPromotionPath(
-  relativePath: String,
-  kind: DownloadRecoverySourceKind,
-  gid: Long?,
-): String? {
-  if (gid == null || gid <= 0) return null
-  if (kind == DownloadRecoverySourceKind.DIRECTORY) return relativePath.takeIf(String::isNotBlank)
-  if (kind != DownloadRecoverySourceKind.CBZ && kind != DownloadRecoverySourceKind.ZIP) return null
-  val filename = relativePath.substringAfterLast('/')
-  val expectedExtension = if (kind == DownloadRecoverySourceKind.CBZ) "cbz" else "zip"
-  if (!filename.equals("$gid.$expectedExtension", ignoreCase = true)) return null
-  return relativePath.substringBeforeLast('/', "").takeIf(String::isNotBlank)
 }
 
 private fun RecoveryFileKind.toRoomKind(): DownloadRecoverySourceKind =

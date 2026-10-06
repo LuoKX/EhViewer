@@ -55,6 +55,7 @@ pub mod local_pages;
 pub mod reader;
 pub mod reader_policy;
 pub mod recovery;
+pub mod recovery_directory;
 pub mod recovery_eh_lookup;
 pub mod recovery_scan;
 pub mod recovery_search;

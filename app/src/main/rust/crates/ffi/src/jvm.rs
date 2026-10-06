@@ -22,6 +22,7 @@ mod local_pages;
 mod parser;
 mod plan;
 mod reader_policy;
+mod recovery_directory;
 mod recovery_eh_lookup;
 mod recovery_metadata;
 mod recovery_scan;
