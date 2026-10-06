@@ -10,11 +10,16 @@ use std::path::Path;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result, anyhow, bail, ensure};
 use eh_archive::archive_filters::DecodedSource;
 use eh_archive::production_tar::{self, TarMember};
 use eh_archive::production_zip::{self, ZipMember, ZipScan};
+use eh_archive::recovery_batch::{
+    MAX_RECOVERY_BATCH_NAME_BYTES, RecoveryBatch, RecoveryBatchContext, RecoveryBatchEntry,
+    RecoveryBatchRequest, finish_recovery_batch, plan_recovery_batch,
+};
 use rars::{ArchiveReadOptions, ArchiveReader as RarArchiveReader};
 use sevenz_rust2::{
     Archive as SevenZipArchive, EncoderMethod, Error as SevenZipError,
@@ -104,6 +109,7 @@ struct ArchiveReader {
     entries: Vec<ArchiveEntry>,
     metadata_entries: Vec<ArchiveEntry>,
     unsafe_path: bool,
+    recovery_progress: Option<(u32, bool)>,
 }
 
 impl ArchiveReader {
@@ -136,6 +142,7 @@ impl ArchiveReader {
             entries,
             metadata_entries,
             unsafe_path,
+            recovery_progress: None,
         })
     }
 
@@ -201,6 +208,55 @@ impl ArchiveReader {
     fn verify_entry(&mut self, index: usize) -> Result<bool> {
         let mut sink = std::io::sink();
         self.extract_to(index, &mut sink).map(|_| true)
+    }
+
+    fn inspect_recovery_batch(&mut self, request: &RecoveryBatchRequest) -> Result<RecoveryBatch> {
+        ensure!(
+            self.state != ArchiveReaderState::Closed,
+            "Rust archive reader is closed"
+        );
+        let encrypted = self.state == ArchiveReaderState::PasswordRequired;
+        let context = RecoveryBatchContext {
+            entry_count: if encrypted {
+                0
+            } else {
+                u32::try_from(self.entries.len())?
+            },
+            encrypted,
+            unsafe_path: self.unsafe_path,
+        };
+        let range = plan_recovery_batch(context, request)?;
+        if request.start_index != 0 {
+            ensure!(
+                self.recovery_progress == Some((request.start_index, request.all_readable)),
+                "Archive recovery cursor does not match inspected state"
+            );
+        }
+        let started = Instant::now();
+        let mut entries = Vec::new();
+        for index in range {
+            let index = usize::try_from(index)?;
+            let entry = self.entry(index)?;
+            ensure!(
+                entry.name.len() <= MAX_RECOVERY_BATCH_NAME_BYTES,
+                "Archive recovery entry name exceeds wire limit"
+            );
+            let name = entry.name.clone();
+            let size = entry.size;
+            let readable = self.verify_entry(index).is_ok();
+            entries.push(RecoveryBatchEntry {
+                name,
+                size,
+                readable,
+            });
+            // Cooperative time slice: a single decoder call cannot be interrupted, as in V2.
+            if started.elapsed() >= Duration::from_millis(25) {
+                break;
+            }
+        }
+        let batch = finish_recovery_batch(context, request, entries)?;
+        self.recovery_progress = Some((batch.next_index, batch.all_readable));
+        Ok(batch)
     }
 
     fn recovery_metadata(&mut self, kind: RecoveryMetadataKind) -> Result<Option<Vec<u8>>> {
@@ -310,6 +366,14 @@ impl ArchiveReaderRegistry {
 
     pub(super) fn verify_entry(&self, handle: i64, index: usize) -> Result<bool> {
         self.with_reader(handle, |reader| reader.verify_entry(index))
+    }
+
+    pub(super) fn inspect_recovery_batch(
+        &self,
+        handle: i64,
+        request: &RecoveryBatchRequest,
+    ) -> Result<RecoveryBatch> {
+        self.with_reader(handle, |reader| reader.inspect_recovery_batch(request))
     }
 
     pub(super) fn recovery_metadata(
@@ -1076,6 +1140,143 @@ mod tests {
             let kind = detect_archive_kind(&mut source).unwrap();
             assert_eq!(matches!(kind, ArchiveKind::Filtered), filtered);
             assert_eq!(source.stream_position().unwrap(), 7);
+        }
+    }
+
+    fn batch_request(start_index: u32, all_readable: bool) -> RecoveryBatchRequest {
+        RecoveryBatchRequest {
+            version: 3,
+            start_index,
+            max_entries: 1,
+            maximum_entries: 100_000,
+            all_readable,
+        }
+    }
+
+    #[test]
+    fn recovery_batches_preserve_positions_and_reject_unverified_cursors() {
+        let mut source = fixture_file(include_bytes!(
+            "../../../../archive/src/production_zip/test_data/mixed.zip"
+        ));
+        source.seek(SeekFrom::Start(7)).unwrap();
+        let registry = &ARCHIVE_READER_REGISTRY;
+        let handle = registry
+            .open(duplicate_file_descriptor(source.as_raw_fd()).unwrap(), true)
+            .unwrap();
+        assert!(
+            registry
+                .inspect_recovery_batch(handle, &batch_request(1, true))
+                .is_err()
+        );
+        for cursor in 0..3 {
+            let batch = registry
+                .inspect_recovery_batch(handle, &batch_request(cursor, true))
+                .unwrap();
+            assert_eq!(batch.next_index, cursor + 1);
+            assert_eq!(batch.entries.len(), 1);
+            assert!(batch.all_readable);
+            assert_eq!(batch.complete, cursor == 2);
+            assert_eq!(source.stream_position().unwrap(), 7);
+        }
+        assert!(
+            registry
+                .inspect_recovery_batch(handle, &batch_request(2, false))
+                .is_err()
+        );
+        assert!(registry.close(handle).unwrap());
+        assert!(
+            registry
+                .inspect_recovery_batch(handle, &batch_request(0, true))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn recovery_batches_classify_encryption_limits_and_bad_crc() {
+        let registry = &ARCHIVE_READER_REGISTRY;
+        for fixture in [RAR4_ENCRYPTED, RAR5_ENCRYPTED, SEVEN_ZIP_ENCRYPTED] {
+            let handle = registry.open(fixture_file(fixture), false).unwrap();
+            let batch = registry
+                .inspect_recovery_batch(handle, &batch_request(0, true))
+                .unwrap();
+            assert_eq!(
+                batch.issues,
+                [eh_archive::recovery_batch::RecoveryBatchIssue::EncryptedArchive]
+            );
+            assert!(batch.entries.is_empty() && !batch.complete);
+            registry.close(handle).unwrap();
+        }
+        let fixture = include_bytes!("../../../../archive/src/production_zip/test_data/mixed.zip");
+        let handle = registry.open(fixture_file(fixture), true).unwrap();
+        let limited = RecoveryBatchRequest {
+            maximum_entries: 1,
+            ..batch_request(0, true)
+        };
+        assert!(
+            registry
+                .inspect_recovery_batch(handle, &limited)
+                .unwrap()
+                .entries
+                .is_empty()
+        );
+        registry.close(handle).unwrap();
+
+        let mut bytes = fixture.to_vec();
+        let central = bytes
+            .windows(4)
+            .position(|value| value == b"PK\x01\x02")
+            .unwrap();
+        bytes[central + 16] ^= 0x80;
+        let handle = registry.open(fixture_file(&bytes), false).unwrap();
+        let mut cursor = 0;
+        let mut readable = true;
+        while cursor < 3 {
+            let batch = registry
+                .inspect_recovery_batch(handle, &batch_request(cursor, readable))
+                .unwrap();
+            cursor = batch.next_index;
+            readable = batch.all_readable;
+            if cursor == 3 {
+                assert!(!batch.complete);
+            }
+        }
+        assert!(!readable);
+        registry.close(handle).unwrap();
+    }
+
+    #[test]
+    fn recovery_batches_use_existing_multi_format_codecs() {
+        let registry = &ARCHIVE_READER_REGISTRY;
+        for fixture in [
+            RAR4,
+            RAR5,
+            SEVEN_ZIP,
+            include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../../../androidTest/assets/archive-v2/images.tar"
+            ))
+            .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.gz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.xz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.gz.xz")
+                .as_slice(),
+        ] {
+            let handle = registry.open(fixture_file(fixture), false).unwrap();
+            let mut cursor = 0;
+            loop {
+                let batch = registry
+                    .inspect_recovery_batch(handle, &batch_request(cursor, true))
+                    .unwrap();
+                assert!(batch.all_readable);
+                cursor = batch.next_index;
+                if cursor == batch.entry_count {
+                    assert!(batch.complete);
+                    break;
+                }
+            }
+            registry.close(handle).unwrap();
         }
     }
 

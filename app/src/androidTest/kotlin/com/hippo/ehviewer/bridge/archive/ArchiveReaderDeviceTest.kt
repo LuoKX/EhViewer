@@ -155,6 +155,84 @@ class ArchiveReaderDeviceTest {
     }
   }
 
+  @Test
+  fun recoveryV3BatchesPreserveBorrowedDescriptorsAndDetectCrcFailure() {
+    val archive = temporaryFile("recovery-v3", ".cbz")
+    ZipOutputStream(archive.outputStream().buffered()).use { zip ->
+      zip.writeEntry("1.jpg", PAGE_TWO, ZipEntry.STORED)
+      zip.writeEntry("2.jpg", PAGE_TEN, ZipEntry.DEFLATED)
+    }
+    try {
+      openReadOnly(archive).use { descriptor ->
+        Os.lseek(descriptor.fileDescriptor, SOURCE_OFFSET, OsConstants.SEEK_SET)
+        RustArchiveReaderV2.open(descriptor.fd, true).use { reader ->
+          val first = reader.inspectRecovery(ArchiveRecoveryRequest(3, 0, 1, 100_000, true))
+          assertEquals(1, first.nextIndex)
+          assertTrue(!first.complete)
+          assertSourceOffset(descriptor)
+          val last =
+            reader.inspectRecovery(ArchiveRecoveryRequest(3, 1, 1, 100_000, first.allReadable))
+          assertTrue(last.complete)
+          assertSourceOffset(descriptor)
+          assertThrows(RuntimeException::class.java) {
+            reader.inspectRecovery(ArchiveRecoveryRequest(3, 1, 1, 100_000, true))
+          }
+        }
+        assertSourceOffset(descriptor)
+      }
+      corruptFirstCentralDirectoryCrc(archive)
+      openReadOnly(archive).use { descriptor ->
+        RustArchiveReaderV2.open(descriptor.fd, true).use { reader ->
+          val first = reader.inspectRecovery(ArchiveRecoveryRequest(3, 0, 1, 100_000, true))
+          assertTrue(!first.allReadable)
+          val last =
+            reader.inspectRecovery(ArchiveRecoveryRequest(3, 1, 1, 100_000, first.allReadable))
+          assertTrue(!last.complete)
+        }
+      }
+    } finally {
+      archive.delete()
+    }
+  }
+
+  @Test
+  fun recoveryV3ReturnsStructuredLimitsAndEncryptionWithoutFallback() {
+    val archive = temporaryFile("recovery-v3-limit", ".cbz")
+    ZipOutputStream(archive.outputStream().buffered()).use { zip ->
+      zip.writeEntry("1.jpg", PAGE_TWO, ZipEntry.STORED)
+      zip.writeEntry("2.jpg", PAGE_TEN, ZipEntry.STORED)
+    }
+    try {
+      openReadOnly(archive).use { descriptor ->
+        RustArchiveReaderV2.open(descriptor.fd, true).use { reader ->
+          val batch = reader.inspectRecovery(ArchiveRecoveryRequest(3, 0, 32, 1, true))
+          assertTrue(batch.entries.isEmpty())
+          assertEquals(
+            listOf(com.hippo.ehviewer.bridge.download.RecoveryIssue.LIMIT_EXCEEDED),
+            batch.issues,
+          )
+        }
+      }
+    } finally {
+      archive.delete()
+    }
+    val locked = copyAssetToTemporaryFile("archive-v2/encrypted-images.zip", ".locked")
+    try {
+      openReadOnly(locked).use { descriptor ->
+        RustArchiveReaderV2.open(descriptor.fd, false).use { reader ->
+          val batch = reader.inspectRecovery(ArchiveRecoveryRequest(3, 0, 32, 100_000, true))
+          assertEquals(
+            listOf(com.hippo.ehviewer.bridge.download.RecoveryIssue.ENCRYPTED_ARCHIVE),
+            batch.issues,
+          )
+          assertTrue(batch.entries.isEmpty() && !batch.complete)
+        }
+      }
+    } finally {
+      locked.delete()
+    }
+  }
+
   private fun writeArchive(file: File) {
     ZipOutputStream(file.outputStream().buffered()).use { archive ->
       archive.writeEntry("folder/image10.jpg", PAGE_TEN, ZipEntry.DEFLATED)
@@ -164,13 +242,21 @@ class ArchiveReaderDeviceTest {
     }
   }
 
-  private fun writeStoredArchive(file: File, name: String, contents: ByteArray) {
+  private fun writeStoredArchive(
+    file: File,
+    name: String,
+    contents: ByteArray,
+  ) {
     ZipOutputStream(file.outputStream().buffered()).use { archive ->
       archive.writeEntry(name, contents, ZipEntry.STORED)
     }
   }
 
-  private fun ZipOutputStream.writeEntry(name: String, contents: ByteArray, method: Int) {
+  private fun ZipOutputStream.writeEntry(
+    name: String,
+    contents: ByteArray,
+    method: Int,
+  ) {
     val entry = ZipEntry(name).apply { this.method = method }
     if (method == ZipEntry.STORED) {
       val size = contents.size.toLong()
@@ -191,7 +277,10 @@ class ArchiveReaderDeviceTest {
     file.writeBytes(bytes)
   }
 
-  private fun signatureOffset(bytes: ByteArray, signature: ByteArray): Int {
+  private fun signatureOffset(
+    bytes: ByteArray,
+    signature: ByteArray,
+  ): Int {
     require(bytes.size >= signature.size) { "ZIP fixture is shorter than its signature" }
     for (index in 0..(bytes.size - signature.size)) {
       if (signature.indices.all { offset -> bytes[index + offset] == signature[offset] }) {
@@ -204,9 +293,13 @@ class ArchiveReaderDeviceTest {
   private fun ByteBuffer.readRemainingBytes(): ByteArray =
     ByteArray(remaining()).also { bytes -> get(bytes) }
 
-  private fun copyAssetToTemporaryFile(assetName: String, suffix: String): File =
+  private fun copyAssetToTemporaryFile(
+    assetName: String,
+    suffix: String,
+  ): File =
     temporaryFile("reader-fixture", suffix).also { output ->
-      ApplicationProvider.getApplicationContext<android.content.Context>()
+      ApplicationProvider
+        .getApplicationContext<android.content.Context>()
         .assets
         .open(assetName)
         .use { input -> output.outputStream().use(input::copyTo) }
@@ -220,7 +313,10 @@ class ArchiveReaderDeviceTest {
     )
   }
 
-  private fun temporaryFile(prefix: String, suffix: String): File =
+  private fun temporaryFile(
+    prefix: String,
+    suffix: String,
+  ): File =
     File.createTempFile(
       prefix,
       suffix,

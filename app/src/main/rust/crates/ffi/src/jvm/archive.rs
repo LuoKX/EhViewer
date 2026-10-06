@@ -15,9 +15,9 @@ use jni::sys::{JNI_TRUE, jboolean, jbyteArray, jstring};
 use jni::sys::{jint, jlong};
 use jni_fn::jni_fn;
 
-#[cfg(target_os = "android")]
-use super::deref_mut_direct_bytebuffer;
 use super::jni_throwing;
+#[cfg(target_os = "android")]
+use super::{decode_request, deref_direct_bytebuffer, deref_mut_direct_bytebuffer};
 
 #[cfg(any(target_os = "android", all(test, feature = "jvm")))]
 mod archive_native;
@@ -224,6 +224,37 @@ pub fn nativeVerifyArchiveEntryV2(
     jni_throwing(&mut env, |_| {
         ARCHIVE_READER_REGISTRY.verify_entry(reader_handle, archive_entry_index(index)?)?;
         Ok(JNI_TRUE)
+    })
+}
+
+/// Returns one bounded V3 recovery batch from the same V2 opaque handle.
+///
+/// The codec retains the expected cursor/readability state, validates the request
+/// before decoding, and contains failures without exporting filenames in errors.
+#[cfg(target_os = "android")]
+#[jni_fn("com.hippo.ehviewer.bridge.archive.ArchiveReaderBridgeKt")]
+pub fn nativeInspectArchiveRecoveryV3(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    reader_handle: jlong,
+    request_buffer: JByteBuffer<'_>,
+    request_size: jint,
+) -> jbyteArray {
+    jni_throwing(&mut env, |env| {
+        ensure!(
+            request_size <= 256,
+            "Archive recovery request exceeds wire limit"
+        );
+        let input = deref_direct_bytebuffer(env, &request_buffer)?;
+        let request = decode_request(input, request_size)?;
+        let batch = ARCHIVE_READER_REGISTRY.inspect_recovery_batch(reader_handle, &request)?;
+        let envelope = eh_domain::contracts::ApiEnvelope::ok(3, "archiveRecovery", batch);
+        let bytes = serde_cbor::to_vec(&envelope)?;
+        ensure!(
+            bytes.len() <= 3 * 1024 * 1024,
+            "Archive recovery response exceeds wire limit"
+        );
+        Ok(env.byte_array_from_slice(&bytes)?.into_raw())
     })
 }
 

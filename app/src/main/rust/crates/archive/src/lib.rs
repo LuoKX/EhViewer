@@ -28,6 +28,8 @@ pub mod production_zip;
 pub mod reader;
 /// Recovery-specific all-entry inspection policy and resource budgets.
 pub mod recovery;
+/// Versioned bounded recovery batch planning and cumulative completion.
+pub mod recovery_batch;
 /// Deterministic, sequential application-generated CBZ writing.
 pub mod writer;
 

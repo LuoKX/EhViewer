@@ -118,7 +118,10 @@ class ArchiveReaderBridgeTest {
     var sortedEntries = false
     var lastPassword = byteArrayOf()
 
-    override fun open(fileDescriptor: Int, sortEntries: Boolean): Long {
+    override fun open(
+      fileDescriptor: Int,
+      sortEntries: Boolean,
+    ): Long {
       openCalls += 1
       openedFileDescriptor = fileDescriptor
       sortedEntries = sortEntries
@@ -127,7 +130,10 @@ class ArchiveReaderBridgeTest {
 
     override fun needsPassword(readerHandle: Long) = needsPassword
 
-    override fun providePassword(readerHandle: Long, password: ByteArray): Boolean {
+    override fun providePassword(
+      readerHandle: Long,
+      password: ByteArray,
+    ): Boolean {
       lastPassword = password
       val accepted = acceptedPassword?.contentEquals(password) == true
       if (accepted) needsPassword = false
@@ -136,19 +142,44 @@ class ArchiveReaderBridgeTest {
 
     override fun entryCount(readerHandle: Long) = entryCount
 
-    override fun entrySize(readerHandle: Long, index: Int) = entrySize
+    override fun entrySize(
+      readerHandle: Long,
+      index: Int,
+    ) = entrySize
 
-    override fun extension(readerHandle: Long, index: Int) = extension
+    override fun extension(
+      readerHandle: Long,
+      index: Int,
+    ) = extension
 
-    override fun name(readerHandle: Long, index: Int) = "0000000${index + 1}.$extension"
+    override fun name(
+      readerHandle: Long,
+      index: Int,
+    ) = "0000000${index + 1}.$extension"
 
-    override fun verify(readerHandle: Long, index: Int) = true
+    override fun verify(
+      readerHandle: Long,
+      index: Int,
+    ) = true
 
     override fun hasUnsafePath(readerHandle: Long) = false
 
-    override fun recoveryMetadata(readerHandle: Long, kind: Int): ByteArray? = null
+    override fun recoveryMetadata(
+      readerHandle: Long,
+      kind: Int,
+    ): ByteArray? = null
 
-    override fun extract(readerHandle: Long, index: Int, output: ByteBuffer): Int {
+    override fun inspectRecovery(
+      readerHandle: Long,
+      request: ByteBuffer,
+      requestSize: Int,
+    ): ByteArray = error("V2 characterization never invokes recovery batches")
+
+    override fun extract(
+      readerHandle: Long,
+      index: Int,
+      output: ByteBuffer,
+    ): Int {
       output.duplicate().put(IMAGE)
       return extractedSize
     }

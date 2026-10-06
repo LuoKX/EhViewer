@@ -346,6 +346,7 @@ dependencies = [
  "lzma-rust2",
  "rawzip",
  "serde",
+ "serde_cbor",
  "serde_json",
  "tar",
  "thiserror 2.0.18",

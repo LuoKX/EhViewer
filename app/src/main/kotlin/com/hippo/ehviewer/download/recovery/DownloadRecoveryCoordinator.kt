@@ -12,6 +12,7 @@ import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.bridge.archive.RecoveryArchiveMetadataKind
 import com.hippo.ehviewer.bridge.archive.RustArchiveReaderV2
+import com.hippo.ehviewer.bridge.archive.collectArchiveRecoveryBatches
 import com.hippo.ehviewer.bridge.download.DOWNLOAD_RECOVERY_API_VERSION
 import com.hippo.ehviewer.bridge.download.ExistingRecoveryMapping
 import com.hippo.ehviewer.bridge.download.RecoveryArchiveInput
@@ -58,7 +59,9 @@ internal data class RecoveryScanResult(
   val limitExceeded: Boolean,
 )
 
-internal class DownloadRecoveryCoordinator(private val context: Context) {
+internal class DownloadRecoveryCoordinator(
+  private val context: Context,
+) {
   private data class InspectedCandidate(
     val node: RecoveryDocumentNode,
     val roomKind: DownloadRecoverySourceKind,
@@ -86,28 +89,32 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     val candidateFacts = ArrayList<StorageCandidateInput>()
     var candidateIdentityBytes = 0L
     var candidateObservationLimitExceeded = false
-    classification@ for (chunk in tree.nodes.withIndex().asSequence().chunked(1024)) {
+    classification@ for (chunk in tree.nodes
+      .withIndex()
+      .asSequence()
+      .chunked(1024)) {
       currentCoroutineContext().ensureActive()
-      val observations = chunk.map { (index, node) ->
-        RecoveryFileObservation(
-          index = index,
-          directory = node.isDirectory,
-          root = node.relativePath.isEmpty(),
-          // Platform Regex observation preserves device case-folding; Rust owns eligibility.
-          hasStrictPage =
-            node.isDirectory &&
-              filesByParent[node.sourceId].orEmpty().any {
-                STRICT_PAGE.matches(it.displayName)
-              },
-          suffixUtf16 = node.displayName.takeLast(7).toUtf16LeBytes(),
-        )
-      }
+      val observations =
+        chunk.map { (index, node) ->
+          RecoveryFileObservation(
+            index = index,
+            directory = node.isDirectory,
+            root = node.relativePath.isEmpty(),
+            // Platform Regex observation preserves device case-folding; Rust owns eligibility.
+            hasStrictPage =
+              node.isDirectory &&
+                filesByParent[node.sourceId].orEmpty().any {
+                  STRICT_PAGE.matches(it.displayName)
+                },
+            suffixUtf16 = node.displayName.takeLast(7).toUtf16LeBytes(),
+          )
+        }
       val classified =
         planStorageRules(
           StorageRulesRequest(
             operation = StorageOperation.CLASSIFY,
             observations = observations,
-          )
+          ),
         )
       for (candidate in classified.candidates) {
         val node = tree.nodes[candidate.index]
@@ -126,7 +133,7 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
           operation = StorageOperation.CANDIDATES,
           candidates = candidateFacts,
           maxItems = limits.maxCandidates,
-        )
+        ),
       )
     val allCandidates =
       candidatePlan.candidates.map {
@@ -165,33 +172,34 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     }
 
     val existingDownloads = EhDB.getAllDownloadInfo()
-    val mappings = existingDownloads.map { download ->
-      val matched = inspected.firstOrNull { candidate ->
-        candidate.plan.status == RecoveryStatus.READY &&
-          candidate.plan.gid == download.gid &&
-          recoveryPromotionPath(
-            candidate.node.relativePath,
-            candidate.roomKind,
-            candidate.plan.gid,
-          ) == download.dirname
+    val mappings =
+      existingDownloads.map { download ->
+        val matched =
+          inspected.firstOrNull { candidate ->
+            candidate.plan.status == RecoveryStatus.READY &&
+              candidate.plan.gid == download.gid &&
+              recoveryPromotionPath(
+                candidate.node.relativePath,
+                candidate.roomKind,
+                candidate.plan.gid,
+              ) == download.dirname
+          }
+        ExistingRecoveryMapping(
+          gid = download.gid,
+          sourceKey =
+            matched?.plan?.sourceKey
+              ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
+          complete = download.state == DownloadInfo.STATE_FINISH,
+        )
       }
-      ExistingRecoveryMapping(
-        gid = download.gid,
-        sourceKey =
-          matched?.plan?.sourceKey
-            ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
-        complete = download.state == DownloadInfo.STATE_FINISH,
-      )
-    }
     val decisions =
       planDownloadRecoveryConflicts(
-          RecoveryConflictRequest(
-            version = DOWNLOAD_RECOVERY_API_VERSION,
-            candidates = inspected.map(InspectedCandidate::plan),
-            existing = mappings,
-          )
-        )
-        .decisions
+        RecoveryConflictRequest(
+          version = DOWNLOAD_RECOVERY_API_VERSION,
+          candidates = inspected.map(InspectedCandidate::plan),
+          existing = mappings,
+        ),
+      ).decisions
         .associateBy { it.sourceKey }
     val oldRows = EhDB.getDownloadRecoveryCandidates().associateBy { it.sourceKey }
     val now = System.currentTimeMillis()
@@ -235,9 +243,10 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
           localPageCount = plan.localPageCount,
           evidence = plan.evidence.joinToString(",") { it.kind.name },
           issues =
-            (plan.issues.map { it.name } +
-                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList())
-              .distinct()
+            (
+              plan.issues.map { it.name } +
+                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList()
+            ).distinct()
               .joinToString(","),
           status = if (pathBlocked) DownloadRecoveryStatus.PATH_CONFLICT else plan.toRoomStatus(),
           fingerprint = plan.fingerprint,
@@ -255,7 +264,7 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       val decision = requireNotNull(decisions[candidate.plan.sourceKey])
       if (
         decision.action != RecoveryPersistenceAction.PROMOTE_FINISHED ||
-          decision.status != RecoveryStatus.READY
+        decision.status != RecoveryStatus.READY
       ) {
         continue
       }
@@ -304,7 +313,7 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
                 .distinct()
                 .joinToString(","),
             updatedAt = System.currentTimeMillis(),
-          )
+          ),
         )
       }
     }
@@ -371,58 +380,22 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     try {
       openDescriptor(node).use { descriptor ->
         RustArchiveReaderV2.open(descriptor.fd, sortEntries = true).use { reader ->
-          if (reader.needsPassword) {
-            archive =
-              archive.copy(issues = (archive.issues + RecoveryIssue.ENCRYPTED_ARCHIVE).distinct())
-          } else {
-            val count = reader.entryCount
-            if (count > limits.maxArchiveEntries) {
-              archive =
-                archive.copy(issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct())
-            } else {
-              val inspectedEntries = ArrayList<RecoveryEntryInput>(count)
-              for (index in 0 until count) {
-                currentCoroutineContext().ensureActive()
-                if (android.os.SystemClock.elapsedRealtime() >= deadline) {
-                  archive =
-                    archive.copy(
-                      issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct()
-                    )
-                  break
-                }
-                inspectedEntries +=
-                  RecoveryEntryInput(
-                    name = reader.name(index),
-                    size = reader.size(index),
-                    regular = true,
-                    readable = runCatching { reader.verify(index) }.getOrDefault(false),
-                  )
-              }
-              entries = inspectedEntries
-              if (
-                RecoveryIssue.LIMIT_EXCEEDED !in archive.issues &&
-                  android.os.SystemClock.elapsedRealtime() < deadline
-              ) {
-                spiderInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.SPIDER_INFO)
-                comicInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.COMIC_INFO)
-                archive =
-                  archive.copy(
-                    complete =
-                      entries.size == count &&
-                        entries.isNotEmpty() &&
-                        entries.all(RecoveryEntryInput::readable),
-                    issues =
-                      if (reader.hasUnsafePath) {
-                        (archive.issues + RecoveryIssue.UNSAFE_ARCHIVE_PATH).distinct()
-                      } else {
-                        archive.issues
-                      },
-                  )
-              } else {
-                archive =
-                  archive.copy(issues = (archive.issues + RecoveryIssue.LIMIT_EXCEEDED).distinct())
-              }
-            }
+          val inspection =
+            collectArchiveRecoveryBatches(
+              maximumEntries = limits.maxArchiveEntries,
+              deadlineExceeded = { android.os.SystemClock.elapsedRealtime() >= deadline },
+              inspect = reader::inspectRecovery,
+            )
+          entries = inspection.entries
+          archive = archive.copy(issues = inspection.issues)
+          if (
+            RecoveryIssue.ENCRYPTED_ARCHIVE !in inspection.issues &&
+            RecoveryIssue.LIMIT_EXCEEDED !in inspection.issues
+          ) {
+            currentCoroutineContext().ensureActive()
+            spiderInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.SPIDER_INFO)
+            comicInfo = reader.recoveryMetadata(RecoveryArchiveMetadataKind.COMIC_INFO)
+            archive = archive.copy(complete = inspection.complete)
           }
         }
       }
@@ -448,18 +421,37 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
 
   private fun RecoveryCandidatePlan.toRoomStatus(): DownloadRecoveryStatus =
     when (status) {
-      RecoveryStatus.READY -> DownloadRecoveryStatus.READY
-      RecoveryStatus.MISSING_IDENTITY -> DownloadRecoveryStatus.MISSING_IDENTITY
-      RecoveryStatus.INCOMPLETE -> DownloadRecoveryStatus.CONTENT_INCOMPLETE
-      RecoveryStatus.UNREADABLE -> DownloadRecoveryStatus.UNREADABLE
-      RecoveryStatus.LIMIT_EXCEEDED -> DownloadRecoveryStatus.LIMIT_EXCEEDED
-      RecoveryStatus.SOURCE_MISSING -> DownloadRecoveryStatus.SOURCE_MISSING
-      RecoveryStatus.CONFLICT ->
+      RecoveryStatus.READY -> {
+        DownloadRecoveryStatus.READY
+      }
+
+      RecoveryStatus.MISSING_IDENTITY -> {
+        DownloadRecoveryStatus.MISSING_IDENTITY
+      }
+
+      RecoveryStatus.INCOMPLETE -> {
+        DownloadRecoveryStatus.CONTENT_INCOMPLETE
+      }
+
+      RecoveryStatus.UNREADABLE -> {
+        DownloadRecoveryStatus.UNREADABLE
+      }
+
+      RecoveryStatus.LIMIT_EXCEEDED -> {
+        DownloadRecoveryStatus.LIMIT_EXCEEDED
+      }
+
+      RecoveryStatus.SOURCE_MISSING -> {
+        DownloadRecoveryStatus.SOURCE_MISSING
+      }
+
+      RecoveryStatus.CONFLICT -> {
         when {
           RecoveryIssue.DUPLICATE_SOURCE in issues -> DownloadRecoveryStatus.DUPLICATE_SOURCE
           RecoveryIssue.EXISTING_MAPPING_CONFLICT in issues -> DownloadRecoveryStatus.PATH_CONFLICT
           else -> DownloadRecoveryStatus.IDENTITY_CONFLICT
         }
+      }
     }
 
   private fun readBounded(node: RecoveryDocumentNode): ByteArray =
@@ -476,10 +468,10 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
       output.toByteArray()
     }
 
-  private fun canRead(node: RecoveryDocumentNode): Boolean = runCatching {
-    openInput(node).use { it.read() >= 0 }
-  }
-    .getOrDefault(false)
+  private fun canRead(node: RecoveryDocumentNode): Boolean =
+    runCatching {
+      openInput(node).use { it.read() >= 0 }
+    }.getOrDefault(false)
 
   private fun openInput(node: RecoveryDocumentNode) =
     if (node.uri.scheme == "file") {

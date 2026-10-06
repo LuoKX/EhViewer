@@ -153,7 +153,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     mDownloadListener = listener
   }
 
-  suspend fun startDownload(galleryInfo: BaseGalleryInfo, label: String?) {
+  suspend fun startDownload(
+    galleryInfo: BaseGalleryInfo,
+    label: String?,
+  ) {
     startRustDownload(galleryInfo, label)
   }
 
@@ -163,28 +166,28 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   @Stable
   @Composable
-  fun collectDownloadState(gid: Long): State<Int> = remember {
-    notifyFlow.transform { if (it.gid == gid) emit(getDownloadState(gid)) }
-  }
-    .collectAsState(getDownloadState(gid))
+  fun collectDownloadState(gid: Long): State<Int> =
+    remember {
+      notifyFlow.transform { if (it.gid == gid) emit(getDownloadState(gid)) }
+    }.collectAsState(getDownloadState(gid))
 
   @Stable
   @Composable
-  fun collectContainDownloadInfo(gid: Long): State<Boolean> = remember {
-    notifyFlow.transform { if (it.gid == gid) emit(containDownloadInfo(gid)) }
-  }
-    .collectAsState(containDownloadInfo(gid))
+  fun collectContainDownloadInfo(gid: Long): State<Boolean> =
+    remember {
+      notifyFlow.transform { if (it.gid == gid) emit(containDownloadInfo(gid)) }
+    }.collectAsState(containDownloadInfo(gid))
 
   @Stable
   @Composable
   inline fun <T> updatedDownloadInfo(
     info: DownloadInfo,
     crossinline transform: @DisallowComposableCalls DownloadInfo.() -> T,
-  ): T = remember {
-    notifyFlow.transform { if (it.gid == info.gid) emit(transform(it)) }
-  }
-    .collectAsState(transform(info))
-    .value
+  ): T =
+    remember {
+      notifyFlow.transform { if (it.gid == info.gid) emit(transform(it)) }
+    }.collectAsState(transform(info))
+      .value
 
   suspend fun startAllDownload() {
     runRustDownloadQueueCommand(DownloadQueueCommand.startAll())
@@ -216,16 +219,15 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   suspend fun addDownloadLabel(downloadLabelList: List<DownloadLabel>) {
-    val offset = downloadLabelList.size
-    downloadLabelList.forEachIndexed { index, label ->
-      if (!containLabel(label.label)) {
-        label.position = index + offset
-        labelList.add(EhDB.addDownloadLabel(label))
-      }
+    planDownloadLabelImport(labelList, downloadLabelList).forEach { label ->
+      labelList.add(EhDB.addDownloadLabel(label))
     }
   }
 
-  suspend fun restoreDownload(galleryInfo: BaseGalleryInfo, dirname: String) {
+  suspend fun restoreDownload(
+    galleryInfo: BaseGalleryInfo,
+    dirname: String,
+  ) {
     val info = DownloadInfo(galleryInfo.asEntity(), dirname)
     info.state = DownloadInfo.STATE_NONE
 
@@ -278,7 +280,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
   suspend fun stopAllDownload() = runRustDownloadQueueCommand(DownloadQueueCommand.stopAll())
 
-  suspend fun deleteDownload(gid: Long, deleteFiles: Boolean = false) {
+  suspend fun deleteDownload(
+    gid: Long,
+    deleteFiles: Boolean = false,
+  ) {
     val info = deleteRustDownload(gid)
     if (deleteFiles && info != null) {
       deleteDownloadFiles(info)
@@ -293,13 +298,16 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     sortMutex.withLock { sortDownloadsLocked(mode) }
   }
 
-  suspend fun resetAllReadingProgress() = runCatching {
-    EhDB.clearProgressInfo()
-  }
-    .onFailure { logcat(it) }
+  suspend fun resetAllReadingProgress() =
+    runCatching {
+      EhDB.clearProgressInfo()
+    }.onFailure { logcat(it) }
 
   /** Creates a missing Android row before asking Rust to start exactly one task. */
-  private suspend fun startRustDownload(galleryInfo: BaseGalleryInfo, label: String?) {
+  private suspend fun startRustDownload(
+    galleryInfo: BaseGalleryInfo,
+    label: String?,
+  ) {
     sortMutex.withLock {
       mutex.withLock {
         recoverRustDownloadQueueIfNeededLocked()
@@ -333,17 +341,18 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   /** Stops and removes one item without allowing another queue command to interleave. */
-  private suspend fun deleteRustDownload(galleryId: Long): DownloadInfo? = sortMutex.withLock {
-    mutex.withLock {
-      recoverRustDownloadQueueIfNeededLocked()
-      reduceRustDownloadQueueLocked(DownloadQueueCommand.stopOne(galleryId))
-      mAllInfoMap.remove(galleryId)?.also { info ->
-        EhDB.removeDownloadInfo(info)
-        allInfoList.remove(info)
-        mutableNotifyFlow.emit(info)
+  private suspend fun deleteRustDownload(galleryId: Long): DownloadInfo? =
+    sortMutex.withLock {
+      mutex.withLock {
+        recoverRustDownloadQueueIfNeededLocked()
+        reduceRustDownloadQueueLocked(DownloadQueueCommand.stopOne(galleryId))
+        mAllInfoMap.remove(galleryId)?.also { info ->
+          EhDB.removeDownloadInfo(info)
+          allInfoList.remove(info)
+          mutableNotifyFlow.emit(info)
+        }
       }
     }
-  }
 
   /** Stops and removes selected items atomically with respect to Rust queue commands. */
   private suspend fun deleteRustDownloads(galleryIds: LongArray) {
@@ -459,42 +468,49 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
       plan.cancelGalleryId?.let { galleryId ->
         checkNotNull(detachCurrentWorkerLocked(galleryId))
       }
-    val completedInfo = completion?.let { result ->
-      val progressPlan = mCurrentTask?.let { info ->
-        val command =
-          DownloadProgressCommand.finish(
-            result.finished,
-            result.downloaded,
-            result.total,
-            failed = result.failed,
-          )
-        planDownloadProgress(DownloadProgressRequest(1, info.toDownloadProgressSnapshot(), command))
-      }
-      if (progressPlan != null) {
-        val expectedState = plan.snapshot.entries.single { it.galleryId == result.galleryId }.state
-        require(progressPlan.snapshot.state == expectedState) {
-          "Download progress state does not match queue finish state"
-        }
-      }
-      mSpeedReminder.onFinish()
-      checkNotNull(detachCurrentWorkerLocked(result.galleryId)).also { info ->
+    val completedInfo =
+      completion?.let { result ->
+        val progressPlan =
+          mCurrentTask?.let { info ->
+            val command =
+              DownloadProgressCommand.finish(
+                result.finished,
+                result.downloaded,
+                result.total,
+                failed = result.failed,
+              )
+            planDownloadProgress(
+              DownloadProgressRequest(1, info.toDownloadProgressSnapshot(), command),
+            )
+          }
         if (progressPlan != null) {
-          val snapshot = progressPlan.snapshot
-          info.finished = snapshot.finished
-          info.downloaded = snapshot.downloaded
-          info.total = snapshot.total
-          info.legacy = snapshot.legacy
-          info.speed = snapshot.speedBytesPerSecond
-          info.remaining = snapshot.remainingMilliseconds
-          info.state = snapshot.state.toAndroidDownloadState()
-        } else {
-          info.finished = result.finished
-          info.downloaded = result.downloaded
-          info.total = result.total
-          info.legacy = result.total - result.finished
+          val expectedState =
+            plan.snapshot.entries
+              .single { it.galleryId == result.galleryId }
+              .state
+          require(progressPlan.snapshot.state == expectedState) {
+            "Download progress state does not match queue finish state"
+          }
+        }
+        mSpeedReminder.onFinish()
+        checkNotNull(detachCurrentWorkerLocked(result.galleryId)).also { info ->
+          if (progressPlan != null) {
+            val snapshot = progressPlan.snapshot
+            info.finished = snapshot.finished
+            info.downloaded = snapshot.downloaded
+            info.total = snapshot.total
+            info.legacy = snapshot.legacy
+            info.speed = snapshot.speedBytesPerSecond
+            info.remaining = snapshot.remainingMilliseconds
+            info.state = snapshot.state.toAndroidDownloadState()
+          } else {
+            info.finished = result.finished
+            info.downloaded = result.downloaded
+            info.total = result.total
+            info.legacy = result.total - result.finished
+          }
         }
       }
-    }
 
     mWaitList.clear()
     plan.snapshot.waiting.forEach { galleryId ->
@@ -596,7 +612,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   /** @param label Not allow new label */
-  suspend fun changeLabel(list: Collection<DownloadInfo>, label: String?) {
+  suspend fun changeLabel(
+    list: Collection<DownloadInfo>,
+    label: String?,
+  ) {
     if (null != label && !containLabel(label)) {
       logcat(TAG, LogPriority.ERROR) { "Not exits label: $label" }
       return
@@ -614,7 +633,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     labelList.add(EhDB.addDownloadLabel(DownloadLabel(label, labelList.size)))
   }
 
-  suspend fun renameLabel(from: String, to: String) {
+  suspend fun renameLabel(
+    from: String,
+    to: String,
+  ) {
     val index = labelList.indexOfFirst { it.label == from }
     if (index != -1) {
       val exist = labelList.removeAt(index)
@@ -663,8 +685,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
               null
             }
           }
-        }
-        .parMapNotNull(concurrency = 5) { (info, updateGallery, updateArtist) ->
+        }.parMapNotNull(concurrency = 5) { (info, updateGallery, updateArtist) ->
           info.downloadDir?.run {
             val comicInfo = find(COMIC_INFO_FILE)?.let { readComicInfo(it) }
             if (comicInfo != null) {
@@ -706,16 +727,17 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
           }
         }
 
-    val galleryInfoList = buildList {
-      list.forEach { (info, artists) ->
-        info?.let {
-          add(it)
-        }
-        artists?.let { (gid, updateList) ->
-          EhDB.putDownloadArtist(gid, updateList)
+    val galleryInfoList =
+      buildList {
+        list.forEach { (info, artists) ->
+          info?.let {
+            add(it)
+          }
+          artists?.let { (gid, updateList) ->
+            EhDB.putDownloadArtist(gid, updateList)
+          }
         }
       }
-    }
     if (galleryInfoList.isNotEmpty()) EhDB.updateGalleryInfo(galleryInfoList)
   }
 
@@ -754,7 +776,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     }
   }
 
-  override fun onPageSuccess(index: Int, finished: Int, downloaded: Int, total: Int) {
+  override fun onPageSuccess(
+    index: Int,
+    finished: Int,
+    downloaded: Int,
+    total: Int,
+  ) {
     val expected = mCurrentTask
     launch {
       withExpectedDownloadProgressTask(expected) { info ->
@@ -789,7 +816,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     }
   }
 
-  override fun onFinish(finished: Int, downloaded: Int, total: Int, failed: Boolean) {
+  override fun onFinish(
+    finished: Int,
+    downloaded: Int,
+    total: Int,
+    failed: Boolean,
+  ) {
     val expected = mCurrentTask
     launch {
       if (expected == null) {
@@ -842,9 +874,10 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
 
       fun start() {
         if (currentJob == null) {
-          currentJob = launch {
-            tracker.speedFlow().collect(::updateSpeed)
-          }
+          currentJob =
+            launch {
+              tracker.speedFlow().collect(::updateSpeed)
+            }
         }
       }
 
@@ -858,7 +891,12 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
         currentJob = null
       }
 
-      suspend fun onDownload(index: Int, contentLength: Long, receivedSize: Long, bytesRead: Int) {
+      suspend fun onDownload(
+        index: Int,
+        contentLength: Long,
+        receivedSize: Long,
+        bytesRead: Int,
+      ) {
         mutex.withLock {
           contentLengthMap.put(index, contentLength)
           receivedSizeMap.put(index, receivedSize)
@@ -893,14 +931,15 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
         }
       }
 
-      private suspend fun snapshotTransfers() = mutex.withLock {
-        (0 until contentLengthMap.size).map { index ->
-          com.hippo.ehviewer.bridge.download.ActiveDownloadTransfer(
-            contentLengthMap.valueAt(index),
-            receivedSizeMap.valueAt(index),
-          )
+      private suspend fun snapshotTransfers() =
+        mutex.withLock {
+          (0 until contentLengthMap.size).map { index ->
+            com.hippo.ehviewer.bridge.download.ActiveDownloadTransfer(
+              contentLengthMap.valueAt(index),
+              receivedSizeMap.valueAt(index),
+            )
+          }
         }
-      }
     }
 
   private const val TAG = "DownloadManager"
@@ -910,15 +949,15 @@ var downloadLocation: Path
   get() =
     with(Settings) {
       if (downloadScheme != null) {
-        Uri.Builder()
+        Uri
+          .Builder()
           .apply {
             scheme(downloadScheme)
             encodedAuthority(downloadAuthority)
             encodedPath(downloadPath)
             encodedQuery(downloadQuery)
             encodedFragment(downloadFragment)
-          }
-          .build()
+          }.build()
           .toOkioPath()
       } else {
         AppConfig.defaultDownloadDir?.toOkioPath() ?: "".toPath()

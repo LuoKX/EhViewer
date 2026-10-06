@@ -40,6 +40,24 @@ goldens. The isolated Rust gate is 100% line (237/237) and function (11/11), foc
 coverage is 8/8, and the exact V1 manifest is 41/41. The real-JNI list/download device
 test compiles but has not run in the current non-KVM environment.
 
+## Recovery Archive Batch Slice
+
+`eh_archive::recovery_batch` owns V3 bounded range planning, cumulative readability,
+completion and stable recovery issues. The existing codec/handle adapter verifies
+cursor continuity and integrity; Android owns SAF descriptors, cancellation,
+monotonic deadlines, sidecars and persistence. Production recovery directly invokes
+one V3 CBOR operation per batch instead of per-entry V2 name/size/verify calls.
+V2 exports are unchanged; V3 has its own exact manifest. No legacy fallback exists.
+
+The isolated production owner passes 100% line (57/57) and function (3/3) coverage.
+Shared CBOR goldens, nine new JVM bridge tests, full default/marshmallow test suites,
+and ARM64/x86_64 debug builds pass. New real-JNI descriptor/CRC and encryption/limit
+tests compile for both flavors but have not run on a device. The 25 ms native slice
+is cooperative, not a hard bound on one decoder call. This does not activate the
+separate all-header recovery policy or complete the remaining directory/metadata
+migration. See [implementation evidence](../audits/rust-migration-implementation-2026-10-06.md)
+for compatibility budgets, pending device acceptance and retained platform effects.
+
 ## P1 Audit Follow-up
 
 The four portable gaps from the follow-up audit now have direct Rust owners:

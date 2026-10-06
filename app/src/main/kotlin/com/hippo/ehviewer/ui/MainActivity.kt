@@ -228,10 +228,11 @@ class MainActivity : AppCompatActivity() {
       val navController = rememberNavController()
       val navigator = navController.rememberDestinationsNavigator()
 
-      fun closeDrawer(callback: () -> Unit = {}) = scope.launch {
-        navDrawerState.close()
-        callback()
-      }
+      fun closeDrawer(callback: () -> Unit = {}) =
+        scope.launch {
+          navDrawerState.close()
+          callback()
+        }
 
       suspend fun DialogState.checkDownloadLocation() {
         val valid = withIOContext { downloadLocation.isDirectory }
@@ -261,10 +262,9 @@ class MainActivity : AppCompatActivity() {
               withIOContext {
                 AppUpdater.checkForUpdate()?.let { showNewVersion(it) }
               }
+            }.onFailure {
+              snackbarState.showSnackbar(getString(R.string.update_failed, it.displayString()))
             }
-              .onFailure {
-                snackbarState.showSnackbar(getString(R.string.update_failed, it.displayString()))
-              }
           } else {
             snackbarState.showSnackbar(noNetwork)
           }
@@ -321,10 +321,9 @@ class MainActivity : AppCompatActivity() {
                     val hash = withIOContext { uri.toOkioPath().sha1() }
                     navigate(
                       ListUrlBuilder(
-                          mode = ListUrlBuilder.MODE_IMAGE_SEARCH,
-                          hash = hash,
-                        )
-                        .asDst()
+                        mode = ListUrlBuilder.MODE_IMAGE_SEARCH,
+                        hash = hash,
+                      ).asDst(),
                     )
                   }
                 }
@@ -335,7 +334,7 @@ class MainActivity : AppCompatActivity() {
               val args = intent.getBundleExtra(DownloadService.ACTION_START_DOWNLOADSCENE_ARGS)!!
               if (
                 args.getString(DownloadService.KEY_ACTION) ==
-                  DownloadService.ACTION_CLEAR_DOWNLOAD_SERVICE
+                DownloadService.ACTION_CLEAR_DOWNLOAD_SERVICE
               ) {
                 DownloadService.clear()
               }
@@ -372,31 +371,32 @@ class MainActivity : AppCompatActivity() {
       val snackMessage = stringResource(R.string.clipboard_gallery_url_snack_message)
       val snackAction = stringResource(R.string.clipboard_gallery_url_snack_action)
       LifecycleResumeEffect(scope) {
-        val job = scope.launch {
-          delay(300)
-          val text = clipboardManager.getUrlFromClipboard(applicationContext)
-          val hashCode = text?.hashCode() ?: 0
-          if (text != null && hashCode != 0 && Settings.clipboardTextHashCode != hashCode) {
-            val result1 = GalleryDetailUrlParser.parse(text, false)
-            var launch: (() -> Unit)? = null
-            if (result1 != null) {
-              launch = { navigator.navigate(result1.gid asDstWith result1.token) }
-            }
-            val result2 = GalleryPageUrlParser.parse(text, false)
-            if (result2 != null) {
-              launch = {
-                navigator.navigate(
-                  ProgressScreenDestination(result2.gid, result2.pToken, result2.page)
-                )
+        val job =
+          scope.launch {
+            delay(300)
+            val text = clipboardManager.getUrlFromClipboard(applicationContext)
+            val hashCode = text?.hashCode() ?: 0
+            if (text != null && hashCode != 0 && Settings.clipboardTextHashCode != hashCode) {
+              val result1 = GalleryDetailUrlParser.parse(text, false)
+              var launch: (() -> Unit)? = null
+              if (result1 != null) {
+                launch = { navigator.navigate(result1.gid asDstWith result1.token) }
+              }
+              val result2 = GalleryPageUrlParser.parse(text, false)
+              if (result2 != null) {
+                launch = {
+                  navigator.navigate(
+                    ProgressScreenDestination(result2.gid, result2.pToken, result2.page),
+                  )
+                }
+              }
+              launch?.let {
+                val ret = snackbarState.showSnackbar(snackMessage, snackAction, true)
+                if (ret == SnackbarResult.ActionPerformed) it()
               }
             }
-            launch?.let {
-              val ret = snackbarState.showSnackbar(snackMessage, snackAction, true)
-              if (ret == SnackbarResult.ActionPerformed) it()
-            }
+            Settings.clipboardTextHashCode = hashCode
           }
-          Settings.clipboardTextHashCode = hashCode
-        }
         onPauseOrDispose { job.cancel() }
       }
       val currentDestination by navController.currentDestinationAsState()
@@ -406,7 +406,8 @@ class MainActivity : AppCompatActivity() {
       val density = LocalDensity.current
       val windowWidth =
         with(density) {
-          LocalWindowInfo.current.containerSize.width.toDp()
+          LocalWindowInfo.current.containerSize.width
+            .toDp()
         }
       val adaptiveInfo = currentWindowAdaptiveInfoV2()
       val needSignIn by Settings.needSignIn.collectAsState()
@@ -431,7 +432,7 @@ class MainActivity : AppCompatActivity() {
                   }
                 },
             )
-          }
+          },
         ) {
           var minOffset by remember {
             mutableFloatStateOf(-with(density) { DrawerDefaults.MaximumDrawerWidth.toPx() })
@@ -449,8 +450,9 @@ class MainActivity : AppCompatActivity() {
                 val scrollState = rememberScrollState()
                 Column(
                   modifier =
-                    Modifier.verticalScroll(scrollState)
-                      .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                    Modifier
+                      .verticalScroll(scrollState)
+                      .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
                 ) {
                   Image(
                     painter = painterResource(id = com.hippo.ehviewer.R.drawable.sadpanda_low_poly),
@@ -485,8 +487,7 @@ class MainActivity : AppCompatActivity() {
                 val step = calculateFraction(minOffset, 0f, navDrawerState.currentOffset)
                 with(density) { lerp(0, 10, step).dp.toPx() }
               }
-            }
-              .collectAsState(0f)
+            }.collectAsState(0f)
             MutableSideSheet(
               drawerState = sideSheetState,
               modifier =
