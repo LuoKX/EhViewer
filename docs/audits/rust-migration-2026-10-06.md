@@ -2,7 +2,7 @@
 
 基线：`f20ae414d`（`fix(core): address Pi-Lens source audit findings`）。开始时工作区干净。
 
-> 同日实施更新：两处风险已修复；首个归档 V3 批处理切片已接生产并通过宿主验证，真机验收待办。详见 [实施记录](rust-migration-implementation-2026-10-06.md)。下文保留实施前复审快照，源码行号及“本轮未改源码”等表述属于复审阶段。
+> 同日实施更新：两处风险已修复，七类代码迁移均已逐类提交并通过主线宿主/构建验证；设备验收仍待办。详见 [初始实施快照](rust-migration-implementation-2026-10-06.md) 与 [七类整合记录](rust-migration-completion-2026-10-06.md)。下文保留实施前复审快照，源码行号及“本轮未改源码”等表述属于复审阶段。
 
 ## 范围与证据限制
 
