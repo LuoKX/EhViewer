@@ -4,7 +4,7 @@ import re
 import unittest
 
 CI = Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
-OWNERS = ("reader_policy", "transfer_speed", "recovery_search", "spider_info", "local_pages", "cache_keys")
+OWNERS = ("reader_policy", "transfer_speed", "recovery_search", "spider_info", "local_pages", "cache_keys", "file_rules", "text_spans", "production_zip", "production_tar", "archive_filters", "webp")
 
 
 class CoverageMaskTest(unittest.TestCase):
@@ -15,6 +15,9 @@ class CoverageMaskTest(unittest.TestCase):
         for mask in followup:
             # LLVM uses POSIX ERE: noncapturing groups invalidate the whole filter.
             self.assertNotIn("(?:", mask)
+            self.assertIsNotNone(re.search(mask, "/repo/vendor/zip/src/read.rs"))
+            self.assertIsNotNone(re.search(mask, "/repo/crates/codec_limits/src/lib.rs"))
+            self.assertIsNotNone(re.search(mask, "/repo/crates/codec_limits/src/tests.rs"))
             for owner in OWNERS:
                 with self.subTest(owner=owner,mask=mask[:80]):
                     self.assertIsNotNone(re.search(mask, f"/repo/crates/net/src/{owner}.rs"))

@@ -16,8 +16,6 @@ jvm = [
     "dep:rars",
     "dep:sevenz-rust2",
     "dep:sha1",
-    "dep:webp-android",
-    "dep:webp-host",
     "dep:zeroize",
 ]
 android = ["jvm", "dep:image", "dep:ndk", "ndk/bitmap"]
@@ -42,10 +40,6 @@ zeroize = { version = "1.8", optional = true }
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk = { version = "0.9", optional = true }
-webp-android = { package = "libwebp-sys2", git = "https://github.com/FooIbar/libwebp-sys2-rs.git", features = ["1_5", "demux", "extern-types"], optional = true }
-
-[target.'cfg(not(target_os = "android"))'.dependencies]
-webp-host = { package = "libwebp-sys2", version = "0.1.10", features = ["1_5", "demux", "extern-types", "static"], optional = true }
 
 [lints.rust]
 missing_docs = "deny"

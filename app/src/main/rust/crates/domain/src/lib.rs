@@ -10,7 +10,8 @@
 //! [`download`] owns the pure queue state machine, [`download_catalog`] owns
 //! catalog sorting/filtering, [`gallery_filter`] owns Gallery list/comment filter
 //! decisions, [`gallery_rules`] owns category and similar-title compatibility,
-//! [`library`] owns Android-persistence-facing plans, [`search`] owns query
+//! [`library`] owns Android-persistence-facing plans, [`file_rules`] owns filename
+//! compatibility, [`text_spans`] owns batched text interval normalization, [`search`] owns query
 //! normalization, [`settings`] owns portable repair rules, [`reader`] plans page
 //! scheduling and deterministic image-fetch transitions, and [`session`] plans
 //! sanitized lifecycle transitions and classifies response failures without
@@ -41,6 +42,7 @@ pub mod contracts;
 pub mod daily;
 pub mod download;
 pub mod download_catalog;
+pub mod file_rules;
 pub mod gallery_enrichment;
 pub mod gallery_filter;
 pub mod gallery_rules;
@@ -55,4 +57,5 @@ pub mod search;
 pub mod session;
 pub mod settings;
 pub mod spider_info;
+pub mod text_spans;
 pub mod transfer_speed;

@@ -57,8 +57,9 @@ utility crates are not allowed.
 `eh_ffi` owns the versioned response-parser and request/plan exports backed by
 `eh_domain`/`eh_net`, archive writer/validator exports backed by `eh_archive`, the
 unified V2 archive-reader exports, one always-available Rust Core health export,
-and the stable image/WebP exports. Its `webp` module owns libwebp
-input lifetime, decoder handles, and synchronized decode state;
+and the stable image/WebP exports. Its `webp` module owns decoder handles and
+synchronization; eh_image::webp owns encoded input, Rust single-frame decoding,
+premultiplied animation composition and resource policy;
 `jvm::{bitmap,hardware_buffer,webp}` owns Android/JVM validation and storage access.
 The crate also owns the direct-buffer/UTF-8/CBOR/panic-containment primitives used by
 the Rust JNI adapters. The root packaging facade contains no parser or compatibility
@@ -70,14 +71,14 @@ and `android-26` features.
 CMake builds a behavior-free link anchor, forces unresolved `Java_*` symbols out of
 the Rust archive, and exports them from the final shared library. CI builds the
 archive and final x86_64 library, extracts symbols with `nm`, and compares the exact
-60-symbol V1, 13-symbol Archive V2, nine-symbol Android image, three-symbol host WebP,
+78-symbol V1, 13-symbol Archive V2, nine-symbol Android image, three-symbol host WebP,
 single Hash compatibility, and single `JNI_OnLoad` sets with checked-in manifests.
 Negative manifests reject the fourteen retired unversioned parser exports, three
 retired GIF exports, nine old C Archive JNI exports, and `strnatcmp`; moving or
 reintroducing an implementation therefore cannot silently drift ownership or ABI.
-The Android `libwebp-sys2` fork is bindings-only, so CMake still builds and supplies
-`webp`/`webpdemux` to the final shared-library link. That build dependency does not
-own decoder state or JNI code; both remain private to `eh_ffi`.
+libwebp-sys2 and C webp/webpdemux build/link dependencies are removed. CMake now
+links only the behavior-free anchor, Rust core and Android system libraries.
+Pinned Rust codec patches and licenses live under app/src/main/rust/vendor.
 
 Host unit coverage measures the pure codec rather than pretending JVM object access
 is business logic. The codec validates positive bounded lengths, UTF-8 and CBOR,
@@ -133,6 +134,13 @@ not current architecture. See [ADR 0007](adr/0007-single-rust-core-selection.md)
 Any later architecture paragraph that names `useRustCore*`, `default-off`, global
 off/on, legacy-first parity, or pre-effect fallback records a pre-mainline slice only.
 The production implementation follows the direct Rust contract above.
+
+## Remaining Portable Rules
+
+Filename compatibility and batched text-range normalization now invoke direct Rust
+owners. UTF-16 strings, allocation limits, independent coverage, shared wire goldens
+and native-library retirement stages are tracked in [P3 migration](p3-migration.md).
+This does not move platform effects, HTTP, Room, Compose or third-party C codecs.
 
 ## Session Failure Policy Boundary
 
@@ -530,7 +538,8 @@ HardwareBuffer handle.
 
 ## Animated WebP FFI Boundary
 
-`eh_ffi::webp` owns libwebp and the decoder registry;
+`eh_image::webp` owns the pure-Rust decoder/compositor and bounded input/raster
+lifecycle; `eh_ffi::webp` owns the synchronized decoder registry;
 `eh_ffi::jvm::{webp,bitmap}` owns the unchanged JVM and Android JNI adapters. The
 root compatibility crate only links those exports into its static archive. The
 boundary follows this ownership contract:
@@ -548,7 +557,9 @@ boundary follows this ownership contract:
 
 Host tests decode the checked-in ten-frame fixture, cover input ownership, callback
 failure, independent handles, metadata limits, reset, invalid input/handles, and
-registry poisoning. API-35 instrumentation constructs and draws the real animation,
+registry poisoning. P3 additionally compares full premultiplied RGBA canvases with
+pinned libwebp 1.6.0 lossless/lossy/alpha/blend/dispose oracles and frame hashes.
+Bounds and codec allocation hooks are described in p3-migration.md. API-35 instrumentation constructs and draws the real animation,
 checks remaining-buffer preservation, start/stop, malformed input, and idempotent
 disposal. Exact host and Android symbol manifests prevent this source move from
 changing any JNI name.
@@ -698,8 +709,11 @@ captured backend; it does not introduce another selection point.
 ## Unified Multi-Format Archive Boundary
 
 `eh_ffi::jvm::archive::archive_native` owns the unified V2 reader lifecycle and
-uses the project's pinned libarchive build only as a codec dependency. The Rust
-boundary detects ZIP/CBZ, RAR/RAR5, 7z and tar, supports the encrypted-ZIP password
+uses format-specific codecs: ordinary ZIP/CBZ uses eh_archive::production_zip,
+RAR/RAR5 uses rars, and 7z uses sevenz-rust2. TAR uses production_tar; outer
+gzip/xz uses archive_filters with Rust flate2/lzma-rust2 codecs. libarchive,
+liblzma, nettle and their CMake fetch/build/link steps are removed. The Rust
+boundary detects formats by content and supports the encrypted-ZIP password
 flow, retains the eleven lowercase playable extensions and natural ordering, and
 enforces the 100,000-entry and 512-MiB-image limits. Unsupported codec encryption
 or compression is an explicit Rust failure, never a reason to select legacy.
@@ -714,7 +728,9 @@ the boundary.
 `ArchivePageLoader` sends every archive to Rust V2 regardless of filename extension
 and surfaces open, password, index, or extraction failures. The old C reader, Kotlin
 JNI declarations, natsort implementation, and private native header are absent from
-production; pinned libarchive remains only as the Rust reader's codec dependency.
+production, including the former libarchive codec adapter. Extended/sparse TAR,
+compressed ZIP, shared decoder heap bounds and bounded replay are documented in
+p3-migration.md; no C fallback or runtime backend selection remains.
 Kotlin/Android owns SAF, descriptor acquisition, password UI, and page lifecycle.
 API-35 and physical/SAF execution remain separate device evidence.
 

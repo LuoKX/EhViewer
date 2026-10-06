@@ -1,0 +1,31 @@
+{
+  "width": 6,
+  "height": 4,
+  "loops": 3,
+  "frames": [
+    {
+      "timestamp": 13,
+      "sha256": "9445bac99974b52c63f3db7fc4b304e0e9b32ef6f0fb5fa213ba243f8cce8a1a"
+    },
+    {
+      "timestamp": 50,
+      "sha256": "d9e83e25faa84d1d8c06b6036e8a392b597e21e33dfda30b958178a243e45063"
+    },
+    {
+      "timestamp": 50,
+      "sha256": "2f4ae372e5197c4b0ecc0e7de88b9e51acbc98e4cbb12ab801411b0c1589c604"
+    },
+    {
+      "timestamp": 79,
+      "sha256": "932d5dc150083f8ddfb916ba0185d99961cb4b116292015c444eb7ef63f13a60"
+    },
+    {
+      "timestamp": 86,
+      "sha256": "d9c618db9dd7b8ecba009850b100d35edf8ab5c0f5f44e4f6c49e266e7b72200"
+    },
+    {
+      "timestamp": 105,
+      "sha256": "623c22281a5ebd7a6867712b4be767b8d02a184a50af604c533df6be0cdd3f7d"
+    }
+  ]
+}

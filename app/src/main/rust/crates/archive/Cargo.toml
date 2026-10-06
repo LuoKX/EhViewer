@@ -8,13 +8,17 @@ description = "Safe CBZ writing, validation, and bounded ZIP reading for the EhV
 publish = false
 
 [dependencies]
+eh_codec_limits = { path = "../codec_limits" }
+tar = { version = "=0.4.46", default-features = false }
 flate2 = { version = "1.1.9", default-features = false, features = ["rust_backend"] }
 rawzip = "=0.5.1"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0"
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "=8.6.0", default-features = false, features = ["aes-crypto", "bzip2", "deflate", "deflate64", "legacy-zip", "lzma", "ppmd", "xz"] }
+lzma-rust2 = { version = "=0.18.0", default-features = false, features = ["std", "xz"] }
 
 [dev-dependencies]
+crc32fast = "1.5"
 serde_json = "1.0"
 
 [lints]

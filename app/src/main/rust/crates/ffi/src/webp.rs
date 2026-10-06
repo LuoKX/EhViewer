@@ -2,155 +2,34 @@
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::ptr::NonNull;
-#[cfg(any(target_os = "android", test))]
-use std::ptr::null_mut;
-#[cfg(any(target_os = "android", test))]
-use std::slice::from_raw_parts;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use anyhow::{Context, Result, anyhow, ensure};
-#[cfg(target_os = "android")]
-use webp_android as webp_sys;
-#[cfg(not(target_os = "android"))]
-use webp_host as webp_sys;
-use webp_sys::{
-    MODE_rgbA, WebPAnimDecoder, WebPAnimDecoderDelete, WebPAnimDecoderGetInfo, WebPAnimDecoderNew,
-    WebPAnimDecoderOptions, WebPAnimInfo, WebPData,
-};
-#[cfg(any(target_os = "android", test))]
-use webp_sys::{WebPAnimDecoderGetNext, WebPAnimDecoderHasMoreFrames, WebPAnimDecoderReset};
-
+use eh_image::webp::AnimationDecoder;
+pub(super) use eh_image::webp::ImageInfo;
 static NEXT_HANDLE: AtomicI64 = AtomicI64::new(1);
 static DECODERS: OnceLock<Mutex<HashMap<i64, Decoder>>> = OnceLock::new();
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct ImageInfo {
-    pub(super) width: u32,
-    pub(super) height: u32,
-    pub(super) loop_count: u32,
-    pub(super) frame_count: u32,
-}
-
 struct Decoder {
-    decoder: NonNull<WebPAnimDecoder>,
-    // libwebp borrows WebPData bytes for the complete decoder lifetime.
-    _data: Vec<u8>,
+    decoder: AnimationDecoder,
 }
-
-// SAFETY: libwebp animation decoders have no thread affinity. Every operation
-// is serialized by DECODERS, and the backing bytes remain immutable in Decoder.
-#[allow(
-    unsafe_code,
-    reason = "the synchronized registry transfers libwebp decoder ownership across JNI threads"
-)]
-unsafe impl Send for Decoder {}
-
 impl Decoder {
     fn new(data: &[u8]) -> Result<Self> {
-        ensure!(!data.is_empty(), "animated WebP input is empty");
-        let data = data.to_vec();
-        let webp_data = WebPData {
-            bytes: data.as_ptr(),
-            size: data.len(),
-        };
-        let options = WebPAnimDecoderOptions {
-            color_mode: MODE_rgbA,
-            use_threads: 1,
-            padding: [0; 7],
-        };
-        // SAFETY: webp_data points to immutable Vec storage retained by Self;
-        // options is fully initialized for libwebp's animation decoder API.
-        #[allow(
-            unsafe_code,
-            reason = "libwebp receives initialized options and bytes retained by the decoder owner"
-        )]
-        let decoder =
-            NonNull::new(unsafe { WebPAnimDecoderNew(&raw const webp_data, &raw const options) })
-                .context("libwebp rejected the animated image")?;
-        let decoder = Self {
-            decoder,
-            _data: data,
-        };
-        decoder.info()?;
-        Ok(decoder)
+        Ok(Self {
+            decoder: AnimationDecoder::new(data)?,
+        })
     }
-
     fn info(&self) -> Result<ImageInfo> {
-        let mut info = WebPAnimInfo {
-            canvas_width: 0,
-            canvas_height: 0,
-            loop_count: 0,
-            bgcolor: 0,
-            frame_count: 0,
-            pad: [0; 4],
-        };
-        // SAFETY: self.decoder remains valid until Drop and info is writable.
-        #[allow(
-            unsafe_code,
-            reason = "the owned decoder is live and the metadata output is initialized writable storage"
-        )]
-        let succeeded = unsafe { WebPAnimDecoderGetInfo(self.decoder.as_ptr(), &raw mut info) };
-        ensure!(succeeded != 0, "libwebp could not read animation metadata");
-        validate_info(info)
+        validate_info(self.decoder.info())
     }
-
     #[cfg(any(target_os = "android", test))]
     fn next_frame<R>(
         &mut self,
         reset: bool,
         consume: impl FnOnce(&[u8], ImageInfo, i32) -> Result<R>,
     ) -> Result<R> {
-        let info = self.info()?;
-        // SAFETY: the decoder is valid and exclusively borrowed through the
-        // registry mutex for this complete operation.
-        #[allow(
-            unsafe_code,
-            reason = "the registry mutex gives this call exclusive access to the live decoder"
-        )]
-        unsafe {
-            if reset || WebPAnimDecoderHasMoreFrames(self.decoder.as_ptr()) == 0 {
-                WebPAnimDecoderReset(self.decoder.as_ptr());
-            }
-        }
-        let mut pixels = null_mut();
-        let mut timestamp = 0;
-        // SAFETY: libwebp initializes pixels/timestamp on success; the returned
-        // canvas remains valid until the next decoder operation, which cannot
-        // occur while the registry mutex and this mutable borrow are held.
-        #[allow(
-            unsafe_code,
-            reason = "the live decoder exclusively initializes the frame pointer and timestamp outputs"
-        )]
-        let succeeded = unsafe {
-            WebPAnimDecoderGetNext(self.decoder.as_ptr(), &raw mut pixels, &raw mut timestamp)
-        };
-        ensure!(succeeded != 0, "libwebp could not decode the next frame");
-        let pixels = NonNull::new(pixels).context("libwebp returned an empty frame")?;
-        ensure!(timestamp > 0, "libwebp returned an invalid frame timestamp");
-        let frame_len = frame_length(info)?;
-        // SAFETY: successful WebPAnimDecoderGetNext returns a complete RGBA
-        // canvas with frame_len bytes, valid until the next decoder operation.
-        #[allow(
-            unsafe_code,
-            reason = "libwebp returned a complete RGBA canvas whose checked length remains live under the mutex"
-        )]
-        let frame = unsafe { from_raw_parts(pixels.as_ptr(), frame_len) };
-        consume(frame, info, timestamp)
-    }
-}
-
-impl Drop for Decoder {
-    fn drop(&mut self) {
-        // SAFETY: Decoder owns this non-null pointer and Drop runs exactly once.
-        #[allow(
-            unsafe_code,
-            reason = "Decoder uniquely owns this non-null libwebp pointer until its single drop"
-        )]
-        unsafe {
-            WebPAnimDecoderDelete(self.decoder.as_ptr());
-        }
+        self.decoder.next_frame(reset, consume)
     }
 }
 
@@ -206,37 +85,27 @@ pub(super) fn destroy_decoder(handle: i64) -> Result<bool> {
     Ok(lock_decoders()?.remove(&handle).is_some())
 }
 
-fn validate_info(info: WebPAnimInfo) -> Result<ImageInfo> {
+fn validate_info(info: ImageInfo) -> Result<ImageInfo> {
     ensure!(
-        info.canvas_width > 0 && info.canvas_height > 0,
+        info.width > 0 && info.height > 0,
         "animated WebP dimensions must be non-zero"
     );
     ensure!(info.frame_count > 0, "animated WebP has no frames");
     ensure!(
-        info.canvas_width <= 0x00ff_ffff && info.canvas_height <= 0x00ff_ffff,
+        info.width <= 0x00ff_ffff && info.height <= 0x00ff_ffff,
         "animated WebP dimensions exceed the packed JNI range"
     );
     ensure!(
         info.loop_count <= 0x0000_ffff,
         "animated WebP loop count exceeds the packed JNI range"
     );
-    Ok(ImageInfo {
-        width: info.canvas_width,
-        height: info.canvas_height,
-        loop_count: info.loop_count,
-        frame_count: info.frame_count,
-    })
+    eh_image::webp::frame_length(info.width, info.height)?;
+    Ok(info)
 }
 
-#[cfg(any(target_os = "android", test))]
+#[cfg(test)]
 fn frame_length(info: ImageInfo) -> Result<usize> {
-    usize::try_from(info.width)
-        .context("animated WebP width exceeds this platform")?
-        .checked_mul(
-            usize::try_from(info.height).context("animated WebP height exceeds this platform")?,
-        )
-        .and_then(|pixels| pixels.checked_mul(4))
-        .context("animated WebP frame size overflow")
+    eh_image::webp::frame_length(info.width, info.height)
 }
 
 fn lock_decoders() -> Result<MutexGuard<'static, HashMap<i64, Decoder>>> {
@@ -257,7 +126,6 @@ mod tests {
     use std::sync::Mutex;
     use std::sync::atomic::AtomicI64;
 
-    use super::webp_sys::WebPAnimInfo;
     use super::{
         ImageInfo, create_decoder, decode_next_frame, destroy_decoder, frame_length,
         get_image_info, lock_decoder_registry, next_handle, pack_image_info, validate_info,
@@ -385,15 +253,8 @@ mod tests {
         canvas_height: u32,
         loop_count: u32,
         frame_count: u32,
-    ) -> WebPAnimInfo {
-        WebPAnimInfo {
-            canvas_width,
-            canvas_height,
-            loop_count,
-            bgcolor: 0,
-            frame_count,
-            pad: [0; 4],
-        }
+    ) -> ImageInfo {
+        image_info(canvas_width, canvas_height, loop_count, frame_count)
     }
 
     fn decode_hex(input: &str) -> Vec<u8> {

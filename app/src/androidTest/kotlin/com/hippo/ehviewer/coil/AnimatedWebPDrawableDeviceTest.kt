@@ -6,6 +6,7 @@ import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.nio.ByteBuffer
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -69,7 +70,43 @@ class AnimatedWebPDrawableDeviceTest {
       assertThrows(RuntimeException::class.java) {
         AnimatedWebPDrawable(malformed)
       }
-    assertTrue(error.message.orEmpty().contains("libwebp"))
+    assertTrue(error.message.orEmpty().contains("WebP"))
+  }
+
+  @Test
+  fun realJniMatchesPremultipliedGoldenFramesAndReset() {
+    val assets = InstrumentationRegistry.getInstrumentation().context.assets
+    val encoded = assets.open("webp-p3/lossless-blend.webp").use { it.readBytes() }
+    val expected = assets.open("webp-p3/lossless-blend.rgba").use { it.readBytes() }
+    val bridge = Class.forName("com.hippo.ehviewer.coil.AnimatedWebPDrawableKt")
+    fun method(name: String, vararg types: Class<*>) =
+      bridge.getDeclaredMethod(name, *types).apply { isAccessible = true }
+    val create = method("nativeCreateDecoder", ByteBuffer::class.java)
+    val info = method("nativeGetImageInfo", java.lang.Long.TYPE)
+    val decode =
+      method("nativeDecodeNextFrame", java.lang.Long.TYPE, java.lang.Boolean.TYPE, Bitmap::class.java)
+    val destroy = method("nativeDestroyDecoder", java.lang.Long.TYPE)
+    val source = ByteBuffer.allocateDirect(encoded.size).apply { put(encoded); flip() }
+    val handle = (create.invoke(null, source) as Number).toLong()
+    val bitmap = Bitmap.createBitmap(6, 4, Bitmap.Config.ARGB_8888)
+    try {
+      val packed = (info.invoke(null, handle) as Number).toLong()
+      assertEquals(6L, packed ushr 40)
+      assertEquals(4L, packed ushr 16 and 0xFFFFFF)
+      assertEquals(3L, packed and 0xFFFF)
+      val timestamps = intArrayOf(13, 50, 50, 79, 86, 105)
+      for (index in timestamps.indices) {
+        assertEquals(timestamps[index], (decode.invoke(null, handle, false, bitmap) as Number).toInt())
+        val actual = ByteBuffer.allocate(bitmap.byteCount)
+        bitmap.copyPixelsToBuffer(actual)
+        assertArrayEquals(expected.copyOfRange(index * 96, (index + 1) * 96), actual.array())
+      }
+      assertEquals(13, (decode.invoke(null, handle, true, bitmap) as Number).toInt())
+    } finally {
+      destroy.invoke(null, handle)
+      destroy.invoke(null, handle)
+      bitmap.recycle()
+    }
   }
 
   private fun loadAnimatedWebP(): ByteArray {

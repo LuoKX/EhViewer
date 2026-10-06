@@ -4,8 +4,9 @@ version = "0.0.0"
 edition = "2024"
 
 [workspace]
-members = ["crates/archive", "crates/domain", "crates/ffi", "crates/image", "crates/net"]
+members = ["crates/codec_limits", "crates/archive", "crates/domain", "crates/ffi", "crates/image", "crates/net"]
 resolver = "3"
+exclude = ["vendor/zip", "vendor/lzma-rust2", "vendor/image-webp"]
 
 [workspace.package]
 edition = "2024"
@@ -35,6 +36,11 @@ eh_ffi = { path = "crates/ffi" }
 jni = { version = "0.21", optional = true }
 log = "0.4"
 android_logger = { default-features = false, version = "0.15" }
+
+[patch.crates-io]
+zip = { path = "vendor/zip" }
+lzma-rust2 = { path = "vendor/lzma-rust2" }
+image-webp = { path = "vendor/image-webp" }
 
 [profile.release]
 panic = "unwind"

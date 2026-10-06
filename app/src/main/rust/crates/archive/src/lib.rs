@@ -18,6 +18,12 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+/// Bounded seekable views over nested gzip/XZ streams.
+pub mod archive_filters;
+/// TAR extended/sparse metadata and streamed member extraction.
+pub mod production_tar;
+/// Full production ZIP codecs, encryption, metadata and bounded extraction.
+pub mod production_zip;
 /// Safe ZIP/CBZ reader metadata, extraction, sorting, and opaque-handle lifecycle.
 pub mod reader;
 /// Recovery-specific all-entry inspection policy and resource budgets.

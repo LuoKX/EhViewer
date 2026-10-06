@@ -84,7 +84,8 @@ class AnimatedWebPDrawable(source: ByteBuffer) :
     }
   }
 
-  // Two Android frame bitmaps, two libwebp RGBA canvases, and the Rust-owned input copy.
+  // Two Android frame bitmaps, Rust canvas + bounded reusable raster, and owned input.
+  // Subframe raster may be smaller; count full canvas size conservatively.
   override val size: Long
     get() = 16L * width * height + inputSize
 

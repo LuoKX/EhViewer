@@ -47,8 +47,10 @@ tag dictionary/index/scoring, EH recovery planning/reconciliation, Gallery reque
 and Detail/reader/MPV URL planning, and language/metadata inference. See
 [P1 migration](p1-migration.md) for boundaries, cache compatibility, budgets,
 independent coverage and device-execution status. P2 policies/codecs/file rules
-now have direct Rust owners; see [P2 migration](p2-migration.md). This is not a claim that every
-portable line in the project has moved to Rust.
+now have direct Rust owners; see [P2 migration](p2-migration.md). Remaining filename and
+production text-range rules have direct Rust owners; native-library retirement is tracked
+separately in [P3 migration](p3-migration.md). This is not a claim that every
+portable line or third-party implementation in the project has moved to Rust.
 
 ## Planned Order
 
@@ -102,7 +104,7 @@ have been removed and are covered by a retired-symbol negative manifest.
 The structural FFI migration owns the checked versioned business symbols, unified
 archive V2 reader symbols, archive writer/validator symbols, Rust Core health, the
 animated WebP registry, Android Bitmap/HardwareBuffer adapters, and shared checked
-transport. Current manifests require exactly 60 V1, 13 Archive V2, nine Android
+transport. Current manifests require exactly 78 V1, 13 Archive V2, nine Android
 image, three host WebP, one Hash compatibility, and one `JNI_OnLoad` export. Negative
 manifests reject all fourteen former root parser exports, all three retired GIF
 exports, all nine old C Archive exports, and `strnatcmp`. Older counts below are
@@ -111,8 +113,8 @@ historical evidence only.
 The root parser tree and its live-network test are removed. The app-owned C Archive
 wrapper, Kotlin declarations, natsort code, private header, and GIF C implementation
 are also removed. The root static library now keeps only `JNI_OnLoad` and links
-`eh_ffi`; CMake keeps a behavior-free translation unit plus the pinned libarchive,
-libwebp, and system libraries required by Rust adapters.
+`eh_ffi`; CMake keeps a behavior-free translation unit and system libraries.
+P3 stages 2b/3 retire libarchive/liblzma/nettle and libwebp/webpdemux C chains.
 
 The Android 9–13 GIF delay workaround is now Rust-owned in `eh_image::gif`. The JNI
 adapter returns a bounded JVM-owned snapshot without moving the source descriptor;
@@ -435,10 +437,13 @@ containment, hardware-bitmap wrapping, and closing the caller's Java buffer befo
 readback. CI runs it on an API 35 x86_64 emulator; the first successful remote run
 remains required evidence before this slice can change rollout defaults.
 
-Animated WebP now lives in `eh_ffi::webp`, with JVM create/info/destroy exports in
+Animated WebP decoding/composition now lives in `eh_image::webp`; synchronized
+handles remain in `eh_ffi::webp`, with JVM create/info/destroy exports in
 `eh_ffi::jvm::webp` and Android frame copying in `eh_ffi::jvm::bitmap`. Rust copies
 the remaining Java buffer, stores decoders behind positive opaque handles in a
-synchronized registry, checks every libwebp status, and makes destroy idempotent.
+synchronized registry, checks every Rust codec result, and makes destroy idempotent.
+C libwebp and both libwebp-sys2 dependencies are removed; P3 stage 3 records fixed
+C-reference frame goldens, allocation bounds and independent owner coverage.
 The Android adapter validates RGBA format, dimensions, stride, and pointer
 arithmetic before copying each row. Kotlin construction releases partial
 allocations on failure, heap/direct inputs preserve their remaining-byte range, and
@@ -558,7 +563,10 @@ validator round trip and failure cleanup on its emulator; physical/SAF device
 writing, performance, and rollback rehearsal remain open.
 
 The reader-side slice is now the unified V2 lifecycle in
-`eh_ffi::jvm::archive::archive_native`, backed by the pinned libarchive codec. It
+`eh_ffi::jvm::archive::archive_native`. Ordinary ZIP/CBZ now uses the pure-Rust
+production_zip adapter; RAR/RAR5 uses rars and 7z uses sevenz-rust2. TAR now uses
+production_tar, and outer gzip/xz uses bounded archive_filters, including compressed
+ZIP. The libarchive/liblzma/nettle C dependency chain is removed. The reader
 detects ZIP/CBZ, RAR/RAR5, 7z and tar, handles encrypted ZIP passwords, filters the
 same eleven lowercase playable extensions, applies natural ordering, and enforces
 100,000 entries plus 512 MiB per image. Unsupported codec encryption or compression
@@ -567,8 +575,8 @@ fails in Rust without legacy fallback.
 Positive opaque handles serialize reader state and make close idempotent while
 waiting for active extraction. JNI duplicates source/output descriptors, restores
 the shared source offset, and writes only Java-owned direct buffers or duplicated
-output descriptors. The global snapshot sends every archive to V2 when on and uses
-the retained legacy C reader only when off. Historical `eh_archive::reader` rawzip
+output descriptors. Every archive uses Rust V2 directly; no global snapshot,
+retained legacy C reader or error-driven replay remains. Historical `eh_archive::reader` rawzip
 tests remain characterization evidence, but the dead V1 reader JNI exports have
 been removed. C7 requires fresh multi-format, password, corruption, descriptor,
 concurrency, ABI, and packaging evidence; physical/SAF execution remains deferred.

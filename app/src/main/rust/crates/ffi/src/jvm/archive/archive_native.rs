@@ -1,28 +1,20 @@
 //! Rust-owned multi-format archive lifecycle with format-specific codec adapters.
 
-#![allow(
-    unsafe_code,
-    reason = "libarchive exposes a C ABI; all raw pointers are contained by NativeArchive"
-)]
-
 use std::cmp::Ordering as CmpOrdering;
 use std::collections::HashMap;
-#[cfg(target_os = "android")]
-use std::ffi::CStr;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::os::fd::AsRawFd;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
-#[cfg(target_os = "android")]
-use std::ptr::NonNull;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::thread;
 
 use anyhow::{Context as _, Result, anyhow, bail, ensure};
-#[cfg(target_os = "android")]
-use libc::{c_char, c_int, c_void, mode_t, size_t, ssize_t};
+use eh_archive::archive_filters::DecodedSource;
+use eh_archive::production_tar::{self, TarMember};
+use eh_archive::production_zip::{self, ZipMember, ZipScan};
 use rars::{ArchiveReadOptions, ArchiveReader as RarArchiveReader};
 use sevenz_rust2::{
     Archive as SevenZipArchive, EncoderMethod, Error as SevenZipError,
@@ -35,14 +27,6 @@ use super::duplicate_file_descriptor;
 pub(super) static ARCHIVE_READER_REGISTRY: LazyLock<ArchiveReaderRegistry> =
     LazyLock::new(ArchiveReaderRegistry::default);
 
-#[cfg(target_os = "android")]
-const ARCHIVE_OK: c_int = 0;
-#[cfg(target_os = "android")]
-const ARCHIVE_EOF: c_int = 1;
-#[cfg(target_os = "android")]
-const AE_IFREG: mode_t = 0o100_000;
-#[cfg(target_os = "android")]
-const ARCHIVE_BLOCK_SIZE: size_t = 64 * 1024;
 const MAX_ARCHIVE_ENTRIES: usize = 100_000;
 const MAX_IMAGE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_RECOVERY_METADATA_BYTES: u64 = 512 * 1024;
@@ -56,15 +40,17 @@ const PLAYABLE_EXTENSIONS: [&str; 11] = [
 
 #[derive(Clone, Copy, Debug)]
 enum ArchiveKind {
-    Libarchive,
+    Zip,
+    Tar,
+    Filtered,
     Rar,
     SevenZip,
 }
 
 #[derive(Clone, Debug)]
 enum EntryLocator {
-    #[cfg(target_os = "android")]
-    Libarchive(usize),
+    Zip(ZipMember),
+    Tar(TarMember),
     Rar(usize),
     SevenZip(usize),
 }
@@ -85,31 +71,20 @@ struct ArchiveEntry {
 }
 
 struct ArchivePassword {
-    nul_terminated_bytes: Vec<u8>,
+    bytes: Vec<u8>,
 }
-
 impl ArchivePassword {
-    fn new(mut bytes: Vec<u8>) -> Result<Self> {
+    fn new(bytes: Vec<u8>) -> Result<Self> {
         ensure!(!bytes.contains(&0), "Archive password contains a NUL byte");
-        bytes.push(0);
-        Ok(Self {
-            nul_terminated_bytes: bytes,
-        })
+        Ok(Self { bytes })
     }
-
     fn bytes(&self) -> &[u8] {
-        &self.nul_terminated_bytes[..self.nul_terminated_bytes.len() - 1]
-    }
-
-    #[cfg(target_os = "android")]
-    fn as_ptr(&self) -> *const c_char {
-        self.nul_terminated_bytes.as_ptr().cast()
+        &self.bytes
     }
 }
-
 impl Drop for ArchivePassword {
     fn drop(&mut self) {
-        self.nul_terminated_bytes.zeroize();
+        self.bytes.zeroize();
     }
 }
 
@@ -417,10 +392,32 @@ fn detect_archive_kind(source: &mut File) -> Result<ArchiveKind> {
                 ArchiveKind::Rar
             } else if signature.starts_with(SEVEN_ZIP_SIGNATURE) {
                 ArchiveKind::SevenZip
+            } else if signature.starts_with(b"\x1f\x8b") || signature.starts_with(b"\xfd7zXZ\0") {
+                ArchiveKind::Filtered
+            } else if has_tar_header(source)? {
+                ArchiveKind::Tar
+            } else if signature.starts_with(b"PK\x03\x04")
+                || signature.starts_with(b"PK\x05\x06")
+                || signature.starts_with(b"PK\x07\x08")
+                || production_zip::recognizes(&mut duplicate_file_descriptor(source.as_raw_fd())?)?
+            {
+                ArchiveKind::Zip
             } else {
-                ArchiveKind::Libarchive
+                ArchiveKind::Tar
             },
         )
+    })
+}
+
+fn has_tar_header(source: &File) -> Result<bool> {
+    let mut input = duplicate_file_descriptor(source.as_raw_fd())?;
+    with_source_position_restored(&mut input, |source| {
+        let mut header = [0; 512];
+        match source.take(512).read_exact(&mut header) {
+            Ok(()) => Ok(production_tar::recognizes_header(&header)),
+            Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => Ok(false),
+            Err(error) => Err(error.into()),
+        }
     })
 }
 
@@ -432,19 +429,133 @@ fn scan_archive_kind(
     validate_password: bool,
 ) -> Result<ScanOutcome> {
     with_source_position_restored(source, |source| match kind {
+        ArchiveKind::Zip => scan_zip(source, password, sort_entries, validate_password),
         ArchiveKind::Rar => scan_rar(source, password, sort_entries, validate_password),
         ArchiveKind::SevenZip => scan_seven_zip(source, password, sort_entries, validate_password),
-        ArchiveKind::Libarchive => {
-            #[cfg(target_os = "android")]
-            {
-                scan_libarchive(source, password, sort_entries, validate_password)
-            }
-            #[cfg(not(target_os = "android"))]
-            {
-                let _ = (source, password, sort_entries, validate_password);
-                bail!("libarchive-backed formats are available only in Android builds")
-            }
+        ArchiveKind::Tar => {
+            let mut input = duplicate_file_descriptor(source.as_raw_fd())?;
+            scan_tar_source(&mut input, sort_entries)
         }
+        ArchiveKind::Filtered => {
+            let mut input = DecodedSource::new(duplicate_file_descriptor(source.as_raw_fd())?)?;
+            let budget = input.allocation_budget();
+            budget.run(|| {
+                let mut header = Vec::with_capacity(512);
+                input.by_ref().take(512).read_to_end(&mut header)?;
+                input.seek(SeekFrom::Start(0))?;
+                if production_tar::recognizes_header(&header) {
+                    scan_tar_source(&mut input, sort_entries)
+                } else {
+                    scan_zip_source(&mut input, password, sort_entries, validate_password)
+                }
+            })
+        }
+    })
+}
+
+fn scan_zip(
+    source: &File,
+    password: Option<&ArchivePassword>,
+    sort_entries: bool,
+    validate_password: bool,
+) -> Result<ScanOutcome> {
+    let mut input = duplicate_file_descriptor(source.as_raw_fd())?;
+    scan_zip_source(&mut input, password, sort_entries, validate_password)
+}
+
+fn scan_zip_source<R: Read + Seek>(
+    input: &mut R,
+    password: Option<&ArchivePassword>,
+    sort_entries: bool,
+    validate_password: bool,
+) -> Result<ScanOutcome> {
+    let members = match production_zip::scan(
+        input,
+        password.map(ArchivePassword::bytes),
+        validate_password,
+    )? {
+        ZipScan::Complete(members) => members,
+        ZipScan::PasswordRequired => return Ok(ScanOutcome::PasswordRequired),
+    };
+    let mut entries = Vec::new();
+    let mut metadata_entries = Vec::new();
+    let mut encrypted = false;
+    let mut unsafe_path = false;
+    for member in members {
+        encrypted |= member.encrypted;
+        unsafe_path |= is_unsafe_archive_path(&member.name);
+        if !member.regular {
+            continue;
+        }
+        let extension = playable_extension(&member.name).map(str::to_owned);
+        let metadata_kind = recovery_metadata_kind(&member.name);
+        if let Some(extension) = extension {
+            validate_image_size(member.size)?;
+            entries.push(ArchiveEntry {
+                name: member.name.clone(),
+                size: member.size,
+                locator: EntryLocator::Zip(member),
+                extension,
+                metadata_kind: None,
+            });
+        } else if let Some(metadata_kind) = metadata_kind {
+            validate_recovery_metadata_size(member.size)?;
+            metadata_entries.push(ArchiveEntry {
+                name: member.name.clone(),
+                size: member.size,
+                locator: EntryLocator::Zip(member),
+                extension: String::new(),
+                metadata_kind: Some(metadata_kind),
+            });
+        }
+    }
+    sort_archive_entries(&mut entries, sort_entries);
+    Ok(ScanOutcome::Complete {
+        entries,
+        metadata_entries,
+        encrypted,
+        unsafe_path,
+    })
+}
+
+fn scan_tar_source<R: Read + Seek>(input: &mut R, sort_entries: bool) -> Result<ScanOutcome> {
+    let members = production_tar::scan(input)?;
+    let mut entries = Vec::new();
+    let mut metadata_entries = Vec::new();
+    let mut unsafe_path = false;
+    for member in members {
+        unsafe_path |= is_unsafe_archive_path(&member.name);
+        if !member.regular {
+            continue;
+        }
+        let extension = playable_extension(&member.name).map(str::to_owned);
+        let metadata_kind = recovery_metadata_kind(&member.name);
+        if let Some(extension) = extension {
+            validate_image_size(member.size)?;
+            entries.push(ArchiveEntry {
+                name: member.name.clone(),
+                size: member.size,
+                locator: EntryLocator::Tar(member),
+                extension,
+                metadata_kind: None,
+            });
+        } else if let Some(metadata_kind) = metadata_kind {
+            validate_recovery_metadata_size(member.size)?;
+            metadata_entries.push(ArchiveEntry {
+                name: member.name.clone(),
+                size: member.size,
+                locator: EntryLocator::Tar(member),
+                extension: String::new(),
+                metadata_kind: Some(metadata_kind),
+            });
+        }
+    }
+    sort_archive_entries(&mut entries, sort_entries);
+    Ok(ScanOutcome::Complete {
+        entries,
+        metadata_entries,
+        encrypted: false,
+        unsafe_path,
     })
 }
 
@@ -641,94 +752,6 @@ fn seven_zip_password_failure(error: &SevenZipError) -> bool {
     ) || error.to_string().to_ascii_lowercase().contains("password")
 }
 
-#[cfg(target_os = "android")]
-fn scan_libarchive(
-    source: &File,
-    password: Option<&ArchivePassword>,
-    sort_entries: bool,
-    validate_password: bool,
-) -> Result<ScanOutcome> {
-    let password_supplied = password.is_some();
-    let mut archive = match NativeArchive::open(source, password) {
-        Ok(archive) => archive,
-        Err(error) if libarchive_password_failure(&error, password_supplied) => {
-            return Ok(ScanOutcome::PasswordRequired);
-        }
-        Err(error) => return Err(error),
-    };
-    let mut entries = Vec::new();
-    let mut metadata_entries = Vec::new();
-    let mut total_entries = 0usize;
-    let mut encrypted = false;
-    let mut unsafe_path = false;
-    let mut password_validated = false;
-
-    loop {
-        let entry = match archive.next_header() {
-            Ok(Some(entry)) => entry,
-            Ok(None) => break,
-            Err(error) if libarchive_password_failure(&error, password_supplied) => {
-                return Ok(ScanOutcome::PasswordRequired);
-            }
-            Err(error) => return Err(error),
-        };
-        total_entries = total_entries
-            .checked_add(1)
-            .context("Archive entry count overflow")?;
-        ensure!(
-            total_entries <= MAX_ARCHIVE_ENTRIES,
-            "Archive contains too many entries"
-        );
-        let is_regular = native_entry_is_regular(entry);
-        let is_encrypted = native_entry_is_encrypted(entry);
-        encrypted |= is_encrypted;
-        let name = native_entry_name(entry)?;
-        unsafe_path |= is_unsafe_archive_path(&name);
-
-        if is_regular {
-            let size = native_entry_size(entry)?;
-            if let Some(extension) = playable_extension(&name).map(str::to_owned) {
-                validate_image_size(size)?;
-                entries.push(ArchiveEntry {
-                    locator: EntryLocator::Libarchive(total_entries - 1),
-                    name,
-                    extension,
-                    size,
-                    metadata_kind: None,
-                });
-            } else if let Some(metadata_kind) = recovery_metadata_kind(&name) {
-                validate_recovery_metadata_size(size)?;
-                metadata_entries.push(ArchiveEntry {
-                    locator: EntryLocator::Libarchive(total_entries - 1),
-                    name,
-                    extension: String::new(),
-                    size,
-                    metadata_kind: Some(metadata_kind),
-                });
-            }
-
-            if validate_password && is_encrypted && !password_validated {
-                if let Err(error) = archive.drain_current_entry(size) {
-                    if libarchive_unsupported_encryption(&error) {
-                        return Err(error);
-                    }
-                    return Ok(ScanOutcome::PasswordRequired);
-                }
-                password_validated = true;
-            }
-        }
-    }
-
-    encrypted |= archive.has_encrypted_entries() == 1;
-    sort_archive_entries(&mut entries, sort_entries);
-    Ok(ScanOutcome::Complete {
-        entries,
-        metadata_entries,
-        encrypted,
-        unsafe_path,
-    })
-}
-
 fn validate_image_size(size: u64) -> Result<()> {
     ensure!(size > 0, "Archive image entry is empty");
     ensure!(
@@ -761,18 +784,42 @@ fn extract_entry(
     output: &mut (dyn Write + Send),
 ) -> Result<u64> {
     match kind {
+        ArchiveKind::Zip => {
+            let EntryLocator::Zip(member) = &target.locator else {
+                bail!("ZIP entry has a mismatched codec locator");
+            };
+            let mut input = duplicate_file_descriptor(source.as_raw_fd())?;
+            Ok(production_zip::extract(
+                &mut input,
+                password.map(ArchivePassword::bytes),
+                member,
+                output,
+            )?)
+        }
         ArchiveKind::Rar => extract_rar(source, password, target, output),
         ArchiveKind::SevenZip => extract_seven_zip(source, password, target, output),
-        ArchiveKind::Libarchive => {
-            #[cfg(target_os = "android")]
-            {
-                extract_libarchive(source, password, target, output)
-            }
-            #[cfg(not(target_os = "android"))]
-            {
-                let _ = (source, password, target, output);
-                bail!("libarchive-backed formats are available only in Android builds")
-            }
+        ArchiveKind::Tar => {
+            let EntryLocator::Tar(member) = &target.locator else {
+                bail!("TAR entry has a mismatched codec locator");
+            };
+            let mut input = duplicate_file_descriptor(source.as_raw_fd())?;
+            Ok(production_tar::extract(&mut input, member, output)?)
+        }
+        ArchiveKind::Filtered => {
+            let mut input = DecodedSource::new(duplicate_file_descriptor(source.as_raw_fd())?)?;
+            let budget = input.allocation_budget();
+            budget.run(|| match &target.locator {
+                EntryLocator::Zip(member) => Ok(production_zip::extract(
+                    &mut input,
+                    password.map(ArchivePassword::bytes),
+                    member,
+                    output,
+                )?),
+                EntryLocator::Tar(member) => {
+                    Ok(production_tar::extract(&mut input, member, output)?)
+                }
+                _ => bail!("Filtered archive entry has a mismatched codec locator"),
+            })
         }
     }
 }
@@ -853,35 +900,6 @@ fn extract_seven_zip(
     })
     .context("Failed to extract 7z image entry")?;
     copied.context("7z image entry disappeared before extraction")
-}
-
-#[cfg(target_os = "android")]
-fn extract_libarchive(
-    source: &File,
-    password: Option<&ArchivePassword>,
-    target: &ArchiveEntry,
-    output: &mut (dyn Write + Send),
-) -> Result<u64> {
-    let EntryLocator::Libarchive(target_index) = target.locator else {
-        bail!("libarchive entry has a mismatched codec locator");
-    };
-    let mut archive = NativeArchive::open(source, password)?;
-    let mut source_index = 0usize;
-    loop {
-        let entry = archive
-            .next_header()?
-            .context("Archive ended before the requested image entry")?;
-        let current_index = source_index;
-        source_index += 1;
-        if current_index == target_index {
-            let name = native_entry_name(entry)?;
-            ensure!(
-                native_entry_is_regular(entry) && name == target.name,
-                "Archive entry changed between scan and extraction"
-            );
-            return archive.copy_current_entry(output, target.size);
-        }
-    }
 }
 
 fn copy_exact_entry(
@@ -1005,239 +1023,6 @@ fn trim_digit_run(bytes: &[u8]) -> &[u8] {
     first_nonzero.map_or(&bytes[bytes.len() - 1..], |index| &bytes[index..])
 }
 
-#[cfg(target_os = "android")]
-fn libarchive_password_failure(error: &anyhow::Error, password_supplied: bool) -> bool {
-    if libarchive_unsupported_encryption(error) {
-        return false;
-    }
-    let message = error.to_string().to_ascii_lowercase();
-    message.contains("passphrase")
-        || message.contains("password")
-        || (!password_supplied && message.contains("encrypted"))
-}
-
-#[cfg(target_os = "android")]
-fn libarchive_unsupported_encryption(error: &anyhow::Error) -> bool {
-    let message = error.to_string().to_ascii_lowercase();
-    message.contains("encrypted data is not currently supported")
-        || message.contains("unsupported encryption")
-}
-
-#[cfg(target_os = "android")]
-struct NativeArchive {
-    raw: NonNull<ArchiveOpaque>,
-    source: File,
-    opened: bool,
-}
-
-#[cfg(target_os = "android")]
-impl NativeArchive {
-    fn open(source: &File, password: Option<&ArchivePassword>) -> Result<Self> {
-        let source = duplicate_file_descriptor(source.as_raw_fd())
-            .context("Failed to duplicate archive source descriptor")?;
-        // SAFETY: allocation has no preconditions and the returned pointer is checked below.
-        let raw = NonNull::new(unsafe { archive_read_new() })
-            .context("libarchive failed to allocate a reader")?;
-        let mut archive = Self {
-            raw,
-            source,
-            opened: false,
-        };
-        archive.enable_format(archive_read_support_format_tar, "tar")?;
-        archive.enable_format(archive_read_support_format_zip, "zip")?;
-        archive.enable_format(archive_read_support_filter_gzip, "gzip filter")?;
-        archive.enable_format(archive_read_support_filter_xz, "xz filter")?;
-        if let Some(password) = password {
-            // SAFETY: both pointers remain valid for the duration of this call and libarchive copies
-            // the passphrase into its internal list.
-            let status = unsafe { archive_read_add_passphrase(raw.as_ptr(), password.as_ptr()) };
-            archive.ensure_status(status, "Failed to add archive passphrase")?;
-        }
-        // SAFETY: the duplicated descriptor remains owned by `archive` until after close/free.
-        let status = unsafe {
-            archive_read_open_fd(raw.as_ptr(), archive.source.as_raw_fd(), ARCHIVE_BLOCK_SIZE)
-        };
-        archive.ensure_status(status, "Failed to open archive")?;
-        archive.opened = true;
-        Ok(archive)
-    }
-
-    fn enable_format(
-        &mut self,
-        enable: unsafe extern "C" fn(*mut ArchiveOpaque) -> c_int,
-        name: &str,
-    ) -> Result<()> {
-        // SAFETY: `self.raw` is a live reader allocated by libarchive.
-        let status = unsafe { enable(self.raw.as_ptr()) };
-        self.ensure_status(status, &format!("Failed to enable {name}"))
-    }
-
-    fn next_header(&mut self) -> Result<Option<NonNull<ArchiveEntryOpaque>>> {
-        let mut entry = std::ptr::null_mut();
-        // SAFETY: the reader is open and `entry` is a valid out pointer.
-        let status = unsafe { archive_read_next_header(self.raw.as_ptr(), &raw mut entry) };
-        match status {
-            ARCHIVE_OK => NonNull::new(entry)
-                .map(Some)
-                .context("libarchive returned a null entry header"),
-            ARCHIVE_EOF => Ok(None),
-            _ => Err(self.error("Failed to read archive entry header")),
-        }
-    }
-
-    fn has_encrypted_entries(&self) -> c_int {
-        // SAFETY: the reader remains live through this call.
-        unsafe { archive_read_has_encrypted_entries(self.raw.as_ptr()) }
-    }
-
-    fn drain_current_entry(&mut self, expected_size: u64) -> Result<()> {
-        self.copy_current_entry(&mut std::io::sink(), expected_size)
-            .map(|_| ())
-    }
-
-    fn copy_current_entry(
-        &mut self,
-        output: &mut (dyn Write + Send),
-        expected_size: u64,
-    ) -> Result<u64> {
-        let mut buffer = vec![0u8; COPY_BUFFER_BYTES];
-        let mut total = 0u64;
-        loop {
-            // SAFETY: the buffer is writable for its declared length and the reader is positioned
-            // at the current entry's data stream.
-            let read = unsafe {
-                archive_read_data(
-                    self.raw.as_ptr(),
-                    buffer.as_mut_ptr().cast::<c_void>(),
-                    buffer.len(),
-                )
-            };
-            if read < 0 {
-                return Err(self.error("Failed to decode archive image entry"));
-            }
-            if read == 0 {
-                break;
-            }
-            let read = usize::try_from(read).context("Archive read count exceeds Rust range")?;
-            total = total
-                .checked_add(u64::try_from(read)?)
-                .context("Archive image byte count overflow")?;
-            ensure!(
-                total <= expected_size && total <= MAX_IMAGE_BYTES,
-                "Decoded archive image exceeds its declared size"
-            );
-            output
-                .write_all(&buffer[..read])
-                .context("Failed to write decoded archive image")?;
-        }
-        ensure!(
-            total == expected_size,
-            "Decoded archive image size does not match metadata"
-        );
-        Ok(total)
-    }
-
-    fn ensure_status(&self, status: c_int, operation: &str) -> Result<()> {
-        if status < ARCHIVE_OK {
-            Err(self.error(operation))
-        } else {
-            Ok(())
-        }
-    }
-
-    fn error(&self, operation: &str) -> anyhow::Error {
-        // SAFETY: error strings are owned by the live reader and are NUL terminated when non-null.
-        let message = unsafe {
-            let message = archive_error_string(self.raw.as_ptr());
-            (!message.is_null()).then(|| CStr::from_ptr(message).to_string_lossy().into_owned())
-        }
-        .unwrap_or_else(|| "unknown libarchive error".to_owned());
-        anyhow!("{operation}: {message}")
-    }
-}
-
-#[cfg(target_os = "android")]
-impl Drop for NativeArchive {
-    fn drop(&mut self) {
-        // SAFETY: `raw` was allocated exactly once and is freed exactly once here. The descriptor
-        // helper does not close `_source`, so Rust retains sole ownership of that duplicate.
-        unsafe {
-            if self.opened {
-                archive_read_close(self.raw.as_ptr());
-            }
-            archive_read_free(self.raw.as_ptr());
-        }
-    }
-}
-
-#[cfg(target_os = "android")]
-fn native_entry_name(entry: NonNull<ArchiveEntryOpaque>) -> Result<String> {
-    // SAFETY: the entry belongs to the current live archive header.
-    let name = unsafe { archive_entry_pathname(entry.as_ptr()) };
-    ensure!(!name.is_null(), "Archive entry has no pathname");
-    // SAFETY: libarchive pathnames are NUL-terminated for the lifetime of the current header.
-    Ok(unsafe { CStr::from_ptr(name) }
-        .to_string_lossy()
-        .into_owned())
-}
-
-#[cfg(target_os = "android")]
-fn native_entry_is_regular(entry: NonNull<ArchiveEntryOpaque>) -> bool {
-    // SAFETY: the entry belongs to the current live archive header.
-    unsafe { archive_entry_filetype(entry.as_ptr()) == AE_IFREG }
-}
-
-#[cfg(target_os = "android")]
-fn native_entry_is_encrypted(entry: NonNull<ArchiveEntryOpaque>) -> bool {
-    // SAFETY: the entry belongs to the current live archive header.
-    unsafe { archive_entry_is_encrypted(entry.as_ptr()) == 1 }
-}
-
-#[cfg(target_os = "android")]
-fn native_entry_size(entry: NonNull<ArchiveEntryOpaque>) -> Result<u64> {
-    // SAFETY: the entry belongs to the current live archive header.
-    let size = unsafe { archive_entry_size(entry.as_ptr()) };
-    u64::try_from(size).context("Archive image entry has an unknown or negative size")
-}
-
-#[cfg(target_os = "android")]
-#[repr(C)]
-struct ArchiveOpaque {
-    _private: [u8; 0],
-}
-
-#[cfg(target_os = "android")]
-#[repr(C)]
-struct ArchiveEntryOpaque {
-    _private: [u8; 0],
-}
-
-#[cfg(target_os = "android")]
-unsafe extern "C" {
-    fn archive_read_new() -> *mut ArchiveOpaque;
-    fn archive_read_support_format_tar(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_support_format_zip(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_support_filter_gzip(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_support_filter_xz(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_add_passphrase(archive: *mut ArchiveOpaque, passphrase: *const c_char)
-    -> c_int;
-    fn archive_read_open_fd(archive: *mut ArchiveOpaque, fd: c_int, block_size: size_t) -> c_int;
-    fn archive_read_next_header(
-        archive: *mut ArchiveOpaque,
-        entry: *mut *mut ArchiveEntryOpaque,
-    ) -> c_int;
-    fn archive_read_has_encrypted_entries(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_data(archive: *mut ArchiveOpaque, buffer: *mut c_void, size: size_t)
-    -> ssize_t;
-    fn archive_read_close(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_read_free(archive: *mut ArchiveOpaque) -> c_int;
-    fn archive_error_string(archive: *mut ArchiveOpaque) -> *const c_char;
-    fn archive_entry_pathname(entry: *mut ArchiveEntryOpaque) -> *const c_char;
-    fn archive_entry_filetype(entry: *mut ArchiveEntryOpaque) -> mode_t;
-    fn archive_entry_is_encrypted(entry: *mut ArchiveEntryOpaque) -> c_int;
-    fn archive_entry_size(entry: *mut ArchiveEntryOpaque) -> i64;
-}
-
 #[cfg(test)]
 mod tests {
     use std::fs::OpenOptions;
@@ -1270,6 +1055,161 @@ mod tests {
         env!("CARGO_MANIFEST_DIR"),
         "/../../../../androidTest/assets/archive-v2/encrypted-images.7z"
     ));
+
+    #[test]
+    fn outer_tar_and_filters_take_priority_over_nested_zip_footers() {
+        let fixtures = [
+            (
+                include_bytes!("../../../../archive/src/production_zip/test_data/nested.tar")
+                    .as_slice(),
+                false,
+            ),
+            (
+                include_bytes!("../../../../archive/src/production_zip/test_data/stored.zip.gz")
+                    .as_slice(),
+                true,
+            ),
+        ];
+        for (bytes, filtered) in fixtures {
+            let mut source = fixture_file(bytes);
+            source.seek(SeekFrom::Start(7)).unwrap();
+            let kind = detect_archive_kind(&mut source).unwrap();
+            assert_eq!(matches!(kind, ArchiveKind::Filtered), filtered);
+            assert_eq!(source.stream_position().unwrap(), 7);
+        }
+    }
+
+    #[test]
+    fn production_zip_registry_preserves_order_metadata_and_descriptor_position() {
+        let bytes = include_bytes!("../../../../archive/src/production_zip/test_data/mixed.zip");
+        let mut source = fixture_file(bytes);
+        source.seek(SeekFrom::Start(7)).unwrap();
+        let registry = &ARCHIVE_READER_REGISTRY;
+        let handle = registry
+            .open(duplicate_file_descriptor(source.as_raw_fd()).unwrap(), true)
+            .unwrap();
+        assert_eq!(source.stream_position().unwrap(), 7);
+        assert_eq!(registry.entry_count(handle).unwrap(), 3);
+        assert!(registry.has_unsafe_path(handle).unwrap());
+        for (index, (name, expected)) in [
+            ("PAGE0.PNG", b"upper".as_slice()),
+            ("page2.png", b"two".as_slice()),
+            ("page10.jpg", b"ten".as_slice()),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            assert_eq!(registry.entry_name(handle, index).unwrap(), name);
+            let mut output = Vec::new();
+            registry.extract_to(handle, index, &mut output).unwrap();
+            assert_eq!(output, expected);
+            assert!(registry.verify_entry(handle, index).unwrap());
+            assert_eq!(source.stream_position().unwrap(), 7);
+        }
+        assert_eq!(
+            registry
+                .recovery_metadata(handle, RecoveryMetadataKind::ComicInfo)
+                .unwrap(),
+            Some(b"<ComicInfo/>".to_vec())
+        );
+        assert_eq!(
+            registry
+                .recovery_metadata(handle, RecoveryMetadataKind::SpiderInfo)
+                .unwrap(),
+            Some(b"spider".to_vec())
+        );
+        assert_eq!(source.stream_position().unwrap(), 7);
+        assert!(registry.close(handle).unwrap());
+        assert!(registry.entry_count(handle).is_err());
+    }
+
+    #[test]
+    fn production_tar_and_nested_filter_registry_restore_source_positions() {
+        let plain = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../../androidTest/assets/archive-v2/images.tar"
+        ));
+        for bytes in [
+            plain.as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.gz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.xz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.gz.xz")
+                .as_slice(),
+        ] {
+            let mut source = fixture_file(bytes);
+            source.seek(SeekFrom::Start(7)).unwrap();
+            let handle = ARCHIVE_READER_REGISTRY
+                .open(duplicate_file_descriptor(source.as_raw_fd()).unwrap(), true)
+                .unwrap();
+            assert_eq!(source.stream_position().unwrap(), 7);
+            assert_eq!(ARCHIVE_READER_REGISTRY.entry_count(handle).unwrap(), 1);
+            let mut out = Vec::new();
+            ARCHIVE_READER_REGISTRY
+                .extract_to(handle, 0, &mut out)
+                .unwrap();
+            assert_eq!(out, b"archive-v2-page\n");
+            assert_eq!(source.stream_position().unwrap(), 7);
+            assert!(ARCHIVE_READER_REGISTRY.close(handle).unwrap());
+        }
+    }
+
+    #[test]
+    fn filtered_zip_preserves_password_metadata_order_and_all_outer_integrity() {
+        for bytes in [
+            include_bytes!("../../../../archive/src/production_tar/test_data/mixed.zip.gz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/mixed.zip.xz")
+                .as_slice(),
+        ] {
+            let handle = ARCHIVE_READER_REGISTRY
+                .open(fixture_file(bytes), true)
+                .unwrap();
+            assert_eq!(ARCHIVE_READER_REGISTRY.entry_count(handle).unwrap(), 3);
+            assert_eq!(
+                ARCHIVE_READER_REGISTRY.entry_name(handle, 1).unwrap(),
+                "page2.png"
+            );
+            assert_eq!(
+                ARCHIVE_READER_REGISTRY
+                    .recovery_metadata(handle, RecoveryMetadataKind::SpiderInfo)
+                    .unwrap(),
+                Some(b"spider".to_vec())
+            );
+            assert!(ARCHIVE_READER_REGISTRY.verify_entry(handle, 1).unwrap());
+            assert!(ARCHIVE_READER_REGISTRY.close(handle).unwrap());
+        }
+        for bytes in [
+            include_bytes!("../../../../archive/src/production_tar/test_data/aes.zip.gz")
+                .as_slice(),
+            include_bytes!("../../../../archive/src/production_tar/test_data/aes.zip.xz")
+                .as_slice(),
+        ] {
+            assert_encrypted_fixture(bytes, b"secret", b"archive-v2-page\n");
+        }
+        let mut bytes =
+            include_bytes!("../../../../archive/src/production_tar/test_data/images.tar.gz")
+                .to_vec();
+        let end = bytes.len() - 5;
+        bytes[end] ^= 1;
+        assert!(
+            ARCHIVE_READER_REGISTRY
+                .open(fixture_file(&bytes), false)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn production_zip_registry_validates_zipcrypto_and_lzma() {
+        let encrypted = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../../androidTest/assets/archive-v2/encrypted-images.zip"
+        ));
+        assert_encrypted_fixture(encrypted, b"secret", b"archive-v2-page\n");
+        let plain = include_bytes!("../../../../archive/src/production_zip/test_data/lzma.zip");
+        assert_plain_fixture(plain, 1, b"archive-v2-page\n");
+    }
 
     #[test]
     fn extracts_rar4_rar5_and_seven_zip_by_content() {

@@ -5,6 +5,7 @@ mod archive;
 mod bitmap;
 mod cache_keys;
 mod comic_info;
+mod file_rules;
 mod gallery_enrichment;
 mod gallery_filter;
 mod gallery_network_policy;
@@ -24,6 +25,7 @@ mod recovery_metadata;
 mod recovery_search;
 mod spider_info;
 mod tag_translation;
+mod text_spans;
 mod transfer_speed;
 mod webp;
 

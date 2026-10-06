@@ -26,3 +26,4 @@ pub mod gif;
 pub mod pixel;
 pub mod qr;
 pub mod region;
+pub mod webp;
