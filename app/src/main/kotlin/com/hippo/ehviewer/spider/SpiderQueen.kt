@@ -26,6 +26,7 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.model.GalleryPreview
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.reader.PreviewToken
 import com.hippo.ehviewer.bridge.reader.ReaderFetchActionKind
 import com.hippo.ehviewer.bridge.reader.ReaderFetchErrorSource
 import com.hippo.ehviewer.bridge.reader.ReaderFetchEvent
@@ -342,16 +343,7 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
       }
 
   private fun readPreviews(previews: List<GalleryPreview>, index: Int, spiderInfo: SpiderInfo) {
-    if (index == 0) {
-      spiderInfo.previewPerPage = previews.size
-    } else {
-      spiderInfo.previewPerPage = previews[0].position / index
-    }
-    previews.forEach {
-      if (it.pToken.isNotEmpty()) {
-        spiderInfo.pTokenMap[it.position] = it.pToken
-      }
-    }
+    spiderInfo.applyPreviews(previews.map { PreviewToken(it.position, it.pToken) }, index)
   }
 
   private suspend fun readSpiderInfoFromInternet() =
@@ -378,12 +370,7 @@ class SpiderQueen private constructor(val galleryInfo: GalleryInfo) : CoroutineS
   }
 
   suspend fun getPTokenFromInternet(index: Int): String? {
-    val previewIndex =
-      if (spiderInfo.previewPerPage > 0) {
-        index / spiderInfo.previewPerPage
-      } else {
-        0
-      }
+    val previewIndex = spiderInfo.previewIndex(index)
     val url = getGalleryDetailUrl(galleryInfo.gid, galleryInfo.token, previewIndex)
     return runSuspendCatching {
       EhEngine.getPreviewList(url).run {

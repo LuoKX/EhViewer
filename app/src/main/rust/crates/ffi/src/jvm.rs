@@ -23,6 +23,7 @@ mod health;
 mod local_pages;
 mod parser;
 mod plan;
+mod preview_tokens;
 mod reader_policy;
 mod recovery_directory;
 mod recovery_eh_lookup;

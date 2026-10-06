@@ -213,6 +213,9 @@ jobs:
             com.hippo.ehviewer.bridge.download.DownloadMetadataBridgeKt \
             target/jni-probe/libehviewer-host.so crates/domain/test_data
 
+      - name: Preview Tokens Host JNI Smoke Test
+        run: bash scripts/test_preview_tokens_jni.sh
+
       - name: Install cargo-llvm-cov
         # taiki-e/install-action v2
         uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad
@@ -322,6 +325,9 @@ jobs:
           main((('eh_domain', 'download_metadata',
                  'crates/domain/src/download_metadata.rs'),), 'p5')
           PY
+
+      - name: Preview Token Policy Coverage
+        run: python3 -B scripts/check_preview_token_coverage.py
 
       - name: Follow-up Coverage Mask Tests
         run: python3 -m unittest scripts.tests.test_coverage_masks -v

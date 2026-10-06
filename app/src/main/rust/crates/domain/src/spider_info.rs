@@ -1,4 +1,6 @@
 //! Bounded current-CBOR and legacy `SpiderInfo` codecs shared by reader and recovery.
+
+pub mod preview_tokens;
 use crate::contracts::{ApiEnvelope, RustError};
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
