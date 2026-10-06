@@ -1,20 +1,29 @@
 package tachiyomi.data.release
 
-import com.hippo.ehviewer.util.AppConfig
-import java.io.IOException
+import com.hippo.ehviewer.bridge.updater.UpdateOperation
+import com.hippo.ehviewer.bridge.updater.UpdatePolicyRequest
+import com.hippo.ehviewer.bridge.updater.planUpdatePolicy
+import com.hippo.ehviewer.bridge.updater.selectUpdateBinary
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable data class GithubRepo(
-  @SerialName("default_branch") val defaultBranch: String,
-)
+@Serializable data class GithubRepo(@SerialName("default_branch") val defaultBranch: String)
 
 @Serializable
 data class GithubWorkflowRuns(
-  @SerialName("workflow_runs") val workflowRuns: List<GithubWorkflowRun>,
+  @SerialName("workflow_runs") val workflowRuns: List<GithubWorkflowRun>
 ) {
-  fun latestRun(): GithubWorkflowRun =
-    workflowRuns.firstOrNull() ?: throw IOException("No successful update workflow runs available")
+  fun latestRun(): GithubWorkflowRun {
+    val snapshot = workflowRuns.toList()
+    val plan =
+      planUpdatePolicy(
+        UpdatePolicyRequest(
+          operation = UpdateOperation.SELECT_WORKFLOW,
+          names = snapshot.map { it.headSha },
+        )
+      )
+    return snapshot[checkNotNull(plan.index)]
+  }
 }
 
 @Serializable
@@ -25,17 +34,11 @@ data class GithubWorkflowRun(
 )
 
 @Serializable
-data class GithubArtifacts(
-  @SerialName("artifacts") val artifacts: List<GithubArtifact>,
-) {
-  fun getDownloadLink(
-    matchesVariant: (String) -> Boolean = { AppConfig.matchVariant(it) },
-  ): String {
-    // The default order is upload order, so we need to sort it.
-    val ordered = artifacts.sortedBy { it.name }
-    val fallback =
-      ordered.firstOrNull() ?: throw IOException("No update workflow artifacts available")
-    return (ordered.find { matchesVariant(it.name) } ?: fallback).downloadLink
+data class GithubArtifacts(@SerialName("artifacts") val artifacts: List<GithubArtifact>) {
+  fun getDownloadLink(matchesVariant: ((String) -> Boolean)? = null): String {
+    val snapshot = artifacts.toList()
+    val index = selectUpdateBinary(snapshot.map { it.name }, true, matchesVariant)
+    return snapshot[index].downloadLink
   }
 }
 

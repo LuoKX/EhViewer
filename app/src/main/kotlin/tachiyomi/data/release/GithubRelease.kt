@@ -1,7 +1,6 @@
 package tachiyomi.data.release
 
-import com.hippo.ehviewer.util.AppConfig
-import java.io.IOException
+import com.hippo.ehviewer.bridge.updater.selectUpdateBinary
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,16 +12,16 @@ data class GithubRelease(
   @SerialName("html_url") val releaseLink: String,
   @SerialName("assets") val assets: List<GitHubAssets>,
 ) {
-  fun getDownloadLink(
-    matchesVariant: (String) -> Boolean = { AppConfig.matchVariant(it) },
-  ): String {
-    val fallback = assets.firstOrNull() ?: throw IOException("No update release assets available")
-    return (assets.find { matchesVariant(it.name) } ?: fallback).url
+  fun getDownloadLink(matchesVariant: ((String) -> Boolean)? = null): String {
+    val snapshot = assets.toList()
+    val index = selectUpdateBinary(snapshot.map { it.name }, false, matchesVariant)
+    return snapshot[index].url
   }
 }
 
 /** Assets class containing download url. */
-@Serializable data class GitHubAssets(
+@Serializable
+data class GitHubAssets(
   val url: String,
   val name: String,
 )

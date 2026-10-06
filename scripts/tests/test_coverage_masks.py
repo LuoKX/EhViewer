@@ -9,7 +9,7 @@ OWNERS = (
     "local_pages", "cache_keys", "file_rules", "text_spans", "bbcode",
     "comic_info_policy", "recovery_scan", "storage_rules", "production_zip",
     "production_tar", "archive_filters", "webp", "recovery_batch",
-    "recovery_directory", "backup_import", "download_metadata",
+    "recovery_directory", "backup_import", "download_metadata", "update_policy", "updater",
 )
 MASK_ARGUMENT = re.compile(
     r"""--ignore-filename-regex\s+('[^']*'|"\$\(printf '%s'\s+.*?\)")""",

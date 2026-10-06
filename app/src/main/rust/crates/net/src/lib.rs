@@ -26,4 +26,5 @@ pub mod tag_translation;
 mod test_support;
 mod text;
 pub mod torrent;
+pub mod updater;
 pub mod user_config;

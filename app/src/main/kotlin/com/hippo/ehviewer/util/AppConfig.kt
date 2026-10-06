@@ -15,12 +15,15 @@
  */
 package com.hippo.ehviewer.util
 
-import android.os.Build
 import android.os.Environment
 import com.ehviewer.core.files.exists
 import com.ehviewer.core.files.isDirectory
 import com.ehviewer.core.files.mkdirs
 import com.hippo.ehviewer.BuildConfig
+import com.hippo.ehviewer.bridge.updater.UpdateOperation
+import com.hippo.ehviewer.bridge.updater.facts
+import com.hippo.ehviewer.bridge.updater.installedUpdateVariant
+import com.hippo.ehviewer.bridge.updater.planUpdatePolicy
 import com.hippo.ehviewer.client.parser.ParserUtils
 import java.io.File
 import okio.Path
@@ -32,47 +35,58 @@ fun File.ensureDirectory() = if (exists()) isDirectory else mkdirs()
 fun Path.ensureDirectory() = if (exists()) isDirectory else mkdirs().let { true }
 
 object AppConfig {
-    const val APP_DIRNAME = "EhViewer"
-    private const val DOWNLOAD = "download"
-    private const val TEMP = "temp"
-    private const val PARSE_ERROR = "parse_error"
-    private const val CRASH = "crash"
-    private const val TAG_TRANSLATIONS = "tag-translations"
+  const val APP_DIRNAME = "EhViewer"
+  private const val DOWNLOAD = "download"
+  private const val TEMP = "temp"
+  private const val PARSE_ERROR = "parse_error"
+  private const val CRASH = "crash"
+  private const val TAG_TRANSLATIONS = "tag-translations"
 
-    private val abi = Build.SUPPORTED_ABIS[0].takeIf {
-        it in setOf("arm64-v8a", "x86_64", "armeabi-v7a")
-    } ?: "universal"
+  val isBenchmark = "nonMinified" in BuildConfig.BUILD_TYPE || "benchmark" in BuildConfig.BUILD_TYPE
 
-    val isBenchmark = "nonMinified" in BuildConfig.BUILD_TYPE || "benchmark" in BuildConfig.BUILD_TYPE
+  fun matchVariant(name: String) =
+    checkNotNull(
+      planUpdatePolicy(
+          installedUpdateVariant().facts(UpdateOperation.MATCH).copy(names = listOf(name))
+        )
+        .matched
+    )
 
-    fun matchVariant(name: String) = name.contains(BuildConfig.FLAVOR) && name.contains(abi)
+  val commitTime = ParserUtils.formatDate(BuildConfig.COMMIT_TIME * 1000)
 
-    val commitTime = ParserUtils.formatDate(BuildConfig.COMMIT_TIME * 1000)
+  private val externalAppDir: File?
+    get() {
+      if (Environment.MEDIA_MOUNTED == Environment.getExternalStorageState()) {
+        return appCtx.getExternalFilesDir(null)?.takeIf { it.ensureDirectory() }
+      }
+      return null
+    }
 
-    private val externalAppDir: File?
-        get() {
-            if (Environment.MEDIA_MOUNTED == Environment.getExternalStorageState()) {
-                return appCtx.getExternalFilesDir(null)?.takeIf { it.ensureDirectory() }
-            }
-            return null
-        }
+  private fun getDirInExternalAppDir(filename: String, create: Boolean = true) =
+    externalAppDir?.run {
+      File(this, filename).takeIf { if (create) it.ensureDirectory() else it.isDirectory }
+    }
 
-    private fun getDirInExternalAppDir(filename: String, create: Boolean = true) = externalAppDir?.run { File(this, filename).takeIf { if (create) it.ensureDirectory() else it.isDirectory } }
+  val defaultDownloadDir: File?
+    get() = getDirInExternalAppDir(DOWNLOAD, false)
 
-    val defaultDownloadDir: File?
-        get() = getDirInExternalAppDir(DOWNLOAD, false)
-    val externalTempPersistDir
-        get() = getDirInExternalAppDir(TEMP)?.toOkioPath()
-    val externalParseErrorDir: File?
-        get() = getDirInExternalAppDir(PARSE_ERROR)
-    val externalCrashDir: File?
-        get() = getDirInExternalAppDir(CRASH)
-    val tagTranslationsDir
-        get() = (appCtx.filesDir.toOkioPath() / TAG_TRANSLATIONS).apply { check(ensureDirectory()) }
+  val externalTempPersistDir
+    get() = getDirInExternalAppDir(TEMP)?.toOkioPath()
 
-    // Following locations will be clear on app startup
-    val tempDir
-        get() = (appCtx.cacheDir.toOkioPath() / TEMP).apply { check(ensureDirectory()) }
-    val externalTempDir
-        get() = appCtx.externalCacheDir?.toOkioPath()?.let { it / TEMP }?.apply { check(ensureDirectory()) }
+  val externalParseErrorDir: File?
+    get() = getDirInExternalAppDir(PARSE_ERROR)
+
+  val externalCrashDir: File?
+    get() = getDirInExternalAppDir(CRASH)
+
+  val tagTranslationsDir
+    get() = (appCtx.filesDir.toOkioPath() / TAG_TRANSLATIONS).apply { check(ensureDirectory()) }
+
+  // Following locations will be clear on app startup
+  val tempDir
+    get() = (appCtx.cacheDir.toOkioPath() / TEMP).apply { check(ensureDirectory()) }
+
+  val externalTempDir
+    get() =
+      appCtx.externalCacheDir?.toOkioPath()?.let { it / TEMP }?.apply { check(ensureDirectory()) }
 }

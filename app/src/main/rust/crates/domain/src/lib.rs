@@ -68,3 +68,4 @@ pub mod spider_info;
 pub mod storage_rules;
 pub mod text_spans;
 pub mod transfer_speed;
+pub mod update_policy;

@@ -35,6 +35,7 @@ mod storage_rules;
 mod tag_translation;
 mod text_spans;
 mod transfer_speed;
+mod updater;
 mod webp;
 
 use std::fs::File;

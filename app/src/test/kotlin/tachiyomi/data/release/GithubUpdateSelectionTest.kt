@@ -1,11 +1,16 @@
 package tachiyomi.data.release
 
+import com.hippo.ehviewer.bridge.updater.UpdaterHostLibrary
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class GithubUpdateSelectionTest {
+  init {
+    UpdaterHostLibrary.load()
+  }
+
   @Test
   fun emptyResponsesFailWithoutInspectingNames() {
     val matcher: (String) -> Boolean = { error("Empty collection must not inspect a name") }
