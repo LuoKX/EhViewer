@@ -10,6 +10,7 @@ mod app;
 pub mod ime_session;
 pub mod login_state;
 mod navigation;
+pub mod secure_text;
 pub mod signin_artwork;
 pub mod signin_layout;
 

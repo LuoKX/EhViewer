@@ -1,0 +1,86 @@
+Compiled from "CodepointTransformation.kt"
+public final class androidx.compose.foundation.text.input.internal.CodepointTransformationKt {
+  public static final androidx.compose.foundation.text.input.internal.CodepointTransformation mask(androidx.compose.foundation.text.input.internal.CodepointTransformation$Companion, char);
+    Code:
+         0: new           #10                 // class androidx/compose/foundation/text/input/internal/MaskCodepointTransformation
+         3: dup
+         4: iload_1
+         5: invokespecial #14                 // Method androidx/compose/foundation/text/input/internal/MaskCodepointTransformation."<init>":(C)V
+         8: checkcast     #16                 // class androidx/compose/foundation/text/input/internal/CodepointTransformation
+        11: areturn
+
+  public static final java.lang.CharSequence toVisualText(androidx.compose.foundation.text.input.TextFieldCharSequence, androidx.compose.foundation.text.input.internal.CodepointTransformation, androidx.compose.foundation.text.input.internal.OffsetMappingCalculator);
+    Code:
+         0: aload_0
+         1: astore_3
+         2: iconst_0
+         3: istore        4
+         5: new           #24                 // class java/lang/StringBuilder
+         8: dup
+         9: invokespecial #27                 // Method java/lang/StringBuilder."<init>":()V
+        12: astore        6
+        14: aload         6
+        16: astore        7
+        18: iconst_0
+        19: istore        8
+        21: iconst_0
+        22: istore        9
+        24: iconst_0
+        25: istore        10
+        27: iload         9
+        29: aload_3
+        30: invokevirtual #33                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.length:()I
+        33: if_icmpge     123
+        36: aload_3
+        37: checkcast     #35                 // class java/lang/CharSequence
+        40: iload         9
+        42: invokestatic  #41                 // Method androidx/compose/foundation/text/input/internal/CodepointHelpers_jvmAndAndroidKt.codePointAt:(Ljava/lang/CharSequence;I)I
+        45: istore        11
+        47: aload_1
+        48: iload         10
+        50: iload         11
+        52: invokeinterface #45,  3           // InterfaceMethod androidx/compose/foundation/text/input/internal/CodepointTransformation.transform:(II)I
+        57: istore        12
+        59: iload         11
+        61: invokestatic  #49                 // Method androidx/compose/foundation/text/input/internal/CodepointHelpers_jvmAndAndroidKt.charCount:(I)I
+        64: istore        13
+        66: iload         12
+        68: iload         11
+        70: if_icmpeq     102
+        73: iconst_1
+        74: istore        4
+        76: iload         12
+        78: invokestatic  #49                 // Method androidx/compose/foundation/text/input/internal/CodepointHelpers_jvmAndAndroidKt.charCount:(I)I
+        81: istore        14
+        83: aload_2
+        84: aload         7
+        86: invokevirtual #50                 // Method java/lang/StringBuilder.length:()I
+        89: aload         7
+        91: invokevirtual #50                 // Method java/lang/StringBuilder.length:()I
+        94: iload         13
+        96: iadd
+        97: iload         14
+        99: invokevirtual #56                 // Method androidx/compose/foundation/text/input/internal/OffsetMappingCalculator.recordEditOperation:(III)V
+       102: aload         7
+       104: iload         12
+       106: invokestatic  #62                 // Method androidx/compose/foundation/text/StringsHelpers_jvmAndAndroidKt.appendCodePointX:(Ljava/lang/StringBuilder;I)Ljava/lang/StringBuilder;
+       109: pop
+       110: iload         9
+       112: iload         13
+       114: iadd
+       115: istore        9
+       117: iinc          10, 1
+       120: goto          27
+       123: nop
+       124: aload         6
+       126: invokevirtual #66                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       129: astore        5
+       131: iload         4
+       133: ifeq          144
+       136: aload         5
+       138: checkcast     #35                 // class java/lang/CharSequence
+       141: goto          148
+       144: aload_0
+       145: checkcast     #35                 // class java/lang/CharSequence
+       148: areturn
+}

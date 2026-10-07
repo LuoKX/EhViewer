@@ -1,0 +1,9 @@
+Compiled from "StringsHelpers.jvmAndAndroid.kt"
+public final class androidx.compose.foundation.text.StringsHelpers_jvmAndAndroidKt {
+  public static final java.lang.StringBuilder appendCodePointX(java.lang.StringBuilder, int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokevirtual #13                 // Method java/lang/StringBuilder.appendCodePoint:(I)Ljava/lang/StringBuilder;
+         5: areturn
+}

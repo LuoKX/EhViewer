@@ -1,0 +1,363 @@
+Compiled from "BasicSecureTextField.android.kt"
+public final class androidx.compose.foundation.text.BasicSecureTextField_androidKt {
+  private static final java.lang.String TAG = "BasicSecureTextField";
+
+  private static final kotlin.jvm.functions.Function1<android.content.Context, androidx.compose.foundation.text.ContentResolverForSecureTextField> DefaultContentResolverForSecureTextField;
+
+  private static kotlin.jvm.functions.Function1<? super android.content.Context, ? extends androidx.compose.foundation.text.ContentResolverForSecureTextField> contentResolverForSecureTextField;
+
+  public static final boolean platformAllowsRevealLastTyped(androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_0
+         1: ldc           #10                 // int -1015272320
+         3: ldc           #17                 // String C(platformAllowsRevealLastTyped)39@1443L7,41@1478L119,44@1615L60,46@1711L263,53@2024L242,53@1979L287:BasicSecureTextField.android.kt#423gt5
+         5: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+         8: invokestatic  #27                 // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+        11: ifeq          23
+        14: ldc           #10                 // int -1015272320
+        16: iload_1
+        17: iconst_m1
+        18: ldc           #29                 // String androidx.compose.foundation.text.platformAllowsRevealLastTyped (BasicSecureTextField.android.kt:38)
+        20: invokestatic  #33                 // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+        23: invokestatic  #39                 // Method androidx/compose/ui/platform/AndroidCompositionLocals_androidKt.getLocalContext:()Landroidx/compose/runtime/ProvidableCompositionLocal;
+        26: checkcast     #41                 // class androidx/compose/runtime/CompositionLocal
+        29: astore_3
+        30: aload_0
+        31: astore        4
+        33: iconst_0
+        34: istore        5
+        36: iconst_0
+        37: istore        6
+        39: aload         4
+        41: ldc           #42                 // int 2023513938
+        43: ldc           #44                 // String CC(<get-current>):CompositionLocal.kt#9igjgp
+        45: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+        48: aload         4
+        50: aload_3
+        51: invokeinterface #50,  2           // InterfaceMethod androidx/compose/runtime/Composer.consume:(Landroidx/compose/runtime/CompositionLocal;)Ljava/lang/Object;
+        56: astore        7
+        58: aload         4
+        60: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+        63: aload         7
+        65: checkcast     #56                 // class android/content/Context
+        68: astore_2
+        69: getstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+        72: astore        4
+        74: aload_0
+        75: ldc           #61                 // int -719119593
+        77: ldc           #63                 // String CC(remember):BasicSecureTextField.android.kt#9igjgp
+        79: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+        82: aload_0
+        83: astore        6
+        85: aload_0
+        86: aload_2
+        87: invokeinterface #67,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        92: aload_0
+        93: aload         4
+        95: invokeinterface #67,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       100: ior
+       101: istore        7
+       103: iconst_0
+       104: istore        8
+       106: aload         6
+       108: invokeinterface #71,  1           // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+       113: astore        9
+       115: iconst_0
+       116: istore        10
+       118: iload         7
+       120: ifne          134
+       123: aload         9
+       125: getstatic     #75                 // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+       128: invokevirtual #80                 // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+       131: if_acmpne     165
+       134: iconst_0
+       135: istore        11
+       137: getstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+       140: aload_2
+       141: invokeinterface #86,  2           // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       146: checkcast     #88                 // class androidx/compose/foundation/text/ContentResolverForSecureTextField
+       149: astore        12
+       151: aload         6
+       153: aload         12
+       155: invokeinterface #92,  2           // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+       160: aload         12
+       162: goto          167
+       165: aload         9
+       167: nop
+       168: nop
+       169: checkcast     #88                 // class androidx/compose/foundation/text/ContentResolverForSecureTextField
+       172: astore        5
+       174: aload_0
+       175: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       178: aload         5
+       180: astore_3
+       181: aload_0
+       182: ldc           #93                 // int -719115268
+       184: ldc           #63                 // String CC(remember):BasicSecureTextField.android.kt#9igjgp
+       186: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+       189: aload_0
+       190: astore        6
+       192: aload_0
+       193: aload_3
+       194: invokeinterface #67,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       199: istore        7
+       201: iconst_0
+       202: istore        8
+       204: aload         6
+       206: invokeinterface #71,  1           // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+       211: astore        9
+       213: iconst_0
+       214: istore        10
+       216: iload         7
+       218: ifne          232
+       221: aload         9
+       223: getstatic     #75                 // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+       226: invokevirtual #80                 // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+       229: if_acmpne     266
+       232: iconst_0
+       233: istore        11
+       235: aload_3
+       236: invokeinterface #96,  1           // InterfaceMethod androidx/compose/foundation/text/ContentResolverForSecureTextField.getShowPassword:()Z
+       241: invokestatic  #102                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+       244: aconst_null
+       245: iconst_2
+       246: aconst_null
+       247: invokestatic  #108                // Method androidx/compose/runtime/SnapshotStateKt.mutableStateOf$default:(Ljava/lang/Object;Landroidx/compose/runtime/SnapshotMutationPolicy;ILjava/lang/Object;)Landroidx/compose/runtime/MutableState;
+       250: astore        12
+       252: aload         6
+       254: aload         12
+       256: invokeinterface #92,  2           // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+       261: aload         12
+       263: goto          268
+       266: aload         9
+       268: nop
+       269: nop
+       270: checkcast     #110                // class androidx/compose/runtime/MutableState
+       273: astore        5
+       275: aload_0
+       276: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       279: aload         5
+       281: astore        4
+       283: aload_0
+       284: ldc           #111                // int -719111993
+       286: ldc           #63                 // String CC(remember):BasicSecureTextField.android.kt#9igjgp
+       288: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+       291: aload_0
+       292: astore        7
+       294: aload_0
+       295: aload_3
+       296: invokeinterface #67,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       301: istore        8
+       303: iconst_0
+       304: istore        9
+       306: aload         7
+       308: invokeinterface #71,  1           // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+       313: astore        10
+       315: iconst_0
+       316: istore        11
+       318: iload         8
+       320: ifne          334
+       323: aload         10
+       325: getstatic     #75                 // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+       328: invokevirtual #80                 // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+       331: if_acmpne     374
+       334: iconst_0
+       335: istore        12
+       337: invokestatic  #117                // Method android/os/Looper.getMainLooper:()Landroid/os/Looper;
+       340: invokestatic  #123                // Method androidx/core/os/HandlerCompat.createAsync:(Landroid/os/Looper;)Landroid/os/Handler;
+       343: astore        13
+       345: new           #125                // class androidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1
+       348: dup
+       349: aload_3
+       350: aload         4
+       352: aload         13
+       354: invokespecial #129                // Method androidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1."<init>":(Landroidx/compose/foundation/text/ContentResolverForSecureTextField;Landroidx/compose/runtime/MutableState;Landroid/os/Handler;)V
+       357: nop
+       358: astore        14
+       360: aload         7
+       362: aload         14
+       364: invokeinterface #92,  2           // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+       369: aload         14
+       371: goto          376
+       374: aload         10
+       376: nop
+       377: nop
+       378: checkcast     #125                // class androidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1
+       381: astore        6
+       383: aload_0
+       384: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       387: aload         6
+       389: astore        5
+       391: aload_3
+       392: aload         5
+       394: aload_0
+       395: ldc           #130                // int -719101998
+       397: ldc           #63                 // String CC(remember):BasicSecureTextField.android.kt#9igjgp
+       399: invokestatic  #23                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+       402: aload_0
+       403: astore        7
+       405: aload_0
+       406: aload_3
+       407: invokeinterface #133,  2          // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       412: aload_0
+       413: aload         5
+       415: invokeinterface #133,  2          // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       420: ior
+       421: istore        8
+       423: iconst_0
+       424: istore        9
+       426: aload         7
+       428: invokeinterface #71,  1           // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+       433: astore        10
+       435: iconst_0
+       436: istore        11
+       438: iload         8
+       440: ifne          454
+       443: aload         10
+       445: getstatic     #75                 // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+       448: invokevirtual #80                 // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+       451: if_acmpne     493
+       454: astore        16
+       456: astore        15
+       458: iconst_0
+       459: istore        12
+       461: aload_3
+       462: aload         5
+       464: invokedynamic #151,  0            // InvokeDynamic #0:invoke:(Landroidx/compose/foundation/text/ContentResolverForSecureTextField;Landroidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1;)Lkotlin/jvm/functions/Function1;
+       469: astore        17
+       471: aload         15
+       473: aload         16
+       475: aload         17
+       477: astore        13
+       479: aload         7
+       481: aload         13
+       483: invokeinterface #92,  2           // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+       488: aload         13
+       490: goto          495
+       493: aload         10
+       495: nop
+       496: nop
+       497: checkcast     #82                 // class kotlin/jvm/functions/Function1
+       500: astore        6
+       502: aload_0
+       503: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       506: aload         6
+       508: aload_0
+       509: iconst_0
+       510: invokestatic  #157                // Method androidx/compose/runtime/EffectsKt.DisposableEffect:(Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+       513: aload         4
+       515: invokestatic  #161                // Method platformAllowsRevealLastTyped$lambda$2:(Landroidx/compose/runtime/MutableState;)Z
+       518: istore        6
+       520: invokestatic  #27                 // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+       523: ifeq          529
+       526: invokestatic  #165                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+       529: aload_0
+       530: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       533: iload         6
+       535: ireturn
+
+  public static final kotlin.jvm.functions.Function1<android.content.Context, androidx.compose.foundation.text.ContentResolverForSecureTextField> getContentResolverForSecureTextField();
+    Code:
+         0: getstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+         3: areturn
+
+  public static final void setContentResolverForSecureTextField(kotlin.jvm.functions.Function1<? super android.content.Context, ? extends androidx.compose.foundation.text.ContentResolverForSecureTextField>);
+    Code:
+         0: aload_0
+         1: putstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+         4: return
+
+  public static void getContentResolverForSecureTextField$annotations();
+    Code:
+         0: return
+
+  public static final void resetContentResolverForSecureTextField();
+    Code:
+         0: getstatic     #208                // Field DefaultContentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+         3: putstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+         6: return
+
+  private static final androidx.compose.runtime.DisposableEffectResult platformAllowsRevealLastTyped$lambda$5$0(androidx.compose.foundation.text.ContentResolverForSecureTextField, androidx.compose.foundation.text.BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1, androidx.compose.runtime.DisposableEffectScope);
+    Code:
+         0: aload_0
+         1: ldc           #210                // String show_password
+         3: invokestatic  #216                // Method android/provider/Settings$System.getUriFor:(Ljava/lang/String;)Landroid/net/Uri;
+         6: iconst_0
+         7: aload_1
+         8: checkcast     #218                // class android/database/ContentObserver
+        11: invokeinterface #222,  4          // InterfaceMethod androidx/compose/foundation/text/ContentResolverForSecureTextField.registerContentObserver:(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V
+        16: aload_2
+        17: astore_3
+        18: iconst_0
+        19: istore        4
+        21: new           #224                // class androidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$lambda$5$0$$inlined$onDispose$1
+        24: dup
+        25: aload_0
+        26: aload_1
+        27: invokespecial #227                // Method androidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$lambda$5$0$$inlined$onDispose$1."<init>":(Landroidx/compose/foundation/text/ContentResolverForSecureTextField;Landroidx/compose/foundation/text/BasicSecureTextField_androidKt$platformAllowsRevealLastTyped$settingsObserver$1$1;)V
+        30: checkcast     #229                // class androidx/compose/runtime/DisposableEffectResult
+        33: nop
+        34: areturn
+
+  private static final boolean platformAllowsRevealLastTyped$lambda$2(androidx.compose.runtime.MutableState<java.lang.Boolean>);
+    Code:
+         0: aload_0
+         1: checkcast     #237                // class androidx/compose/runtime/State
+         4: astore_1
+         5: aconst_null
+         6: astore_2
+         7: aconst_null
+         8: astore_3
+         9: iconst_0
+        10: istore        4
+        12: aload_1
+        13: invokeinterface #240,  1          // InterfaceMethod androidx/compose/runtime/State.getValue:()Ljava/lang/Object;
+        18: checkcast     #98                 // class java/lang/Boolean
+        21: invokevirtual #243                // Method java/lang/Boolean.booleanValue:()Z
+        24: ireturn
+
+  private static final void platformAllowsRevealLastTyped$lambda$3(androidx.compose.runtime.MutableState<java.lang.Boolean>, boolean);
+    Code:
+         0: aload_0
+         1: astore_2
+         2: aconst_null
+         3: astore_3
+         4: aconst_null
+         5: astore        4
+         7: iload_1
+         8: invokestatic  #102                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+        11: astore        5
+        13: iconst_0
+        14: istore        6
+        16: aload_2
+        17: aload         5
+        19: invokeinterface #256,  2          // InterfaceMethod androidx/compose/runtime/MutableState.setValue:(Ljava/lang/Object;)V
+        24: nop
+        25: return
+
+  private static final androidx.compose.foundation.text.BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1 DefaultContentResolverForSecureTextField$lambda$0(android.content.Context);
+    Code:
+         0: aload_0
+         1: invokevirtual #264                // Method android/content/Context.getContentResolver:()Landroid/content/ContentResolver;
+         4: astore_1
+         5: new           #266                // class androidx/compose/foundation/text/BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1
+         8: dup
+         9: aload_1
+        10: invokespecial #269                // Method androidx/compose/foundation/text/BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1."<init>":(Landroid/content/ContentResolver;)V
+        13: areturn
+
+  public static final void access$platformAllowsRevealLastTyped$lambda$3(androidx.compose.runtime.MutableState, boolean);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokestatic  #274                // Method platformAllowsRevealLastTyped$lambda$3:(Landroidx/compose/runtime/MutableState;Z)V
+         5: return
+
+  static {};
+    Code:
+         0: invokedynamic #281,  0            // InvokeDynamic #1:invoke:()Lkotlin/jvm/functions/Function1;
+         5: putstatic     #208                // Field DefaultContentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+         8: getstatic     #208                // Field DefaultContentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+        11: putstatic     #60                 // Field contentResolverForSecureTextField:Lkotlin/jvm/functions/Function1;
+        14: return
+}

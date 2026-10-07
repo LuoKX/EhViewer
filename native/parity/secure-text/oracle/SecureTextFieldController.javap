@@ -1,0 +1,146 @@
+Compiled from "BasicSecureTextField.kt"
+public final class androidx.compose.foundation.text.SecureTextFieldController {
+  private final androidx.compose.runtime.State<java.lang.Character> obfuscationMaskState;
+
+  private final androidx.compose.foundation.text.PasswordInputTransformation passwordInputTransformation;
+
+  private final androidx.compose.foundation.text.input.internal.CodepointTransformation codepointTransformation;
+
+  private final androidx.compose.ui.Modifier focusChangeModifier;
+
+  private final kotlinx.coroutines.channels.Channel<kotlin.Unit> resetTimerSignal;
+
+  public static final int $stable;
+
+  public androidx.compose.foundation.text.SecureTextFieldController(androidx.compose.runtime.State<java.lang.Character>);
+    Code:
+         0: aload_0
+         1: invokespecial #11                 // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #15                 // Field obfuscationMaskState:Landroidx/compose/runtime/State;
+         9: aload_0
+        10: new           #17                 // class androidx/compose/foundation/text/PasswordInputTransformation
+        13: dup
+        14: new           #19                 // class androidx/compose/foundation/text/SecureTextFieldController$passwordInputTransformation$1
+        17: dup
+        18: aload_0
+        19: invokespecial #22                 // Method androidx/compose/foundation/text/SecureTextFieldController$passwordInputTransformation$1."<init>":(Ljava/lang/Object;)V
+        22: checkcast     #24                 // class kotlin/jvm/functions/Function0
+        25: invokespecial #27                 // Method androidx/compose/foundation/text/PasswordInputTransformation."<init>":(Lkotlin/jvm/functions/Function0;)V
+        28: putfield      #31                 // Field passwordInputTransformation:Landroidx/compose/foundation/text/PasswordInputTransformation;
+        31: aload_0
+        32: aload_0
+        33: invokedynamic #49,  0             // InvokeDynamic #0:transform:(Landroidx/compose/foundation/text/SecureTextFieldController;)Landroidx/compose/foundation/text/input/internal/CodepointTransformation;
+        38: putfield      #53                 // Field codepointTransformation:Landroidx/compose/foundation/text/input/internal/CodepointTransformation;
+        41: aload_0
+        42: getstatic     #59                 // Field androidx/compose/ui/Modifier.Companion:Landroidx/compose/ui/Modifier$Companion;
+        45: checkcast     #55                 // class androidx/compose/ui/Modifier
+        48: aload_0
+        49: invokedynamic #72,  0             // InvokeDynamic #1:invoke:(Landroidx/compose/foundation/text/SecureTextFieldController;)Lkotlin/jvm/functions/Function1;
+        54: invokestatic  #78                 // Method androidx/compose/ui/focus/FocusChangedModifierKt.onFocusChanged:(Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+        57: putfield      #82                 // Field focusChangeModifier:Landroidx/compose/ui/Modifier;
+        60: aload_0
+        61: ldc           #83                 // int 2147483647
+        63: aconst_null
+        64: aconst_null
+        65: bipush        6
+        67: aconst_null
+        68: invokestatic  #89                 // Method kotlinx/coroutines/channels/ChannelKt.Channel$default:(ILkotlinx/coroutines/channels/BufferOverflow;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/channels/Channel;
+        71: putfield      #93                 // Field resetTimerSignal:Lkotlinx/coroutines/channels/Channel;
+        74: return
+
+  public final androidx.compose.foundation.text.PasswordInputTransformation getPasswordInputTransformation();
+    Code:
+         0: aload_0
+         1: getfield      #31                 // Field passwordInputTransformation:Landroidx/compose/foundation/text/PasswordInputTransformation;
+         4: areturn
+
+  public final androidx.compose.foundation.text.input.internal.CodepointTransformation getCodepointTransformation();
+    Code:
+         0: aload_0
+         1: getfield      #53                 // Field codepointTransformation:Landroidx/compose/foundation/text/input/internal/CodepointTransformation;
+         4: areturn
+
+  public final androidx.compose.ui.Modifier getFocusChangeModifier();
+    Code:
+         0: aload_0
+         1: getfield      #82                 // Field focusChangeModifier:Landroidx/compose/ui/Modifier;
+         4: areturn
+
+  public final java.lang.Object observeHideEvents(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    Code:
+         0: aload_0
+         1: getfield      #93                 // Field resetTimerSignal:Lkotlinx/coroutines/channels/Channel;
+         4: checkcast     #107                // class kotlinx/coroutines/channels/ReceiveChannel
+         7: invokestatic  #113                // Method kotlinx/coroutines/flow/FlowKt.consumeAsFlow:(Lkotlinx/coroutines/channels/ReceiveChannel;)Lkotlinx/coroutines/flow/Flow;
+        10: new           #115                // class androidx/compose/foundation/text/SecureTextFieldController$observeHideEvents$2
+        13: dup
+        14: aload_0
+        15: aconst_null
+        16: invokespecial #118                // Method androidx/compose/foundation/text/SecureTextFieldController$observeHideEvents$2."<init>":(Landroidx/compose/foundation/text/SecureTextFieldController;Lkotlin/coroutines/Continuation;)V
+        19: checkcast     #120                // class kotlin/jvm/functions/Function2
+        22: aload_1
+        23: invokestatic  #124                // Method kotlinx/coroutines/flow/FlowKt.collectLatest:(Lkotlinx/coroutines/flow/Flow;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+        26: dup
+        27: invokestatic  #130                // Method kotlin/coroutines/intrinsics/IntrinsicsKt.getCOROUTINE_SUSPENDED:()Ljava/lang/Object;
+        30: if_acmpne     34
+        33: areturn
+        34: pop
+        35: getstatic     #136                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        38: areturn
+
+  private final void scheduleHide();
+    Code:
+         0: aload_0
+         1: getfield      #93                 // Field resetTimerSignal:Lkotlinx/coroutines/channels/Channel;
+         4: getstatic     #136                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+         7: invokeinterface #144,  2          // InterfaceMethod kotlinx/coroutines/channels/Channel."trySend-JP2dKIU":(Ljava/lang/Object;)Ljava/lang/Object;
+        12: astore_1
+        13: aload_1
+        14: invokestatic  #150                // Method kotlinx/coroutines/channels/ChannelResult."isFailure-impl":(Ljava/lang/Object;)Z
+        17: ifeq          27
+        20: aload_0
+        21: getfield      #31                 // Field passwordInputTransformation:Landroidx/compose/foundation/text/PasswordInputTransformation;
+        24: invokevirtual #153                // Method androidx/compose/foundation/text/PasswordInputTransformation.hide:()V
+        27: return
+
+  private static final int codepointTransformation$lambda$0(androidx.compose.foundation.text.SecureTextFieldController, int, int);
+    Code:
+         0: iload_1
+         1: aload_0
+         2: getfield      #31                 // Field passwordInputTransformation:Landroidx/compose/foundation/text/PasswordInputTransformation;
+         5: invokevirtual #159                // Method androidx/compose/foundation/text/PasswordInputTransformation.getRevealCodepointIndex$foundation:()I
+         8: if_icmpne     15
+        11: iload_2
+        12: goto          30
+        15: aload_0
+        16: getfield      #15                 // Field obfuscationMaskState:Landroidx/compose/runtime/State;
+        19: invokeinterface #164,  1          // InterfaceMethod androidx/compose/runtime/State.getValue:()Ljava/lang/Object;
+        24: checkcast     #166                // class java/lang/Character
+        27: invokevirtual #170                // Method java/lang/Character.charValue:()C
+        30: ireturn
+
+  private static final kotlin.Unit focusChangeModifier$lambda$0(androidx.compose.foundation.text.SecureTextFieldController, androidx.compose.ui.focus.FocusState);
+    Code:
+         0: aload_1
+         1: invokeinterface #180,  1          // InterfaceMethod androidx/compose/ui/focus/FocusState.isFocused:()Z
+         6: ifne          16
+         9: aload_0
+        10: getfield      #31                 // Field passwordInputTransformation:Landroidx/compose/foundation/text/PasswordInputTransformation;
+        13: invokevirtual #153                // Method androidx/compose/foundation/text/PasswordInputTransformation.hide:()V
+        16: getstatic     #136                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        19: areturn
+
+  public static final void access$scheduleHide(androidx.compose.foundation.text.SecureTextFieldController);
+    Code:
+         0: aload_0
+         1: invokespecial #186                // Method scheduleHide:()V
+         4: return
+
+  static {};
+    Code:
+         0: bipush        8
+         2: putstatic     #191                // Field $stable:I
+         5: return
+}

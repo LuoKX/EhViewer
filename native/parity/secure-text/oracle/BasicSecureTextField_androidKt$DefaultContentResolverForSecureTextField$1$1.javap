@@ -1,0 +1,59 @@
+Compiled from "BasicSecureTextField.android.kt"
+public final class androidx.compose.foundation.text.BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1 implements androidx.compose.foundation.text.ContentResolverForSecureTextField {
+  final android.content.ContentResolver $contentResolver;
+
+  androidx.compose.foundation.text.BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1(android.content.ContentResolver);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #12                 // Field $contentResolver:Landroid/content/ContentResolver;
+         5: aload_0
+         6: invokespecial #15                 // Method java/lang/Object."<init>":()V
+         9: return
+
+  public void registerContentObserver(android.net.Uri, boolean, android.database.ContentObserver);
+    Code:
+         0: aload_0
+         1: getfield      #12                 // Field $contentResolver:Landroid/content/ContentResolver;
+         4: aload_1
+         5: iload_2
+         6: aload_3
+         7: invokevirtual #23                 // Method android/content/ContentResolver.registerContentObserver:(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V
+        10: return
+
+  public void unregisterContentObserver(android.database.ContentObserver);
+    Code:
+         0: aload_0
+         1: getfield      #12                 // Field $contentResolver:Landroid/content/ContentResolver;
+         4: aload_1
+         5: invokevirtual #33                 // Method android/content/ContentResolver.unregisterContentObserver:(Landroid/database/ContentObserver;)V
+         8: return
+
+  public boolean getShowPassword();
+    Code:
+         0: nop
+         1: aload_0
+         2: getfield      #12                 // Field $contentResolver:Landroid/content/ContentResolver;
+         5: ldc           #39                 // String show_password
+         7: invokestatic  #45                 // Method android/provider/Settings$System.getInt:(Landroid/content/ContentResolver;Ljava/lang/String;)I
+        10: ifle          17
+        13: iconst_1
+        14: goto          18
+        17: iconst_0
+        18: istore_1
+        19: goto          37
+        22: astore_2
+        23: ldc           #47                 // String BasicSecureTextField
+        25: ldc           #49                 // String Failed to fetch show password setting, using value: true
+        27: aload_2
+        28: checkcast     #51                 // class java/lang/Throwable
+        31: invokestatic  #57                 // Method android/util/Log.w:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+        34: pop
+        35: iconst_1
+        36: istore_1
+        37: iload_1
+        38: ireturn
+      Exception table:
+         from    to  target type
+             0    19    22   Class java/lang/Exception
+}

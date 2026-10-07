@@ -1,0 +1,29 @@
+Compiled from "TextObfuscationMode.kt"
+public final class androidx.compose.foundation.text.input.TextObfuscationMode$Companion {
+  private androidx.compose.foundation.text.input.TextObfuscationMode$Companion();
+    Code:
+         0: aload_0
+         1: invokespecial #8                  // Method java/lang/Object."<init>":()V
+         4: return
+
+  public final int getVisible-vTwcZD0();
+    Code:
+         0: invokestatic  #17                 // Method androidx/compose/foundation/text/input/TextObfuscationMode.access$getVisible$cp:()I
+         3: ireturn
+
+  public final int getRevealLastTyped-vTwcZD0();
+    Code:
+         0: invokestatic  #21                 // Method androidx/compose/foundation/text/input/TextObfuscationMode.access$getRevealLastTyped$cp:()I
+         3: ireturn
+
+  public final int getHidden-vTwcZD0();
+    Code:
+         0: invokestatic  #25                 // Method androidx/compose/foundation/text/input/TextObfuscationMode.access$getHidden$cp:()I
+         3: ireturn
+
+  public androidx.compose.foundation.text.input.TextObfuscationMode$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+    Code:
+         0: aload_0
+         1: invokespecial #27                 // Method "<init>":()V
+         4: return
+}

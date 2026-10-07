@@ -1,0 +1,20 @@
+# Explicit source fixtures; frozen PasswordInputTransformation + CodepointTransformationKt.
+# id	UTF-16 hex	new ranges	selection	render time ms	Original/Mask per codepoint
+single_insert	0078	0:1	1:1	0	O
+single_paste_same_predicate	0078	0:1	1:1	1499	O
+single_replacement_same_predicate	0079	0:1	1:1	1500	M
+single_composition_same_predicate	00e9	0:1	1:1	1501	M
+multi_paste	0078,0079	0:2	2:2	0	MM
+multi_changes	0078,0079	0:1,1:2	2:2	0	MM
+deletion	0078	0:0	0:0	0	M
+selection_only	0078	-	0:1	0	M
+insertion_selected	0078	0:1	0:1	0	M
+reversed_changed_range	0078	1:0	1:1	0	O
+reversed_selection	0078	0:1	1:0	0	M
+astral_insert_two_units	D83D,DE00	0:2	2:2	0	M
+after_astral_no_matching_ordinal	D83D,DE00,0078	2:3	3:3	0	MM
+after_astral_wrong_character	D83D,DE00,0078,0079	2:3	3:3	0	MMO
+combining_mark_single_unit	0065,0301	1:2	2:2	0	MO
+isolated_high_surrogate	D800	0:1	1:1	0	O
+isolated_low_surrogate	DC00	0:1	1:1	0	O
+BMP_non_ascii	6f22	0:1	1:1	0	O

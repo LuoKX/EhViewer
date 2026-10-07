@@ -22,6 +22,7 @@ Stock egui controls are not accepted as equivalent Material3 widgets.
   Android locale/escape resolution has been reproduced.
 - Original-vector Rust renderer and source-drift/code-generation check. Diagnostic asset view only, not the product sign-in page or pixel equivalence.
 - Pure Rust source-anchored logical-dp placement, 19 regressions, measured-widget boundary and one shared expanded scroll. Density rounding and real Material measurements remain unaccepted.
+- Pinned Compose secure-text metadata policy, 12 Rust regressions and 17 complete class proofs with 24 drift/checker tests. Preserves 1500ms reveal, UTF-16/codepoint quirks, mode/platform/focus rules and redacted state. Not wired into product renderer or IME; clipboard, undo, autofill and timer-delivery acceptance remain open. See `parity/secure-text/README.md`.
 - Original core/UI + default/marshmallow debug runtime dependency graphs bound offline; selected versions/source hashes under `parity/fixtures/signin/`.
 - Minimal vendored winit0.30.13 raw Android input hook; one existing queue owner, borrowed callback before normal dispatch. Original source/license retained, bounded patch/provenance under `vendor/winit/docs/`. Global Cargo registry is unchanged.
 - Rust full-buffer/UTF-16 selection/composition transport and local tagged callback leases with ordered local action snapshots, redacted Debug and fail-closed bounded queue. No native-session provenance or zeroization guarantee.
@@ -56,9 +57,10 @@ python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json 
 python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json --owner native/src/signin_artwork.rs
 python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json --owner native/src/ime_session.rs
 python3 -B native/vendor/winit/tests/android_input_handler.py -v
+bash native/parity/secure-text/check_host.sh --coverage
 ```
 
-Login, layout, artwork and pure IME-session owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
+Login, layout, artwork, pure IME-session and secure-text policy owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
 test counts nor source fixtures prove branch/effect/device/pixel equivalence.
 
 Desktop execution needs working X11/Wayland and OpenGL/EGL. X11 needs distribution-

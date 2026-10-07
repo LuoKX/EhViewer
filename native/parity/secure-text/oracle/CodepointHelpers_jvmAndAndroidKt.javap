@@ -1,0 +1,22 @@
+Compiled from "CodepointHelpers.jvmAndAndroid.kt"
+public final class androidx.compose.foundation.text.input.internal.CodepointHelpers_jvmAndAndroidKt {
+  public static final int codePointAt(java.lang.CharSequence, int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokestatic  #11                 // Method java/lang/Character.codePointAt:(Ljava/lang/CharSequence;I)I
+         5: ireturn
+
+  public static final int charCount(int);
+    Code:
+         0: iload_0
+         1: invokestatic  #19                 // Method java/lang/Character.charCount:(I)I
+         4: ireturn
+
+  public static final int codePointBefore(java.lang.CharSequence, int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokestatic  #23                 // Method java/lang/Character.codePointBefore:(Ljava/lang/CharSequence;I)I
+         5: ireturn
+}

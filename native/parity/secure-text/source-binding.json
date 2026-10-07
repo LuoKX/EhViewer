@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "snapshot": "858529fe3",
+  "basis": "Pinned local Android bytecode, javap -c -p -constants; explicit source fixtures, not JVM/device execution",
+  "inputs": [
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt",
+      "sha256": "c295b63ed934e8b12c11314e757bad7eda42f96716f2a2965abe4199fbe7e689"
+    },
+    {
+      "path": "native/parity/fixtures/signin/material-source.json",
+      "sha256": "9f1a8f491827140189c7026e37f1fa910a40535048f2dbf2546801194b6e70f9"
+    },
+    {
+      "path": "native/parity/fixtures/signin/resolved-dependencies.json",
+      "sha256": "15957a6ee60a34dbcb0eaaf81110a0ef78a3029204d12f7faa671adafe4f1d83"
+    },
+    {
+      "path": "native/Cargo.toml",
+      "sha256": "c11b24159a78e2337bcf21534dc16786a88968d8617f188bb5137bb1c5114a70"
+    },
+    {
+      "path": "native/Cargo.lock",
+      "sha256": "35e4b4d1026b4b40827f668c2b85cf38ff2a87821a254976bf84262d9ca366d7"
+    }
+  ],
+  "artifacts": [
+    {
+      "coordinate": "androidx.compose.foundation:foundation-android:1.12.0-alpha02",
+      "cache_relative_path": "androidx.compose.foundation/foundation-android/1.12.0-alpha02/edbcfaa3ef1e5227f1fa8e4bcb4b1ce6165d3ce0/foundation.aar",
+      "aar_sha256": "74344537a4e46d1dd3c3319710d6950e17b3fd465c3f11f364fa75c20282d936",
+      "classes_jar_sha256": "ebcf096aa05a1f28d83f7002f9615c7caf7c9322fe5bf6060e1cc9da7f32582d",
+      "classes": [
+        {
+          "class_name": "androidx.compose.foundation.text.PasswordInputTransformation",
+          "class_sha256": "ec9df5b45ffdfe4ca5d9d831294124485d75b55c0f7570d1bb9c8aff4ac54fe9",
+          "sections": null,
+          "fixture": "oracle/PasswordInputTransformation.javap",
+          "fixture_sha256": "74abbcc0322194a8f776c8f205937876a2bdf8740c7e90b2a86484e85682e1a6"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.SecureTextFieldController",
+          "class_sha256": "074fa494a7759ea1beaf9e651f111606a42d7e45609bff0ecfd72cc0a17e5722",
+          "sections": null,
+          "fixture": "oracle/SecureTextFieldController.javap",
+          "fixture_sha256": "1df17e4d1a68b41bc50e53c3cff7adb85edbe57ac6d27b2f8513f9e6f8f12732"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.SecureTextFieldController$observeHideEvents$2",
+          "class_sha256": "980ecc43759f43a36d1e0be2b7ed23fc8a8ab00c761399cab2f854145a2855b6",
+          "sections": null,
+          "fixture": "oracle/SecureTextFieldController$observeHideEvents$2.javap",
+          "fixture_sha256": "5bcdb92cf42d62b5aaede9c5e2af95c6a0a57e41bdf7987e188ffc47265381a8"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextFieldKt",
+          "class_sha256": "23354640900bd42b6165c0cfa31105d89b1577d70f82c1fda3b4853c9f0bd6bf",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextFieldKt.javap",
+          "fixture_sha256": "cbc866fd5d10b2e0606daeb991caf56e3263eae3156706b852e5cbe97a527508"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$2$1",
+          "class_sha256": "366fd41a44f032b07a254024e579628176f3a2848af48a8e1c83ac5930031e77",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextFieldKt$BasicSecureTextField$2$1.javap",
+          "fixture_sha256": "53ef6747b5554379b7204aeb501b75da6c3bc56d9d8cc099f02a695ff737acb3"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1",
+          "class_sha256": "770ca558d6c03c93b23227a4e4511796197f1a133ad466db6491c0097c4473c1",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextField_androidKt$DefaultContentResolverForSecureTextField$1$1.javap",
+          "fixture_sha256": "5d51527cb67766038f1f66d99ef92c5f5011656065ae6ca85910689245c8c473"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextField_androidKt",
+          "class_sha256": "e413de88c5d89d7b42854539e42737713d8768449eaba43e52b0a8c9631fb03b",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextField_androidKt.javap",
+          "fixture_sha256": "0b25ff735ad50f4f8cf4f627c8df82d7de6a18e53b026d013aa5990880b81f9e"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.input.internal.CodepointTransformationKt",
+          "class_sha256": "991e251aa80452098b533bf433f86937409ff78ce555abe9e9af31f6f13fbeb6",
+          "sections": null,
+          "fixture": "oracle/CodepointTransformationKt.javap",
+          "fixture_sha256": "23ab9439b46ac2658289e7af5e4d2efa67fc0654469dc63bcb1d1fec5d598772"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.input.TextFieldBuffer",
+          "class_sha256": "00f99129e34620c41d41868ffdb80ba93a5a2f7f5fecd309d26a5ba48c453fc4",
+          "sections": null,
+          "fixture": "oracle/TextFieldBuffer.javap",
+          "fixture_sha256": "e93a838143393c6861b4d220e1f98ef4dca13859e8885dc58cdb786c0eec62f7"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1",
+          "class_sha256": "485da3a008dc394f041100ef8ca6c55bff6086af884cc888e67e6fb7e3f32a3b",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1.javap",
+          "fixture_sha256": "4d94c88ea39581cca9e8a7b63ab63a20dd32df9238e57961c36766867f6ce76f"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1",
+          "class_sha256": "a55744d446544b1e6418ba182ef56a47f7ced3ae3a03486f6fd44fc09e60e2ce",
+          "sections": null,
+          "fixture": "oracle/BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1.javap",
+          "fixture_sha256": "08e652c6a4e30efac9aba6aa8e5e5f60ec832f5070cd7198eadfd1f7a224b929"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.input.internal.CodepointHelpers_jvmAndAndroidKt",
+          "class_sha256": "8cf12ae5f232fabc5076ff052e32082a8fd23ccac7baf119c45df138465141c0",
+          "sections": null,
+          "fixture": "oracle/CodepointHelpers_jvmAndAndroidKt.javap",
+          "fixture_sha256": "c5727a56452a822e6a0084ef8b581ee5b97469d67dd2844d07a71b84436d172c"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.StringsHelpers_jvmAndAndroidKt",
+          "class_sha256": "0a02bfece3b13428558ae4bad802000c4a3eaa651c30b872a409d433ebc76f81",
+          "sections": null,
+          "fixture": "oracle/StringsHelpers_jvmAndAndroidKt.javap",
+          "fixture_sha256": "3142c96fdf56907cd0e3c506d3e420fe78a1eb6426eef9c6b16b0e2fa7da86db"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.input.TextObfuscationMode",
+          "class_sha256": "47ea741a5295e2e45493a8aec409a5159cb5ca8bec8c4f96e5003e989b1e420c",
+          "sections": null,
+          "fixture": "oracle/TextObfuscationMode.javap",
+          "fixture_sha256": "5747d52ac34af0ff4e8f2d800dd17e40983c5ec3553eb71b7a12dc9434e60da2"
+        },
+        {
+          "class_name": "androidx.compose.foundation.text.input.TextObfuscationMode$Companion",
+          "class_sha256": "b5b4cfaa25d06590df5558bb72b2ddf68be1f061aa03c5449648d6cd0413be3d",
+          "sections": null,
+          "fixture": "oracle/TextObfuscationMode$Companion.javap",
+          "fixture_sha256": "ec9dcacf3bea1bd500d42a9a436c00fb93af8c45ec08572b2e40d03105493574"
+        }
+      ]
+    },
+    {
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "cache_relative_path": "androidx.compose.material3/material3-android/1.5.0-alpha19/b4599558709ddd517d1a32636f13ffe862bef580/material3.aar",
+      "aar_sha256": "d77c3f8e670dbc96517bb87245ac27459316f5976999d8106204f92eae8c34f4",
+      "classes_jar_sha256": "d618813096d516976ffc33eb67b4a2a4e2404b0b74f0e5fccaf396148d87d51a",
+      "classes": [
+        {
+          "class_name": "androidx.compose.material3.SecureTextFieldKt",
+          "class_sha256": "2177b4687b0f69426d2bb934d37aee8d22b1439c4b559113c53a234294d1495d",
+          "sections": null,
+          "fixture": "oracle/SecureTextFieldKt.javap",
+          "fixture_sha256": "e464706175f8daf1c3da0f9174a9fe083f79f5bb207f11160bf77ea6413347fb"
+        }
+      ]
+    },
+    {
+      "coordinate": "androidx.compose.ui:ui-text-android:1.12.0-alpha02",
+      "cache_relative_path": "androidx.compose.ui/ui-text-android/1.12.0-alpha02/22273fcb13c9cc51f64aa5e955e9f45730b0936b/ui-text.aar",
+      "aar_sha256": "026742aa0d3d10d1bb8a23f9d5cf393e37dfbbb79e70d3a391e37f811872233d",
+      "classes_jar_sha256": "475bb634e1007df7bc1d982edb0b7cfacf35b6c97edfd8725f969affeba6e115",
+      "classes": [
+        {
+          "class_name": "androidx.compose.ui.text.TextRange",
+          "class_sha256": "6e10dd032a42ff71bdef7f27d06b8251bc59b593d0172b24f24f014cb2bc1849",
+          "sections": null,
+          "fixture": "oracle/TextRange.javap",
+          "fixture_sha256": "bdcbc1c46776e7d0d719b5a4b6f7581e6fb38cc085f68bb3f0ace875c3c19c76"
+        }
+      ]
+    }
+  ],
+  "cases_sha256": "f626237df53f52f2c2dbe6bc3a311325c07e305107d151236d94e0269381c979"
+}

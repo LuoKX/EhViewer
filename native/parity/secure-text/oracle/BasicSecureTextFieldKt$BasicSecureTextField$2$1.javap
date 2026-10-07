@@ -1,0 +1,83 @@
+Compiled from "BasicSecureTextField.kt"
+final class androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$2$1 extends kotlin.coroutines.jvm.internal.SuspendLambda implements kotlin.jvm.functions.Function2<kotlinx.coroutines.CoroutineScope, kotlin.coroutines.Continuation<? super kotlin.Unit>, java.lang.Object> {
+  int label;
+
+  final boolean $revealLastTypedEnabled;
+
+  final androidx.compose.foundation.text.SecureTextFieldController $secureTextFieldController;
+
+  androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$2$1(boolean, androidx.compose.foundation.text.SecureTextFieldController, kotlin.coroutines.Continuation<? super androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$2$1>);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: putfield      #14                 // Field $revealLastTypedEnabled:Z
+         5: aload_0
+         6: aload_2
+         7: putfield      #18                 // Field $secureTextFieldController:Landroidx/compose/foundation/text/SecureTextFieldController;
+        10: aload_0
+        11: iconst_2
+        12: aload_3
+        13: invokespecial #21                 // Method kotlin/coroutines/jvm/internal/SuspendLambda."<init>":(ILkotlin/coroutines/Continuation;)V
+        16: return
+
+  public final java.lang.Object invokeSuspend(java.lang.Object);
+    Code:
+         0: invokestatic  #45                 // Method kotlin/coroutines/intrinsics/IntrinsicsKt.getCOROUTINE_SUSPENDED:()Ljava/lang/Object;
+         3: pop
+         4: aload_0
+         5: getfield      #49                 // Field label:I
+         8: tableswitch   { // 0 to 0
+                       0: 28
+                 default: 53
+            }
+        28: aload_1
+        29: invokestatic  #55                 // Method kotlin/ResultKt.throwOnFailure:(Ljava/lang/Object;)V
+        32: aload_0
+        33: getfield      #14                 // Field $revealLastTypedEnabled:Z
+        36: ifne          49
+        39: aload_0
+        40: getfield      #18                 // Field $secureTextFieldController:Landroidx/compose/foundation/text/SecureTextFieldController;
+        43: invokevirtual #61                 // Method androidx/compose/foundation/text/SecureTextFieldController.getPasswordInputTransformation:()Landroidx/compose/foundation/text/PasswordInputTransformation;
+        46: invokevirtual #67                 // Method androidx/compose/foundation/text/PasswordInputTransformation.hide:()V
+        49: getstatic     #73                 // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        52: areturn
+        53: new           #75                 // class java/lang/IllegalStateException
+        56: dup
+        57: ldc           #77                 // String call to \'resume\' before \'invoke\' with coroutine
+        59: invokespecial #80                 // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        62: athrow
+
+  public final kotlin.coroutines.Continuation<kotlin.Unit> create(java.lang.Object, kotlin.coroutines.Continuation<?>);
+    Code:
+         0: new           #2                  // class androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$2$1
+         3: dup
+         4: aload_0
+         5: getfield      #14                 // Field $revealLastTypedEnabled:Z
+         8: aload_0
+         9: getfield      #18                 // Field $secureTextFieldController:Landroidx/compose/foundation/text/SecureTextFieldController;
+        12: aload_2
+        13: invokespecial #87                 // Method "<init>":(ZLandroidx/compose/foundation/text/SecureTextFieldController;Lkotlin/coroutines/Continuation;)V
+        16: checkcast     #89                 // class kotlin/coroutines/Continuation
+        19: areturn
+
+  public final java.lang.Object invoke(kotlinx.coroutines.CoroutineScope, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: invokevirtual #95                 // Method create:(Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Lkotlin/coroutines/Continuation;
+         6: checkcast     #2                  // class androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$2$1
+         9: getstatic     #73                 // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        12: invokevirtual #97                 // Method invokeSuspend:(Ljava/lang/Object;)Ljava/lang/Object;
+        15: areturn
+
+  public java.lang.Object invoke(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: checkcast     #103                // class kotlinx/coroutines/CoroutineScope
+         5: aload_2
+         6: checkcast     #89                 // class kotlin/coroutines/Continuation
+         9: invokevirtual #105                // Method invoke:(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+        12: areturn
+}

@@ -31,11 +31,19 @@ TalkBack, secure text, autofill, typography, lifecycle, GPU or performance parit
 | Feature | Code / host evidence | Product / device gate | Commit policy |
 | --- | --- | --- | --- |
 | Existing Rust core and seven category rules | Already production-wired in original app; prior audit records retained | Original Android effect/device gates remain | Existing commits retained |
-| Isolated Rust foundation | Accepted bounded diagnostic slice, gates above | Not production screen or cutover | Checkpoint existing work before new slices |
+| Isolated Rust foundation | Accepted bounded diagnostic slice, gates above | Not production screen or cutover | Committed `858529fe3` |
 | DataStore preference format and Rust file runtime | Next bounded F1 seam, copied synthetic fixtures only | No live preference access; settings UI/upgrade still pending | Commit after compatibility, failure and independent review gates |
-| Original secure-text behavior | Next source-bound seam, pinned Compose oracle | Actual IME/edit/render/autofill still pending | No stock-password substitution or product completion claim |
+| Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Separate bounded policy commit; no product completion claim |
 | SQLite data compatibility | Inventory historical schemas and copied fixture plan | No live DB or destructive migrations | Own feature commits only after implemented gates |
 | Full F1–F8 application responsibilities | Pending; reuse existing Rust owners | All original behavior/data/device/cutover obligations open | One finished bounded feature per commit |
+
+Secure-text integration gate (2026-10-07): prior P1 proof gaps and P2 toolbar
+wording resolved; independent re-review6eedbd1b-32c0-41cf-9fa1-06f6db0f88f0
+accepts source/policy seam only. Parent reran 67 native Rust tests, strict host
+Clippy, source/checker/owner gates and three-ABI APK/signature validation. APK
+not installed. Complete class proofs preserve original 13 class identities and
+add four helpers/mode classes from the same pinned artifact; no Cargo/source
+version substitution. Logs: ignored `native/build/logs/secure-final-*`.
 
 Parent serializes integration and commits. Workers own disjoint isolated
 snapshots; no shared root writes, commits, installs, credential use or live data.

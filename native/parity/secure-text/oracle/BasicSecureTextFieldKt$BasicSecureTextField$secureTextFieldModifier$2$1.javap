@@ -1,0 +1,45 @@
+Compiled from "BasicSecureTextField.kt"
+final class androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1 implements kotlin.jvm.functions.Function1<androidx.compose.ui.input.key.KeyEvent, java.lang.Boolean> {
+  public static final androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1 INSTANCE;
+
+  androidx.compose.foundation.text.BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1();
+    Code:
+         0: aload_0
+         1: invokespecial #11                 // Method java/lang/Object."<init>":()V
+         4: return
+
+  public final java.lang.Boolean invoke-ZmokQxo(android.view.KeyEvent);
+    Code:
+         0: invokestatic  #21                 // Method androidx/compose/foundation/text/KeyMapping_androidKt.getPlatformDefaultKeyMapping:()Landroidx/compose/foundation/text/KeyMapping;
+         3: aload_1
+         4: invokeinterface #27,  2           // InterfaceMethod androidx/compose/foundation/text/KeyMapping."map-ZmokQxo":(Landroid/view/KeyEvent;)Landroidx/compose/foundation/text/KeyCommand;
+         9: astore_2
+        10: aload_2
+        11: getstatic     #33                 // Field androidx/compose/foundation/text/KeyCommand.COPY:Landroidx/compose/foundation/text/KeyCommand;
+        14: if_acmpeq     24
+        17: aload_2
+        18: getstatic     #36                 // Field androidx/compose/foundation/text/KeyCommand.CUT:Landroidx/compose/foundation/text/KeyCommand;
+        21: if_acmpne     28
+        24: iconst_1
+        25: goto          29
+        28: iconst_0
+        29: invokestatic  #42                 // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+        32: areturn
+
+  public java.lang.Object invoke(java.lang.Object);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: checkcast     #49                 // class androidx/compose/ui/input/key/KeyEvent
+         5: invokevirtual #53                 // Method androidx/compose/ui/input/key/KeyEvent."unbox-impl":()Landroid/view/KeyEvent;
+         8: invokevirtual #55                 // Method "invoke-ZmokQxo":(Landroid/view/KeyEvent;)Ljava/lang/Boolean;
+        11: areturn
+
+  static {};
+    Code:
+         0: new           #2                  // class androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1
+         3: dup
+         4: invokespecial #59                 // Method "<init>":()V
+         7: putstatic     #62                 // Field INSTANCE:Landroidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1;
+        10: return
+}

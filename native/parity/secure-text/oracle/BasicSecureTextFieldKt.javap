@@ -1,0 +1,2353 @@
+Compiled from "BasicSecureTextField.kt"
+public final class androidx.compose.foundation.text.BasicSecureTextFieldKt {
+  private static final long LAST_TYPED_CHARACTER_REVEAL_DURATION_MILLIS = 1500l;
+
+  private static final char DefaultObfuscationCharacter = '\u2022';
+
+  public static final void BasicSecureTextField-ltb6GB4(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2<? super androidx.compose.ui.unit.Density, ? super kotlin.jvm.functions.Function0<androidx.compose.ui.text.TextLayoutResult>, kotlin.Unit>, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, androidx.compose.foundation.ScrollState, androidx.compose.runtime.Composer, int, int, int);
+    Code:
+         0: aload         15
+         2: ldc           #14                 // int 1568790509
+         4: invokeinterface #26,  2           // InterfaceMethod androidx/compose/runtime/Composer.startRestartGroup:(I)Landroidx/compose/runtime/Composer;
+         9: astore        15
+        11: aload         15
+        13: ldc           #28                 // String C(BasicSecureTextField)N(state,modifier,enabled,readOnly,inputTransformation,textStyle,keyboardOptions,onKeyboardAction,onTextLayout,interactionSource,cursorBrush,decorator,textObfuscationMode:c#foundation.text.input.TextObfuscationMode,textObfuscationCharacter,scrollState)140@8345L46,141@8428L60,142@8535L130,142@8493L172,155@9098L129,155@9059L168,162@9271L424,176@9771L38,177@9841L288,191@10367L891,191@10352L906:BasicSecureTextField.kt#423gt5
+        15: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+        18: iload         16
+        20: istore        19
+        22: iload         17
+        24: istore        20
+        26: iload         16
+        28: bipush        6
+        30: iand
+        31: ifne          55
+        34: iload         19
+        36: aload         15
+        38: aload_0
+        39: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        44: ifeq          51
+        47: iconst_4
+        48: goto          52
+        51: iconst_2
+        52: ior
+        53: istore        19
+        55: iload         18
+        57: iconst_2
+        58: iand
+        59: ifeq          72
+        62: iload         19
+        64: bipush        48
+        66: ior
+        67: istore        19
+        69: goto          103
+        72: iload         16
+        74: bipush        48
+        76: iand
+        77: ifne          103
+        80: iload         19
+        82: aload         15
+        84: aload_1
+        85: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        90: ifeq          98
+        93: bipush        32
+        95: goto          100
+        98: bipush        16
+       100: ior
+       101: istore        19
+       103: iload         18
+       105: iconst_4
+       106: iand
+       107: ifeq          121
+       110: iload         19
+       112: sipush        384
+       115: ior
+       116: istore        19
+       118: goto          155
+       121: iload         16
+       123: sipush        384
+       126: iand
+       127: ifne          155
+       130: iload         19
+       132: aload         15
+       134: iload_2
+       135: invokeinterface #41,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Z)Z
+       140: ifeq          149
+       143: sipush        256
+       146: goto          152
+       149: sipush        128
+       152: ior
+       153: istore        19
+       155: iload         18
+       157: bipush        8
+       159: iand
+       160: ifeq          174
+       163: iload         19
+       165: sipush        3072
+       168: ior
+       169: istore        19
+       171: goto          208
+       174: iload         16
+       176: sipush        3072
+       179: iand
+       180: ifne          208
+       183: iload         19
+       185: aload         15
+       187: iload_3
+       188: invokeinterface #41,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Z)Z
+       193: ifeq          202
+       196: sipush        2048
+       199: goto          205
+       202: sipush        1024
+       205: ior
+       206: istore        19
+       208: iload         18
+       210: bipush        16
+       212: iand
+       213: ifeq          227
+       216: iload         19
+       218: sipush        24576
+       221: ior
+       222: istore        19
+       224: goto          262
+       227: iload         16
+       229: sipush        24576
+       232: iand
+       233: ifne          262
+       236: iload         19
+       238: aload         15
+       240: aload         4
+       242: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       247: ifeq          256
+       250: sipush        16384
+       253: goto          259
+       256: sipush        8192
+       259: ior
+       260: istore        19
+       262: iload         18
+       264: bipush        32
+       266: iand
+       267: ifeq          280
+       270: iload         19
+       272: ldc           #42                 // int 196608
+       274: ior
+       275: istore        19
+       277: goto          312
+       280: iload         16
+       282: ldc           #42                 // int 196608
+       284: iand
+       285: ifne          312
+       288: iload         19
+       290: aload         15
+       292: aload         5
+       294: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       299: ifeq          307
+       302: ldc           #43                 // int 131072
+       304: goto          309
+       307: ldc           #44                 // int 65536
+       309: ior
+       310: istore        19
+       312: iload         18
+       314: bipush        64
+       316: iand
+       317: ifeq          330
+       320: iload         19
+       322: ldc           #45                 // int 1572864
+       324: ior
+       325: istore        19
+       327: goto          362
+       330: iload         16
+       332: ldc           #45                 // int 1572864
+       334: iand
+       335: ifne          362
+       338: iload         19
+       340: aload         15
+       342: aload         6
+       344: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       349: ifeq          357
+       352: ldc           #46                 // int 1048576
+       354: goto          359
+       357: ldc           #47                 // int 524288
+       359: ior
+       360: istore        19
+       362: iload         18
+       364: sipush        128
+       367: iand
+       368: ifeq          381
+       371: iload         19
+       373: ldc           #48                 // int 12582912
+       375: ior
+       376: istore        19
+       378: goto          413
+       381: iload         16
+       383: ldc           #48                 // int 12582912
+       385: iand
+       386: ifne          413
+       389: iload         19
+       391: aload         15
+       393: aload         7
+       395: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       400: ifeq          408
+       403: ldc           #49                 // int 8388608
+       405: goto          410
+       408: ldc           #50                 // int 4194304
+       410: ior
+       411: istore        19
+       413: iload         18
+       415: sipush        256
+       418: iand
+       419: ifeq          432
+       422: iload         19
+       424: ldc           #51                 // int 100663296
+       426: ior
+       427: istore        19
+       429: goto          464
+       432: iload         16
+       434: ldc           #51                 // int 100663296
+       436: iand
+       437: ifne          464
+       440: iload         19
+       442: aload         15
+       444: aload         8
+       446: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       451: ifeq          459
+       454: ldc           #55                 // int 67108864
+       456: goto          461
+       459: ldc           #56                 // int 33554432
+       461: ior
+       462: istore        19
+       464: iload         18
+       466: sipush        512
+       469: iand
+       470: ifeq          483
+       473: iload         19
+       475: ldc           #57                 // int 805306368
+       477: ior
+       478: istore        19
+       480: goto          515
+       483: iload         16
+       485: ldc           #57                 // int 805306368
+       487: iand
+       488: ifne          515
+       491: iload         19
+       493: aload         15
+       495: aload         9
+       497: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       502: ifeq          510
+       505: ldc           #58                 // int 536870912
+       507: goto          512
+       510: ldc           #59                 // int 268435456
+       512: ior
+       513: istore        19
+       515: iload         18
+       517: sipush        1024
+       520: iand
+       521: ifeq          534
+       524: iload         20
+       526: bipush        6
+       528: ior
+       529: istore        20
+       531: goto          564
+       534: iload         17
+       536: bipush        6
+       538: iand
+       539: ifne          564
+       542: iload         20
+       544: aload         15
+       546: aload         10
+       548: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       553: ifeq          560
+       556: iconst_4
+       557: goto          561
+       560: iconst_2
+       561: ior
+       562: istore        20
+       564: iload         18
+       566: sipush        2048
+       569: iand
+       570: ifeq          583
+       573: iload         20
+       575: bipush        48
+       577: ior
+       578: istore        20
+       580: goto          635
+       583: iload         17
+       585: bipush        48
+       587: iand
+       588: ifne          635
+       591: iload         20
+       593: iload         17
+       595: bipush        64
+       597: iand
+       598: ifne          613
+       601: aload         15
+       603: aload         11
+       605: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       610: goto          622
+       613: aload         15
+       615: aload         11
+       617: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       622: ifeq          630
+       625: bipush        32
+       627: goto          632
+       630: bipush        16
+       632: ior
+       633: istore        20
+       635: iload         17
+       637: sipush        384
+       640: iand
+       641: ifne          679
+       644: iload         20
+       646: iload         18
+       648: sipush        4096
+       651: iand
+       652: ifne          673
+       655: aload         15
+       657: iload         12
+       659: invokeinterface #62,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(I)Z
+       664: ifeq          673
+       667: sipush        256
+       670: goto          676
+       673: sipush        128
+       676: ior
+       677: istore        20
+       679: iload         18
+       681: sipush        8192
+       684: iand
+       685: ifeq          699
+       688: iload         20
+       690: sipush        3072
+       693: ior
+       694: istore        20
+       696: goto          734
+       699: iload         17
+       701: sipush        3072
+       704: iand
+       705: ifne          734
+       708: iload         20
+       710: aload         15
+       712: iload         13
+       714: invokeinterface #65,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(C)Z
+       719: ifeq          728
+       722: sipush        2048
+       725: goto          731
+       728: sipush        1024
+       731: ior
+       732: istore        20
+       734: iload         17
+       736: sipush        24576
+       739: iand
+       740: ifne          778
+       743: iload         20
+       745: iload         18
+       747: sipush        16384
+       750: iand
+       751: ifne          772
+       754: aload         15
+       756: aload         14
+       758: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       763: ifeq          772
+       766: sipush        16384
+       769: goto          775
+       772: sipush        8192
+       775: ior
+       776: istore        20
+       778: aload         15
+       780: iload         19
+       782: ldc           #66                 // int 306783379
+       784: iand
+       785: ldc           #67                 // int 306783378
+       787: if_icmpne     802
+       790: iload         20
+       792: sipush        9363
+       795: iand
+       796: sipush        9362
+       799: if_icmpeq     806
+       802: iconst_1
+       803: goto          807
+       806: iconst_0
+       807: iload         19
+       809: iconst_1
+       810: iand
+       811: invokeinterface #71,  3           // InterfaceMethod androidx/compose/runtime/Composer.shouldExecute:(ZI)Z
+       816: ifeq          2026
+       819: aload         15
+       821: invokeinterface #75,  1           // InterfaceMethod androidx/compose/runtime/Composer.startDefaults:()V
+       826: aload         15
+       828: ldc           #77                 // String 138@8287L21
+       830: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+       833: iload         16
+       835: iconst_1
+       836: iand
+       837: ifeq          850
+       840: aload         15
+       842: invokeinterface #81,  1           // InterfaceMethod androidx/compose/runtime/Composer.getDefaultsInvalid:()Z
+       847: ifeq          1070
+       850: iload         18
+       852: iconst_2
+       853: iand
+       854: ifeq          864
+       857: getstatic     #87                 // Field androidx/compose/ui/Modifier.Companion:Landroidx/compose/ui/Modifier$Companion;
+       860: checkcast     #83                 // class androidx/compose/ui/Modifier
+       863: astore_1
+       864: iload         18
+       866: iconst_4
+       867: iand
+       868: ifeq          873
+       871: iconst_1
+       872: istore_2
+       873: iload         18
+       875: bipush        8
+       877: iand
+       878: ifeq          883
+       881: iconst_0
+       882: istore_3
+       883: iload         18
+       885: bipush        16
+       887: iand
+       888: ifeq          894
+       891: aconst_null
+       892: astore        4
+       894: iload         18
+       896: bipush        32
+       898: iand
+       899: ifeq          910
+       902: getstatic     #92                 // Field androidx/compose/ui/text/TextStyle.Companion:Landroidx/compose/ui/text/TextStyle$Companion;
+       905: invokevirtual #98                 // Method androidx/compose/ui/text/TextStyle$Companion.getDefault:()Landroidx/compose/ui/text/TextStyle;
+       908: astore        5
+       910: iload         18
+       912: bipush        64
+       914: iand
+       915: ifeq          926
+       918: getstatic     #103                // Field androidx/compose/foundation/text/KeyboardOptions.Companion:Landroidx/compose/foundation/text/KeyboardOptions$Companion;
+       921: invokevirtual #109                // Method androidx/compose/foundation/text/KeyboardOptions$Companion.getSecureTextField$foundation:()Landroidx/compose/foundation/text/KeyboardOptions;
+       924: astore        6
+       926: iload         18
+       928: sipush        128
+       931: iand
+       932: ifeq          938
+       935: aconst_null
+       936: astore        7
+       938: iload         18
+       940: sipush        256
+       943: iand
+       944: ifeq          950
+       947: aconst_null
+       948: astore        8
+       950: iload         18
+       952: sipush        512
+       955: iand
+       956: ifeq          962
+       959: aconst_null
+       960: astore        9
+       962: iload         18
+       964: sipush        1024
+       967: iand
+       968: ifeq          990
+       971: new           #111                // class androidx/compose/ui/graphics/SolidColor
+       974: dup
+       975: getstatic     #116                // Field androidx/compose/ui/graphics/Color.Companion:Landroidx/compose/ui/graphics/Color$Companion;
+       978: invokevirtual #122                // Method androidx/compose/ui/graphics/Color$Companion."getBlack-0d7_KjU":()J
+       981: aconst_null
+       982: invokespecial #126                // Method androidx/compose/ui/graphics/SolidColor."<init>":(JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+       985: checkcast     #128                // class androidx/compose/ui/graphics/Brush
+       988: astore        10
+       990: iload         18
+       992: sipush        2048
+       995: iand
+       996: ifeq          1002
+       999: aconst_null
+      1000: astore        11
+      1002: iload         18
+      1004: sipush        4096
+      1007: iand
+      1008: ifeq          1027
+      1011: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+      1014: invokestatic  #138                // Method androidx/compose/foundation/text/input/TextObfuscationMode_androidKt.getDefault:(Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;)I
+      1017: istore        12
+      1019: iload         20
+      1021: sipush        -897
+      1024: iand
+      1025: istore        20
+      1027: iload         18
+      1029: sipush        8192
+      1032: iand
+      1033: ifeq          1041
+      1036: sipush        8226
+      1039: istore        13
+      1041: iload         18
+      1043: sipush        16384
+      1046: iand
+      1047: ifeq          1110
+      1050: iconst_0
+      1051: aload         15
+      1053: iconst_0
+      1054: iconst_1
+      1055: invokestatic  #144                // Method androidx/compose/foundation/ScrollKt.rememberScrollState:(ILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/ScrollState;
+      1058: astore        14
+      1060: iload         20
+      1062: ldc           #145                // int -57345
+      1064: iand
+      1065: istore        20
+      1067: goto          1110
+      1070: aload         15
+      1072: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+      1077: iload         18
+      1079: sipush        4096
+      1082: iand
+      1083: ifeq          1094
+      1086: iload         20
+      1088: sipush        -897
+      1091: iand
+      1092: istore        20
+      1094: iload         18
+      1096: sipush        16384
+      1099: iand
+      1100: ifeq          1110
+      1103: iload         20
+      1105: ldc           #145                // int -57345
+      1107: iand
+      1108: istore        20
+      1110: aload         15
+      1112: invokeinterface #151,  1          // InterfaceMethod androidx/compose/runtime/Composer.endDefaults:()V
+      1117: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+      1120: ifeq          1134
+      1123: ldc           #14                 // int 1568790509
+      1125: iload         19
+      1127: iload         20
+      1129: ldc           #156                // String androidx.compose.foundation.text.BasicSecureTextField (BasicSecureTextField.kt:139)
+      1131: invokestatic  #160                // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+      1134: iload         13
+      1136: invokestatic  #166                // Method java/lang/Character.valueOf:(C)Ljava/lang/Character;
+      1139: aload         15
+      1141: bipush        14
+      1143: iload         20
+      1145: bipush        9
+      1147: ishr
+      1148: iand
+      1149: invokestatic  #172                // Method androidx/compose/runtime/SnapshotStateKt.rememberUpdatedState:(Ljava/lang/Object;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+      1152: astore        21
+      1154: aload         15
+      1156: ldc           #173                // int 74191401
+      1158: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1160: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1163: aload         15
+      1165: astore        24
+      1167: iconst_0
+      1168: istore        25
+      1170: iconst_0
+      1171: istore        26
+      1173: aload         24
+      1175: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1180: astore        27
+      1182: iconst_0
+      1183: istore        28
+      1185: aload         27
+      1187: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1190: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1193: if_acmpne     1224
+      1196: iconst_0
+      1197: istore        29
+      1199: new           #193                // class androidx/compose/foundation/text/SecureTextFieldController
+      1202: dup
+      1203: aload         21
+      1205: invokespecial #196                // Method androidx/compose/foundation/text/SecureTextFieldController."<init>":(Landroidx/compose/runtime/State;)V
+      1208: astore        30
+      1210: aload         24
+      1212: aload         30
+      1214: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1219: aload         30
+      1221: goto          1226
+      1224: aload         27
+      1226: nop
+      1227: nop
+      1228: checkcast     #193                // class androidx/compose/foundation/text/SecureTextFieldController
+      1231: astore        23
+      1233: aload         15
+      1235: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1238: aload         23
+      1240: astore        22
+      1242: aload         22
+      1244: aload         15
+      1246: ldc           #205                // int 74194895
+      1248: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1250: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1253: aload         15
+      1255: astore        24
+      1257: aload         15
+      1259: aload         22
+      1261: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+      1266: istore        25
+      1268: iconst_0
+      1269: istore        26
+      1271: aload         24
+      1273: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1278: astore        27
+      1280: iconst_0
+      1281: istore        28
+      1283: iload         25
+      1285: ifne          1299
+      1288: aload         27
+      1290: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1293: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1296: if_acmpne     1336
+      1299: astore        34
+      1301: iconst_0
+      1302: istore        29
+      1304: new           #207                // class androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$1$1
+      1307: dup
+      1308: aload         22
+      1310: aconst_null
+      1311: invokespecial #210                // Method androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$1$1."<init>":(Landroidx/compose/foundation/text/SecureTextFieldController;Lkotlin/coroutines/Continuation;)V
+      1314: checkcast     #212                // class kotlin/jvm/functions/Function2
+      1317: aload         34
+      1319: swap
+      1320: astore        30
+      1322: aload         24
+      1324: aload         30
+      1326: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1331: aload         30
+      1333: goto          1338
+      1336: aload         27
+      1338: nop
+      1339: nop
+      1340: checkcast     #212                // class kotlin/jvm/functions/Function2
+      1343: astore        23
+      1345: aload         15
+      1347: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1350: aload         23
+      1352: aload         15
+      1354: iconst_0
+      1355: invokestatic  #218                // Method androidx/compose/runtime/EffectsKt.LaunchedEffect:(Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+      1358: iload         12
+      1360: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+      1363: invokevirtual #224                // Method androidx/compose/foundation/text/input/TextObfuscationMode$Companion."getRevealLastTyped-vTwcZD0":()I
+      1366: invokestatic  #228                // Method androidx/compose/foundation/text/input/TextObfuscationMode."equals-impl0":(II)Z
+      1369: ifeq          1408
+      1372: aload         15
+      1374: ldc           #229                // int 74207180
+      1376: invokeinterface #233,  2          // InterfaceMethod androidx/compose/runtime/Composer.startReplaceGroup:(I)V
+      1381: aload         15
+      1383: ldc           #235                // String 152@8922L31
+      1385: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+      1388: aload         15
+      1390: iconst_0
+      1391: invokestatic  #241                // Method androidx/compose/foundation/text/BasicSecureTextField_androidKt.platformAllowsRevealLastTyped:(Landroidx/compose/runtime/Composer;I)Z
+      1394: istore        24
+      1396: aload         15
+      1398: invokeinterface #244,  1          // InterfaceMethod androidx/compose/runtime/Composer.endReplaceGroup:()V
+      1403: iload         24
+      1405: goto          1425
+      1408: aload         15
+      1410: ldc           #245                // int -1994543479
+      1412: invokeinterface #233,  2          // InterfaceMethod androidx/compose/runtime/Composer.startReplaceGroup:(I)V
+      1417: aload         15
+      1419: invokeinterface #244,  1          // InterfaceMethod androidx/compose/runtime/Composer.endReplaceGroup:()V
+      1424: iconst_0
+      1425: istore        23
+      1427: iload         23
+      1429: invokestatic  #250                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+      1432: aload         15
+      1434: ldc           #251                // int 74212910
+      1436: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1438: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1441: aload         15
+      1443: astore        25
+      1445: aload         15
+      1447: iload         23
+      1449: invokeinterface #41,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Z)Z
+      1454: aload         15
+      1456: aload         22
+      1458: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+      1463: ior
+      1464: istore        26
+      1466: iconst_0
+      1467: istore        27
+      1469: aload         25
+      1471: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1476: astore        28
+      1478: iconst_0
+      1479: istore        29
+      1481: iload         26
+      1483: ifne          1497
+      1486: aload         28
+      1488: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1491: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1494: if_acmpne     1536
+      1497: astore        34
+      1499: iconst_0
+      1500: istore        30
+      1502: new           #253                // class androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$2$1
+      1505: dup
+      1506: iload         23
+      1508: aload         22
+      1510: aconst_null
+      1511: invokespecial #256                // Method androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$2$1."<init>":(ZLandroidx/compose/foundation/text/SecureTextFieldController;Lkotlin/coroutines/Continuation;)V
+      1514: checkcast     #212                // class kotlin/jvm/functions/Function2
+      1517: aload         34
+      1519: swap
+      1520: astore        31
+      1522: aload         25
+      1524: aload         31
+      1526: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1531: aload         31
+      1533: goto          1538
+      1536: aload         28
+      1538: nop
+      1539: nop
+      1540: checkcast     #212                // class kotlin/jvm/functions/Function2
+      1543: astore        24
+      1545: aload         15
+      1547: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1550: aload         24
+      1552: aload         15
+      1554: iconst_0
+      1555: invokestatic  #218                // Method androidx/compose/runtime/EffectsKt.LaunchedEffect:(Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+      1558: aload         15
+      1560: ldc_w         #257                // int 74218741
+      1563: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1565: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1568: aload         15
+      1570: astore        26
+      1572: iload         20
+      1574: sipush        896
+      1577: iand
+      1578: sipush        384
+      1581: ixor
+      1582: sipush        256
+      1585: if_icmple     1600
+      1588: aload         15
+      1590: iload         12
+      1592: invokeinterface #62,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(I)Z
+      1597: ifne          1612
+      1600: iload         20
+      1602: sipush        384
+      1605: iand
+      1606: sipush        256
+      1609: if_icmpne     1616
+      1612: iconst_1
+      1613: goto          1617
+      1616: iconst_0
+      1617: istore        27
+      1619: iconst_0
+      1620: istore        28
+      1622: aload         26
+      1624: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1629: astore        29
+      1631: iconst_0
+      1632: istore        30
+      1634: iload         27
+      1636: ifne          1650
+      1639: aload         29
+      1641: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1644: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1647: if_acmpne     1721
+      1650: iconst_0
+      1651: istore        31
+      1653: iload         12
+      1655: istore        32
+      1657: iload         32
+      1659: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+      1662: invokevirtual #224                // Method androidx/compose/foundation/text/input/TextObfuscationMode$Companion."getRevealLastTyped-vTwcZD0":()I
+      1665: invokestatic  #228                // Method androidx/compose/foundation/text/input/TextObfuscationMode."equals-impl0":(II)Z
+      1668: ifeq          1679
+      1671: aload         22
+      1673: invokevirtual #261                // Method androidx/compose/foundation/text/SecureTextFieldController.getCodepointTransformation:()Landroidx/compose/foundation/text/input/internal/CodepointTransformation;
+      1676: goto          1704
+      1679: iload         32
+      1681: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+      1684: invokevirtual #264                // Method androidx/compose/foundation/text/input/TextObfuscationMode$Companion."getHidden-vTwcZD0":()I
+      1687: invokestatic  #228                // Method androidx/compose/foundation/text/input/TextObfuscationMode."equals-impl0":(II)Z
+      1690: ifeq          1703
+      1693: aload         21
+      1695: invokedynamic #282,  0            // InvokeDynamic #0:transform:(Landroidx/compose/runtime/State;)Landroidx/compose/foundation/text/input/internal/CodepointTransformation;
+      1700: goto          1704
+      1703: aconst_null
+      1704: nop
+      1705: astore        33
+      1707: aload         26
+      1709: aload         33
+      1711: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1716: aload         33
+      1718: goto          1723
+      1721: aload         29
+      1723: nop
+      1724: nop
+      1725: checkcast     #284                // class androidx/compose/foundation/text/input/internal/CodepointTransformation
+      1728: astore        25
+      1730: aload         15
+      1732: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1735: aload         25
+      1737: astore        24
+      1739: aload_1
+      1740: iconst_0
+      1741: aload         15
+      1743: ldc_w         #285                // int 74234355
+      1746: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1748: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1751: aload         15
+      1753: astore        27
+      1755: iconst_0
+      1756: istore        28
+      1758: iconst_0
+      1759: istore        29
+      1761: aload         27
+      1763: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1768: astore        30
+      1770: iconst_0
+      1771: istore        31
+      1773: aload         30
+      1775: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1778: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1781: if_acmpne     1820
+      1784: istore        35
+      1786: astore        34
+      1788: iconst_0
+      1789: istore        32
+      1791: invokedynamic #297,  0            // InvokeDynamic #1:invoke:()Lkotlin/jvm/functions/Function1;
+      1796: astore        36
+      1798: aload         34
+      1800: iload         35
+      1802: aload         36
+      1804: astore        32
+      1806: aload         27
+      1808: aload         32
+      1810: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1815: aload         32
+      1817: goto          1822
+      1820: aload         30
+      1822: nop
+      1823: nop
+      1824: checkcast     #299                // class kotlin/jvm/functions/Function1
+      1827: astore        26
+      1829: aload         15
+      1831: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1834: aload         26
+      1836: iconst_1
+      1837: aconst_null
+      1838: invokestatic  #305                // Method androidx/compose/ui/semantics/SemanticsModifierKt.semantics$default:(Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+      1841: aload         15
+      1843: ldc_w         #306                // int 74236845
+      1846: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+      1848: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+      1851: aload         15
+      1853: astore        27
+      1855: iconst_0
+      1856: istore        28
+      1858: iconst_0
+      1859: istore        29
+      1861: aload         27
+      1863: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+      1868: astore        30
+      1870: iconst_0
+      1871: istore        31
+      1873: aload         30
+      1875: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+      1878: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+      1881: if_acmpne     1914
+      1884: astore        34
+      1886: iconst_0
+      1887: istore        32
+      1889: getstatic     #312                // Field androidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1.INSTANCE:Landroidx/compose/foundation/text/BasicSecureTextFieldKt$BasicSecureTextField$secureTextFieldModifier$2$1;
+      1892: checkcast     #299                // class kotlin/jvm/functions/Function1
+      1895: aload         34
+      1897: swap
+      1898: astore        32
+      1900: aload         27
+      1902: aload         32
+      1904: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+      1909: aload         32
+      1911: goto          1916
+      1914: aload         30
+      1916: nop
+      1917: nop
+      1918: checkcast     #299                // class kotlin/jvm/functions/Function1
+      1921: astore        26
+      1923: aload         15
+      1925: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+      1928: aload         26
+      1930: invokestatic  #318                // Method androidx/compose/ui/input/key/KeyInputModifierKt.onPreviewKeyEvent:(Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+      1933: iload         23
+      1935: ifeq          1946
+      1938: aload         22
+      1940: invokevirtual #322                // Method androidx/compose/foundation/text/SecureTextFieldController.getFocusChangeModifier:()Landroidx/compose/ui/Modifier;
+      1943: goto          1952
+      1946: getstatic     #87                 // Field androidx/compose/ui/Modifier.Companion:Landroidx/compose/ui/Modifier$Companion;
+      1949: checkcast     #83                 // class androidx/compose/ui/Modifier
+      1952: invokeinterface #326,  2          // InterfaceMethod androidx/compose/ui/Modifier.then:(Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+      1957: astore        25
+      1959: ldc_w         #327                // int 135148049
+      1962: iconst_1
+      1963: iload         23
+      1965: aload         4
+      1967: aload         22
+      1969: aload_0
+      1970: aload         25
+      1972: iload_2
+      1973: iload_3
+      1974: aload         5
+      1976: aload         6
+      1978: aload         7
+      1980: aload         8
+      1982: aload         9
+      1984: aload         10
+      1986: aload         24
+      1988: aload         11
+      1990: aload         14
+      1992: invokedynamic #339,  0            // InvokeDynamic #2:invoke:(ZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/foundation/text/SecureTextFieldController;Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/internal/CodepointTransformation;Landroidx/compose/foundation/text/input/TextFieldDecorator;Landroidx/compose/foundation/ScrollState;)Lkotlin/jvm/functions/Function2;
+      1997: aload         15
+      1999: bipush        54
+      2001: invokestatic  #345                // Method androidx/compose/runtime/internal/ComposableLambdaKt.rememberComposableLambda:(IZLjava/lang/Object;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/internal/ComposableLambda;
+      2004: checkcast     #212                // class kotlin/jvm/functions/Function2
+      2007: aload         15
+      2009: bipush        6
+      2011: invokestatic  #349                // Method DisableCutCopy:(Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+      2014: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+      2017: ifeq          2033
+      2020: invokestatic  #352                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+      2023: goto          2033
+      2026: aload         15
+      2028: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+      2033: aload         15
+      2035: invokeinterface #356,  1          // InterfaceMethod androidx/compose/runtime/Composer.endRestartGroup:()Landroidx/compose/runtime/ScopeUpdateScope;
+      2040: dup
+      2041: ifnull        2089
+      2044: aload_0
+      2045: aload_1
+      2046: iload_2
+      2047: iload_3
+      2048: aload         4
+      2050: aload         5
+      2052: aload         6
+      2054: aload         7
+      2056: aload         8
+      2058: aload         9
+      2060: aload         10
+      2062: aload         11
+      2064: iload         12
+      2066: iload         13
+      2068: aload         14
+      2070: iload         16
+      2072: iload         17
+      2074: iload         18
+      2076: invokedynamic #364,  0            // InvokeDynamic #3:invoke:(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/foundation/ScrollState;III)Lkotlin/jvm/functions/Function2;
+      2081: invokeinterface #370,  2          // InterfaceMethod androidx/compose/runtime/ScopeUpdateScope.updateScope:(Lkotlin/jvm/functions/Function2;)V
+      2086: goto          2090
+      2089: pop
+      2090: return
+
+  private static final androidx.compose.foundation.text.input.InputTransformation then(androidx.compose.foundation.text.input.InputTransformation, androidx.compose.foundation.text.input.InputTransformation);
+    Code:
+         0: nop
+         1: aload_0
+         2: ifnonnull     9
+         5: aload_1
+         6: goto          22
+         9: aload_1
+        10: ifnonnull     17
+        13: aload_0
+        14: goto          22
+        17: aload_0
+        18: aload_1
+        19: invokestatic  #445                // Method androidx/compose/foundation/text/input/InputTransformationKt.then:(Landroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/foundation/text/input/InputTransformation;)Landroidx/compose/foundation/text/input/InputTransformation;
+        22: areturn
+
+  private static final void DisableCutCopy(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer, ? super java.lang.Integer, kotlin.Unit>, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_1
+         1: ldc_w         #450                // int 1141174275
+         4: invokeinterface #26,  2           // InterfaceMethod androidx/compose/runtime/Composer.startRestartGroup:(I)Landroidx/compose/runtime/Composer;
+         9: astore_1
+        10: aload_1
+        11: ldc_w         #454                // String C(DisableCutCopy)N(content)312@14862L7,314@14908L877,335@15790L80:BasicSecureTextField.kt#423gt5
+        14: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+        17: iload_2
+        18: istore_3
+        19: iload_2
+        20: bipush        6
+        22: iand
+        23: ifne          44
+        26: iload_3
+        27: aload_1
+        28: aload_0
+        29: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+        34: ifeq          41
+        37: iconst_4
+        38: goto          42
+        41: iconst_2
+        42: ior
+        43: istore_3
+        44: aload_1
+        45: iload_3
+        46: iconst_3
+        47: iand
+        48: iconst_2
+        49: if_icmpeq     56
+        52: iconst_1
+        53: goto          57
+        56: iconst_0
+        57: iload_3
+        58: iconst_1
+        59: iand
+        60: invokeinterface #71,  3           // InterfaceMethod androidx/compose/runtime/Composer.shouldExecute:(ZI)Z
+        65: ifeq          270
+        68: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+        71: ifeq          85
+        74: ldc_w         #450                // int 1141174275
+        77: iload_3
+        78: iconst_m1
+        79: ldc_w         #456                // String androidx.compose.foundation.text.DisableCutCopy (BasicSecureTextField.kt:311)
+        82: invokestatic  #160                // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+        85: invokestatic  #462                // Method androidx/compose/ui/platform/CompositionLocalsKt.getLocalTextToolbar:()Landroidx/compose/runtime/ProvidableCompositionLocal;
+        88: checkcast     #464                // class androidx/compose/runtime/CompositionLocal
+        91: astore        5
+        93: aload_1
+        94: astore        6
+        96: iconst_0
+        97: istore        7
+        99: iconst_0
+       100: istore        8
+       102: aload         6
+       104: ldc_w         #465                // int 2023513938
+       107: ldc_w         #467                // String CC(<get-current>):CompositionLocal.kt#9igjgp
+       110: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+       113: aload         6
+       115: aload         5
+       117: invokeinterface #471,  2          // InterfaceMethod androidx/compose/runtime/Composer.consume:(Landroidx/compose/runtime/CompositionLocal;)Ljava/lang/Object;
+       122: astore        9
+       124: aload         6
+       126: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       129: aload         9
+       131: checkcast     #473                // class androidx/compose/ui/platform/TextToolbar
+       134: astore        4
+       136: aload_1
+       137: ldc_w         #474                // int 1451823216
+       140: ldc           #175                // String CC(remember):BasicSecureTextField.kt#9igjgp
+       142: invokestatic  #179                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerStart:(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V
+       145: aload_1
+       146: astore        7
+       148: aload_1
+       149: aload         4
+       151: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       156: istore        8
+       158: iconst_0
+       159: istore        9
+       161: aload         7
+       163: invokeinterface #183,  1          // InterfaceMethod androidx/compose/runtime/Composer.rememberedValue:()Ljava/lang/Object;
+       168: astore        10
+       170: iconst_0
+       171: istore        11
+       173: iload         8
+       175: ifne          189
+       178: aload         10
+       180: getstatic     #186                // Field androidx/compose/runtime/Composer.Companion:Landroidx/compose/runtime/Composer$Companion;
+       183: invokevirtual #191                // Method androidx/compose/runtime/Composer$Companion.getEmpty:()Ljava/lang/Object;
+       186: if_acmpne     218
+       189: iconst_0
+       190: istore        12
+       192: new           #476                // class androidx/compose/foundation/text/BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1
+       195: dup
+       196: aload         4
+       198: invokespecial #479                // Method androidx/compose/foundation/text/BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1."<init>":(Landroidx/compose/ui/platform/TextToolbar;)V
+       201: nop
+       202: astore        13
+       204: aload         7
+       206: aload         13
+       208: invokeinterface #200,  2          // InterfaceMethod androidx/compose/runtime/Composer.updateRememberedValue:(Ljava/lang/Object;)V
+       213: aload         13
+       215: goto          220
+       218: aload         10
+       220: nop
+       221: nop
+       222: checkcast     #476                // class androidx/compose/foundation/text/BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1
+       225: astore        6
+       227: aload_1
+       228: invokestatic  #204                // Method androidx/compose/runtime/ComposerKt.sourceInformationMarkerEnd:(Landroidx/compose/runtime/Composer;)V
+       231: aload         6
+       233: astore        5
+       235: invokestatic  #462                // Method androidx/compose/ui/platform/CompositionLocalsKt.getLocalTextToolbar:()Landroidx/compose/runtime/ProvidableCompositionLocal;
+       238: aload         5
+       240: invokevirtual #485                // Method androidx/compose/runtime/ProvidableCompositionLocal.provides:(Ljava/lang/Object;)Landroidx/compose/runtime/ProvidedValue;
+       243: aload_0
+       244: aload_1
+       245: getstatic     #490                // Field androidx/compose/runtime/ProvidedValue.$stable:I
+       248: bipush        112
+       250: iload_3
+       251: iconst_3
+       252: ishl
+       253: iand
+       254: ior
+       255: invokestatic  #496                // Method androidx/compose/runtime/CompositionLocalKt.CompositionLocalProvider:(Landroidx/compose/runtime/ProvidedValue;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+       258: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+       261: ifeq          276
+       264: invokestatic  #352                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+       267: goto          276
+       270: aload_1
+       271: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+       276: aload_1
+       277: invokeinterface #356,  1          // InterfaceMethod androidx/compose/runtime/Composer.endRestartGroup:()Landroidx/compose/runtime/ScopeUpdateScope;
+       282: dup
+       283: ifnull        301
+       286: aload_0
+       287: iload_2
+       288: invokedynamic #504,  0            // InvokeDynamic #4:invoke:(Lkotlin/jvm/functions/Function2;I)Lkotlin/jvm/functions/Function2;
+       293: invokeinterface #370,  2          // InterfaceMethod androidx/compose/runtime/ScopeUpdateScope.updateScope:(Lkotlin/jvm/functions/Function2;)V
+       298: goto          302
+       301: pop
+       302: return
+
+  public static final void BasicSecureTextField-Jb9bMDk(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, androidx.compose.runtime.Composer, int, int, int);
+    Code:
+         0: aload         13
+         2: ldc_w         #524                // int 1399310985
+         5: invokeinterface #26,  2           // InterfaceMethod androidx/compose/runtime/Composer.startRestartGroup:(I)Landroidx/compose/runtime/Composer;
+        10: astore        13
+        12: aload         13
+        14: ldc_w         #528                // String C(BasicSecureTextField)N(state,modifier,enabled,inputTransformation,textStyle,keyboardOptions,onKeyboardAction,onTextLayout,interactionSource,cursorBrush,decorator,textObfuscationMode:c#foundation.text.input.TextObfuscationMode,textObfuscationCharacter)364@17059L564:BasicSecureTextField.kt#423gt5
+        17: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+        20: iload         14
+        22: istore        17
+        24: iload         15
+        26: istore        18
+        28: iload         14
+        30: bipush        6
+        32: iand
+        33: ifne          57
+        36: iload         17
+        38: aload         13
+        40: aload_0
+        41: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        46: ifeq          53
+        49: iconst_4
+        50: goto          54
+        53: iconst_2
+        54: ior
+        55: istore        17
+        57: iload         16
+        59: iconst_2
+        60: iand
+        61: ifeq          74
+        64: iload         17
+        66: bipush        48
+        68: ior
+        69: istore        17
+        71: goto          105
+        74: iload         14
+        76: bipush        48
+        78: iand
+        79: ifne          105
+        82: iload         17
+        84: aload         13
+        86: aload_1
+        87: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        92: ifeq          100
+        95: bipush        32
+        97: goto          102
+       100: bipush        16
+       102: ior
+       103: istore        17
+       105: iload         16
+       107: iconst_4
+       108: iand
+       109: ifeq          123
+       112: iload         17
+       114: sipush        384
+       117: ior
+       118: istore        17
+       120: goto          157
+       123: iload         14
+       125: sipush        384
+       128: iand
+       129: ifne          157
+       132: iload         17
+       134: aload         13
+       136: iload_2
+       137: invokeinterface #41,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Z)Z
+       142: ifeq          151
+       145: sipush        256
+       148: goto          154
+       151: sipush        128
+       154: ior
+       155: istore        17
+       157: iload         16
+       159: bipush        8
+       161: iand
+       162: ifeq          176
+       165: iload         17
+       167: sipush        3072
+       170: ior
+       171: istore        17
+       173: goto          210
+       176: iload         14
+       178: sipush        3072
+       181: iand
+       182: ifne          210
+       185: iload         17
+       187: aload         13
+       189: aload_3
+       190: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       195: ifeq          204
+       198: sipush        2048
+       201: goto          207
+       204: sipush        1024
+       207: ior
+       208: istore        17
+       210: iload         16
+       212: bipush        16
+       214: iand
+       215: ifeq          229
+       218: iload         17
+       220: sipush        24576
+       223: ior
+       224: istore        17
+       226: goto          264
+       229: iload         14
+       231: sipush        24576
+       234: iand
+       235: ifne          264
+       238: iload         17
+       240: aload         13
+       242: aload         4
+       244: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       249: ifeq          258
+       252: sipush        16384
+       255: goto          261
+       258: sipush        8192
+       261: ior
+       262: istore        17
+       264: iload         16
+       266: bipush        32
+       268: iand
+       269: ifeq          282
+       272: iload         17
+       274: ldc           #42                 // int 196608
+       276: ior
+       277: istore        17
+       279: goto          314
+       282: iload         14
+       284: ldc           #42                 // int 196608
+       286: iand
+       287: ifne          314
+       290: iload         17
+       292: aload         13
+       294: aload         5
+       296: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       301: ifeq          309
+       304: ldc           #43                 // int 131072
+       306: goto          311
+       309: ldc           #44                 // int 65536
+       311: ior
+       312: istore        17
+       314: iload         16
+       316: bipush        64
+       318: iand
+       319: ifeq          332
+       322: iload         17
+       324: ldc           #45                 // int 1572864
+       326: ior
+       327: istore        17
+       329: goto          364
+       332: iload         14
+       334: ldc           #45                 // int 1572864
+       336: iand
+       337: ifne          364
+       340: iload         17
+       342: aload         13
+       344: aload         6
+       346: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       351: ifeq          359
+       354: ldc           #46                 // int 1048576
+       356: goto          361
+       359: ldc           #47                 // int 524288
+       361: ior
+       362: istore        17
+       364: iload         16
+       366: sipush        128
+       369: iand
+       370: ifeq          383
+       373: iload         17
+       375: ldc           #48                 // int 12582912
+       377: ior
+       378: istore        17
+       380: goto          415
+       383: iload         14
+       385: ldc           #48                 // int 12582912
+       387: iand
+       388: ifne          415
+       391: iload         17
+       393: aload         13
+       395: aload         7
+       397: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       402: ifeq          410
+       405: ldc           #49                 // int 8388608
+       407: goto          412
+       410: ldc           #50                 // int 4194304
+       412: ior
+       413: istore        17
+       415: iload         16
+       417: sipush        256
+       420: iand
+       421: ifeq          434
+       424: iload         17
+       426: ldc           #51                 // int 100663296
+       428: ior
+       429: istore        17
+       431: goto          466
+       434: iload         14
+       436: ldc           #51                 // int 100663296
+       438: iand
+       439: ifne          466
+       442: iload         17
+       444: aload         13
+       446: aload         8
+       448: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       453: ifeq          461
+       456: ldc           #55                 // int 67108864
+       458: goto          463
+       461: ldc           #56                 // int 33554432
+       463: ior
+       464: istore        17
+       466: iload         16
+       468: sipush        512
+       471: iand
+       472: ifeq          485
+       475: iload         17
+       477: ldc           #57                 // int 805306368
+       479: ior
+       480: istore        17
+       482: goto          517
+       485: iload         14
+       487: ldc           #57                 // int 805306368
+       489: iand
+       490: ifne          517
+       493: iload         17
+       495: aload         13
+       497: aload         9
+       499: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       504: ifeq          512
+       507: ldc           #58                 // int 536870912
+       509: goto          514
+       512: ldc           #59                 // int 268435456
+       514: ior
+       515: istore        17
+       517: iload         16
+       519: sipush        1024
+       522: iand
+       523: ifeq          536
+       526: iload         18
+       528: bipush        6
+       530: ior
+       531: istore        18
+       533: goto          586
+       536: iload         15
+       538: bipush        6
+       540: iand
+       541: ifne          586
+       544: iload         18
+       546: iload         15
+       548: bipush        8
+       550: iand
+       551: ifne          566
+       554: aload         13
+       556: aload         10
+       558: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       563: goto          575
+       566: aload         13
+       568: aload         10
+       570: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       575: ifeq          582
+       578: iconst_4
+       579: goto          583
+       582: iconst_2
+       583: ior
+       584: istore        18
+       586: iload         16
+       588: sipush        2048
+       591: iand
+       592: ifeq          605
+       595: iload         18
+       597: bipush        48
+       599: ior
+       600: istore        18
+       602: goto          637
+       605: iload         15
+       607: bipush        48
+       609: iand
+       610: ifne          637
+       613: iload         18
+       615: aload         13
+       617: iload         11
+       619: invokeinterface #62,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(I)Z
+       624: ifeq          632
+       627: bipush        32
+       629: goto          634
+       632: bipush        16
+       634: ior
+       635: istore        18
+       637: iload         16
+       639: sipush        4096
+       642: iand
+       643: ifeq          657
+       646: iload         18
+       648: sipush        384
+       651: ior
+       652: istore        18
+       654: goto          692
+       657: iload         15
+       659: sipush        384
+       662: iand
+       663: ifne          692
+       666: iload         18
+       668: aload         13
+       670: iload         12
+       672: invokeinterface #65,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(C)Z
+       677: ifeq          686
+       680: sipush        256
+       683: goto          689
+       686: sipush        128
+       689: ior
+       690: istore        18
+       692: aload         13
+       694: iload         17
+       696: ldc           #66                 // int 306783379
+       698: iand
+       699: ldc           #67                 // int 306783378
+       701: if_icmpne     716
+       704: iload         18
+       706: sipush        147
+       709: iand
+       710: sipush        146
+       713: if_icmpeq     720
+       716: iconst_1
+       717: goto          721
+       720: iconst_0
+       721: iload         17
+       723: iconst_1
+       724: iand
+       725: invokeinterface #71,  3           // InterfaceMethod androidx/compose/runtime/Composer.shouldExecute:(ZI)Z
+       730: ifeq          1077
+       733: iload         16
+       735: iconst_2
+       736: iand
+       737: ifeq          747
+       740: getstatic     #87                 // Field androidx/compose/ui/Modifier.Companion:Landroidx/compose/ui/Modifier$Companion;
+       743: checkcast     #83                 // class androidx/compose/ui/Modifier
+       746: astore_1
+       747: iload         16
+       749: iconst_4
+       750: iand
+       751: ifeq          756
+       754: iconst_1
+       755: istore_2
+       756: iload         16
+       758: bipush        8
+       760: iand
+       761: ifeq          766
+       764: aconst_null
+       765: astore_3
+       766: iload         16
+       768: bipush        16
+       770: iand
+       771: ifeq          782
+       774: getstatic     #92                 // Field androidx/compose/ui/text/TextStyle.Companion:Landroidx/compose/ui/text/TextStyle$Companion;
+       777: invokevirtual #98                 // Method androidx/compose/ui/text/TextStyle$Companion.getDefault:()Landroidx/compose/ui/text/TextStyle;
+       780: astore        4
+       782: iload         16
+       784: bipush        32
+       786: iand
+       787: ifeq          798
+       790: getstatic     #103                // Field androidx/compose/foundation/text/KeyboardOptions.Companion:Landroidx/compose/foundation/text/KeyboardOptions$Companion;
+       793: invokevirtual #109                // Method androidx/compose/foundation/text/KeyboardOptions$Companion.getSecureTextField$foundation:()Landroidx/compose/foundation/text/KeyboardOptions;
+       796: astore        5
+       798: iload         16
+       800: bipush        64
+       802: iand
+       803: ifeq          809
+       806: aconst_null
+       807: astore        6
+       809: iload         16
+       811: sipush        128
+       814: iand
+       815: ifeq          821
+       818: aconst_null
+       819: astore        7
+       821: iload         16
+       823: sipush        256
+       826: iand
+       827: ifeq          833
+       830: aconst_null
+       831: astore        8
+       833: iload         16
+       835: sipush        512
+       838: iand
+       839: ifeq          861
+       842: new           #111                // class androidx/compose/ui/graphics/SolidColor
+       845: dup
+       846: getstatic     #116                // Field androidx/compose/ui/graphics/Color.Companion:Landroidx/compose/ui/graphics/Color$Companion;
+       849: invokevirtual #122                // Method androidx/compose/ui/graphics/Color$Companion."getBlack-0d7_KjU":()J
+       852: aconst_null
+       853: invokespecial #126                // Method androidx/compose/ui/graphics/SolidColor."<init>":(JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+       856: checkcast     #128                // class androidx/compose/ui/graphics/Brush
+       859: astore        9
+       861: iload         16
+       863: sipush        1024
+       866: iand
+       867: ifeq          873
+       870: aconst_null
+       871: astore        10
+       873: iload         16
+       875: sipush        2048
+       878: iand
+       879: ifeq          890
+       882: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+       885: invokevirtual #224                // Method androidx/compose/foundation/text/input/TextObfuscationMode$Companion."getRevealLastTyped-vTwcZD0":()I
+       888: istore        11
+       890: iload         16
+       892: sipush        4096
+       895: iand
+       896: ifeq          904
+       899: sipush        8226
+       902: istore        12
+       904: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+       907: ifeq          923
+       910: ldc_w         #524                // int 1399310985
+       913: iload         17
+       915: iload         18
+       917: ldc_w         #530                // String androidx.compose.foundation.text.BasicSecureTextField (BasicSecureTextField.kt:363)
+       920: invokestatic  #160                // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+       923: aload_0
+       924: aload_1
+       925: iload_2
+       926: iconst_0
+       927: aload_3
+       928: aload         4
+       930: aload         5
+       932: aload         6
+       934: aload         7
+       936: aload         8
+       938: aload         9
+       940: aload         10
+       942: iload         11
+       944: iload         12
+       946: aconst_null
+       947: aload         13
+       949: sipush        3072
+       952: bipush        14
+       954: iload         17
+       956: iand
+       957: ior
+       958: bipush        112
+       960: iload         17
+       962: iand
+       963: ior
+       964: sipush        896
+       967: iload         17
+       969: iand
+       970: ior
+       971: ldc_w         #531                // int 57344
+       974: iload         17
+       976: iconst_3
+       977: ishl
+       978: iand
+       979: ior
+       980: ldc_w         #532                // int 458752
+       983: iload         17
+       985: iconst_3
+       986: ishl
+       987: iand
+       988: ior
+       989: ldc_w         #533                // int 3670016
+       992: iload         17
+       994: iconst_3
+       995: ishl
+       996: iand
+       997: ior
+       998: ldc_w         #534                // int 29360128
+      1001: iload         17
+      1003: iconst_3
+      1004: ishl
+      1005: iand
+      1006: ior
+      1007: ldc_w         #535                // int 234881024
+      1010: iload         17
+      1012: iconst_3
+      1013: ishl
+      1014: iand
+      1015: ior
+      1016: ldc_w         #536                // int 1879048192
+      1019: iload         17
+      1021: iconst_3
+      1022: ishl
+      1023: iand
+      1024: ior
+      1025: bipush        14
+      1027: iload         17
+      1029: bipush        27
+      1031: ishr
+      1032: iand
+      1033: bipush        112
+      1035: iload         18
+      1037: iconst_3
+      1038: ishl
+      1039: iand
+      1040: ior
+      1041: sipush        896
+      1044: iload         18
+      1046: iconst_3
+      1047: ishl
+      1048: iand
+      1049: ior
+      1050: sipush        7168
+      1053: iload         18
+      1055: iconst_3
+      1056: ishl
+      1057: iand
+      1058: ior
+      1059: sipush        16384
+      1062: invokestatic  #538                // Method "BasicSecureTextField-ltb6GB4":(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/foundation/ScrollState;Landroidx/compose/runtime/Composer;III)V
+      1065: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+      1068: ifeq          1084
+      1071: invokestatic  #352                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+      1074: goto          1084
+      1077: aload         13
+      1079: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+      1084: aload         13
+      1086: invokeinterface #356,  1          // InterfaceMethod androidx/compose/runtime/Composer.endRestartGroup:()Landroidx/compose/runtime/ScopeUpdateScope;
+      1091: dup
+      1092: ifnull        1136
+      1095: aload_0
+      1096: aload_1
+      1097: iload_2
+      1098: aload_3
+      1099: aload         4
+      1101: aload         5
+      1103: aload         6
+      1105: aload         7
+      1107: aload         8
+      1109: aload         9
+      1111: aload         10
+      1113: iload         11
+      1115: iload         12
+      1117: iload         14
+      1119: iload         15
+      1121: iload         16
+      1123: invokedynamic #546,  0            // InvokeDynamic #5:invoke:(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICIII)Lkotlin/jvm/functions/Function2;
+      1128: invokeinterface #370,  2          // InterfaceMethod androidx/compose/runtime/ScopeUpdateScope.updateScope:(Lkotlin/jvm/functions/Function2;)V
+      1133: goto          1137
+      1136: pop
+      1137: return
+
+  public static final void BasicSecureTextField-egD4TGM(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, androidx.compose.runtime.Composer, int, int, int);
+    Code:
+         0: aload         14
+         2: ldc_w         #550                // int -817513499
+         5: invokeinterface #26,  2           // InterfaceMethod androidx/compose/runtime/Composer.startRestartGroup:(I)Landroidx/compose/runtime/Composer;
+        10: astore        14
+        12: aload         14
+        14: ldc_w         #554                // String C(BasicSecureTextField)N(state,modifier,enabled,readOnly,inputTransformation,textStyle,keyboardOptions,onKeyboardAction,onTextLayout,interactionSource,cursorBrush,decorator,textObfuscationMode:c#foundation.text.input.TextObfuscationMode,textObfuscationCharacter)421@19275L21,406@18694L609:BasicSecureTextField.kt#423gt5
+        17: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+        20: iload         15
+        22: istore        18
+        24: iload         16
+        26: istore        19
+        28: iload         15
+        30: bipush        6
+        32: iand
+        33: ifne          57
+        36: iload         18
+        38: aload         14
+        40: aload_0
+        41: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        46: ifeq          53
+        49: iconst_4
+        50: goto          54
+        53: iconst_2
+        54: ior
+        55: istore        18
+        57: iload         17
+        59: iconst_2
+        60: iand
+        61: ifeq          74
+        64: iload         18
+        66: bipush        48
+        68: ior
+        69: istore        18
+        71: goto          105
+        74: iload         15
+        76: bipush        48
+        78: iand
+        79: ifne          105
+        82: iload         18
+        84: aload         14
+        86: aload_1
+        87: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+        92: ifeq          100
+        95: bipush        32
+        97: goto          102
+       100: bipush        16
+       102: ior
+       103: istore        18
+       105: iload         17
+       107: iconst_4
+       108: iand
+       109: ifeq          123
+       112: iload         18
+       114: sipush        384
+       117: ior
+       118: istore        18
+       120: goto          157
+       123: iload         15
+       125: sipush        384
+       128: iand
+       129: ifne          157
+       132: iload         18
+       134: aload         14
+       136: iload_2
+       137: invokeinterface #41,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Z)Z
+       142: ifeq          151
+       145: sipush        256
+       148: goto          154
+       151: sipush        128
+       154: ior
+       155: istore        18
+       157: iload         17
+       159: bipush        16
+       161: iand
+       162: ifeq          176
+       165: iload         18
+       167: sipush        24576
+       170: ior
+       171: istore        18
+       173: goto          211
+       176: iload         15
+       178: sipush        24576
+       181: iand
+       182: ifne          211
+       185: iload         18
+       187: aload         14
+       189: aload         4
+       191: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       196: ifeq          205
+       199: sipush        16384
+       202: goto          208
+       205: sipush        8192
+       208: ior
+       209: istore        18
+       211: iload         17
+       213: bipush        32
+       215: iand
+       216: ifeq          229
+       219: iload         18
+       221: ldc           #42                 // int 196608
+       223: ior
+       224: istore        18
+       226: goto          261
+       229: iload         15
+       231: ldc           #42                 // int 196608
+       233: iand
+       234: ifne          261
+       237: iload         18
+       239: aload         14
+       241: aload         5
+       243: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       248: ifeq          256
+       251: ldc           #43                 // int 131072
+       253: goto          258
+       256: ldc           #44                 // int 65536
+       258: ior
+       259: istore        18
+       261: iload         17
+       263: bipush        64
+       265: iand
+       266: ifeq          279
+       269: iload         18
+       271: ldc           #45                 // int 1572864
+       273: ior
+       274: istore        18
+       276: goto          311
+       279: iload         15
+       281: ldc           #45                 // int 1572864
+       283: iand
+       284: ifne          311
+       287: iload         18
+       289: aload         14
+       291: aload         6
+       293: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       298: ifeq          306
+       301: ldc           #46                 // int 1048576
+       303: goto          308
+       306: ldc           #47                 // int 524288
+       308: ior
+       309: istore        18
+       311: iload         17
+       313: sipush        128
+       316: iand
+       317: ifeq          330
+       320: iload         18
+       322: ldc           #48                 // int 12582912
+       324: ior
+       325: istore        18
+       327: goto          362
+       330: iload         15
+       332: ldc           #48                 // int 12582912
+       334: iand
+       335: ifne          362
+       338: iload         18
+       340: aload         14
+       342: aload         7
+       344: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       349: ifeq          357
+       352: ldc           #49                 // int 8388608
+       354: goto          359
+       357: ldc           #50                 // int 4194304
+       359: ior
+       360: istore        18
+       362: iload         17
+       364: sipush        256
+       367: iand
+       368: ifeq          381
+       371: iload         18
+       373: ldc           #51                 // int 100663296
+       375: ior
+       376: istore        18
+       378: goto          413
+       381: iload         15
+       383: ldc           #51                 // int 100663296
+       385: iand
+       386: ifne          413
+       389: iload         18
+       391: aload         14
+       393: aload         8
+       395: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       400: ifeq          408
+       403: ldc           #55                 // int 67108864
+       405: goto          410
+       408: ldc           #56                 // int 33554432
+       410: ior
+       411: istore        18
+       413: iload         17
+       415: sipush        512
+       418: iand
+       419: ifeq          432
+       422: iload         18
+       424: ldc           #57                 // int 805306368
+       426: ior
+       427: istore        18
+       429: goto          464
+       432: iload         15
+       434: ldc           #57                 // int 805306368
+       436: iand
+       437: ifne          464
+       440: iload         18
+       442: aload         14
+       444: aload         9
+       446: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       451: ifeq          459
+       454: ldc           #58                 // int 536870912
+       456: goto          461
+       459: ldc           #59                 // int 268435456
+       461: ior
+       462: istore        18
+       464: iload         17
+       466: sipush        1024
+       469: iand
+       470: ifeq          483
+       473: iload         19
+       475: bipush        6
+       477: ior
+       478: istore        19
+       480: goto          513
+       483: iload         16
+       485: bipush        6
+       487: iand
+       488: ifne          513
+       491: iload         19
+       493: aload         14
+       495: aload         10
+       497: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       502: ifeq          509
+       505: iconst_4
+       506: goto          510
+       509: iconst_2
+       510: ior
+       511: istore        19
+       513: iload         17
+       515: sipush        2048
+       518: iand
+       519: ifeq          532
+       522: iload         19
+       524: bipush        48
+       526: ior
+       527: istore        19
+       529: goto          584
+       532: iload         16
+       534: bipush        48
+       536: iand
+       537: ifne          584
+       540: iload         19
+       542: iload         16
+       544: bipush        64
+       546: iand
+       547: ifne          562
+       550: aload         14
+       552: aload         11
+       554: invokeinterface #38,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(Ljava/lang/Object;)Z
+       559: goto          571
+       562: aload         14
+       564: aload         11
+       566: invokeinterface #54,  2           // InterfaceMethod androidx/compose/runtime/Composer.changedInstance:(Ljava/lang/Object;)Z
+       571: ifeq          579
+       574: bipush        32
+       576: goto          581
+       579: bipush        16
+       581: ior
+       582: istore        19
+       584: iload         17
+       586: sipush        4096
+       589: iand
+       590: ifeq          604
+       593: iload         19
+       595: sipush        384
+       598: ior
+       599: istore        19
+       601: goto          639
+       604: iload         16
+       606: sipush        384
+       609: iand
+       610: ifne          639
+       613: iload         19
+       615: aload         14
+       617: iload         12
+       619: invokeinterface #62,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(I)Z
+       624: ifeq          633
+       627: sipush        256
+       630: goto          636
+       633: sipush        128
+       636: ior
+       637: istore        19
+       639: iload         17
+       641: sipush        8192
+       644: iand
+       645: ifeq          659
+       648: iload         19
+       650: sipush        3072
+       653: ior
+       654: istore        19
+       656: goto          694
+       659: iload         16
+       661: sipush        3072
+       664: iand
+       665: ifne          694
+       668: iload         19
+       670: aload         14
+       672: iload         13
+       674: invokeinterface #65,  2           // InterfaceMethod androidx/compose/runtime/Composer.changed:(C)Z
+       679: ifeq          688
+       682: sipush        2048
+       685: goto          691
+       688: sipush        1024
+       691: ior
+       692: istore        19
+       694: aload         14
+       696: iload         18
+       698: ldc_w         #555                // int 306782355
+       701: iand
+       702: ldc_w         #556                // int 306782354
+       705: if_icmpne     720
+       708: iload         19
+       710: sipush        1171
+       713: iand
+       714: sipush        1170
+       717: if_icmpeq     724
+       720: iconst_1
+       721: goto          725
+       724: iconst_0
+       725: iload         18
+       727: iconst_1
+       728: iand
+       729: invokeinterface #71,  3           // InterfaceMethod androidx/compose/runtime/Composer.shouldExecute:(ZI)Z
+       734: ifeq          1078
+       737: iload         17
+       739: iconst_2
+       740: iand
+       741: ifeq          751
+       744: getstatic     #87                 // Field androidx/compose/ui/Modifier.Companion:Landroidx/compose/ui/Modifier$Companion;
+       747: checkcast     #83                 // class androidx/compose/ui/Modifier
+       750: astore_1
+       751: iload         17
+       753: iconst_4
+       754: iand
+       755: ifeq          760
+       758: iconst_1
+       759: istore_2
+       760: iload         17
+       762: bipush        8
+       764: iand
+       765: ifeq          770
+       768: iconst_0
+       769: istore_3
+       770: iload         17
+       772: bipush        16
+       774: iand
+       775: ifeq          781
+       778: aconst_null
+       779: astore        4
+       781: iload         17
+       783: bipush        32
+       785: iand
+       786: ifeq          797
+       789: getstatic     #92                 // Field androidx/compose/ui/text/TextStyle.Companion:Landroidx/compose/ui/text/TextStyle$Companion;
+       792: invokevirtual #98                 // Method androidx/compose/ui/text/TextStyle$Companion.getDefault:()Landroidx/compose/ui/text/TextStyle;
+       795: astore        5
+       797: iload         17
+       799: bipush        64
+       801: iand
+       802: ifeq          813
+       805: getstatic     #103                // Field androidx/compose/foundation/text/KeyboardOptions.Companion:Landroidx/compose/foundation/text/KeyboardOptions$Companion;
+       808: invokevirtual #109                // Method androidx/compose/foundation/text/KeyboardOptions$Companion.getSecureTextField$foundation:()Landroidx/compose/foundation/text/KeyboardOptions;
+       811: astore        6
+       813: iload         17
+       815: sipush        128
+       818: iand
+       819: ifeq          825
+       822: aconst_null
+       823: astore        7
+       825: iload         17
+       827: sipush        256
+       830: iand
+       831: ifeq          837
+       834: aconst_null
+       835: astore        8
+       837: iload         17
+       839: sipush        512
+       842: iand
+       843: ifeq          849
+       846: aconst_null
+       847: astore        9
+       849: iload         17
+       851: sipush        1024
+       854: iand
+       855: ifeq          877
+       858: new           #111                // class androidx/compose/ui/graphics/SolidColor
+       861: dup
+       862: getstatic     #116                // Field androidx/compose/ui/graphics/Color.Companion:Landroidx/compose/ui/graphics/Color$Companion;
+       865: invokevirtual #122                // Method androidx/compose/ui/graphics/Color$Companion."getBlack-0d7_KjU":()J
+       868: aconst_null
+       869: invokespecial #126                // Method androidx/compose/ui/graphics/SolidColor."<init>":(JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+       872: checkcast     #128                // class androidx/compose/ui/graphics/Brush
+       875: astore        10
+       877: iload         17
+       879: sipush        2048
+       882: iand
+       883: ifeq          889
+       886: aconst_null
+       887: astore        11
+       889: iload         17
+       891: sipush        4096
+       894: iand
+       895: ifeq          906
+       898: getstatic     #133                // Field androidx/compose/foundation/text/input/TextObfuscationMode.Companion:Landroidx/compose/foundation/text/input/TextObfuscationMode$Companion;
+       901: invokevirtual #224                // Method androidx/compose/foundation/text/input/TextObfuscationMode$Companion."getRevealLastTyped-vTwcZD0":()I
+       904: istore        12
+       906: iload         17
+       908: sipush        8192
+       911: iand
+       912: ifeq          920
+       915: sipush        8226
+       918: istore        13
+       920: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+       923: ifeq          939
+       926: ldc_w         #550                // int -817513499
+       929: iload         18
+       931: iload         19
+       933: ldc_w         #558                // String androidx.compose.foundation.text.BasicSecureTextField (BasicSecureTextField.kt:405)
+       936: invokestatic  #160                // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+       939: aload_0
+       940: aload_1
+       941: iload_2
+       942: iconst_0
+       943: aload         4
+       945: aload         5
+       947: aload         6
+       949: aload         7
+       951: aload         8
+       953: aload         9
+       955: aload         10
+       957: aload         11
+       959: iload         12
+       961: iload         13
+       963: iconst_0
+       964: aload         14
+       966: iconst_0
+       967: iconst_1
+       968: invokestatic  #144                // Method androidx/compose/foundation/ScrollKt.rememberScrollState:(ILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/ScrollState;
+       971: aload         14
+       973: sipush        3072
+       976: bipush        14
+       978: iload         18
+       980: iand
+       981: ior
+       982: bipush        112
+       984: iload         18
+       986: iand
+       987: ior
+       988: sipush        896
+       991: iload         18
+       993: iand
+       994: ior
+       995: ldc_w         #531                // int 57344
+       998: iload         18
+      1000: iand
+      1001: ior
+      1002: ldc_w         #532                // int 458752
+      1005: iload         18
+      1007: iand
+      1008: ior
+      1009: ldc_w         #533                // int 3670016
+      1012: iload         18
+      1014: iand
+      1015: ior
+      1016: ldc_w         #534                // int 29360128
+      1019: iload         18
+      1021: iand
+      1022: ior
+      1023: ldc_w         #535                // int 234881024
+      1026: iload         18
+      1028: iand
+      1029: ior
+      1030: ldc_w         #536                // int 1879048192
+      1033: iload         18
+      1035: iand
+      1036: ior
+      1037: bipush        14
+      1039: iload         19
+      1041: iand
+      1042: bipush        112
+      1044: iload         19
+      1046: iand
+      1047: ior
+      1048: sipush        896
+      1051: iload         19
+      1053: iand
+      1054: ior
+      1055: sipush        7168
+      1058: iload         19
+      1060: iand
+      1061: ior
+      1062: iconst_0
+      1063: invokestatic  #538                // Method "BasicSecureTextField-ltb6GB4":(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/foundation/ScrollState;Landroidx/compose/runtime/Composer;III)V
+      1066: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+      1069: ifeq          1085
+      1072: invokestatic  #352                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+      1075: goto          1085
+      1078: aload         14
+      1080: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+      1085: aload         14
+      1087: invokeinterface #356,  1          // InterfaceMethod androidx/compose/runtime/Composer.endRestartGroup:()Landroidx/compose/runtime/ScopeUpdateScope;
+      1092: dup
+      1093: ifnull        1139
+      1096: aload_0
+      1097: aload_1
+      1098: iload_2
+      1099: iload_3
+      1100: aload         4
+      1102: aload         5
+      1104: aload         6
+      1106: aload         7
+      1108: aload         8
+      1110: aload         9
+      1112: aload         10
+      1114: aload         11
+      1116: iload         12
+      1118: iload         13
+      1120: iload         15
+      1122: iload         16
+      1124: iload         17
+      1126: invokedynamic #566,  0            // InvokeDynamic #6:invoke:(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICIII)Lkotlin/jvm/functions/Function2;
+      1131: invokeinterface #370,  2          // InterfaceMethod androidx/compose/runtime/ScopeUpdateScope.updateScope:(Lkotlin/jvm/functions/Function2;)V
+      1136: goto          1140
+      1139: pop
+      1140: return
+
+  private static final int BasicSecureTextField_ltb6GB4$lambda$3$0(androidx.compose.runtime.State, int, int);
+    Code:
+         0: aload_0
+         1: invokeinterface #569,  1          // InterfaceMethod androidx/compose/runtime/State.getValue:()Ljava/lang/Object;
+         6: checkcast     #162                // class java/lang/Character
+         9: invokevirtual #573                // Method java/lang/Character.charValue:()C
+        12: ireturn
+
+  private static final kotlin.Unit BasicSecureTextField_ltb6GB4$lambda$4$0(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    Code:
+         0: aload_0
+         1: getstatic     #579                // Field androidx/compose/ui/autofill/ContentType.Companion:Landroidx/compose/ui/autofill/ContentType$Companion;
+         4: invokevirtual #585                // Method androidx/compose/ui/autofill/ContentType$Companion.getPassword:()Landroidx/compose/ui/autofill/ContentType;
+         7: invokestatic  #591                // Method androidx/compose/ui/semantics/SemanticsPropertiesKt.setContentType:(Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/autofill/ContentType;)V
+        10: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        13: areturn
+
+  private static final kotlin.Unit BasicSecureTextField_ltb6GB4$lambda$6(boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.foundation.text.SecureTextFieldController, androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, boolean, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.internal.CodepointTransformation, androidx.compose.foundation.text.input.TextFieldDecorator, androidx.compose.foundation.ScrollState, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload         16
+         2: ldc_w         #605                // String C192@10377L875:BasicSecureTextField.kt#423gt5
+         5: invokestatic  #34                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+         8: aload         16
+        10: iload         17
+        12: iconst_3
+        13: iand
+        14: iconst_2
+        15: if_icmpeq     22
+        18: iconst_1
+        19: goto          23
+        22: iconst_0
+        23: iload         17
+        25: iconst_1
+        26: iand
+        27: invokeinterface #71,  3           // InterfaceMethod androidx/compose/runtime/Composer.shouldExecute:(ZI)Z
+        32: ifeq          137
+        35: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+        38: ifeq          53
+        41: ldc_w         #327                // int 135148049
+        44: iload         17
+        46: iconst_m1
+        47: ldc_w         #607                // String androidx.compose.foundation.text.BasicSecureTextField.<anonymous> (BasicSecureTextField.kt:192)
+        50: invokestatic  #160                // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+        53: iload_0
+        54: ifeq          71
+        57: aload_1
+        58: aload_2
+        59: invokevirtual #611                // Method androidx/compose/foundation/text/SecureTextFieldController.getPasswordInputTransformation:()Landroidx/compose/foundation/text/PasswordInputTransformation;
+        62: checkcast     #430                // class androidx/compose/foundation/text/input/InputTransformation
+        65: invokestatic  #612                // Method then:(Landroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/foundation/text/input/InputTransformation;)Landroidx/compose/foundation/text/input/InputTransformation;
+        68: goto          72
+        71: aload_1
+        72: astore        18
+        74: getstatic     #617                // Field androidx/compose/foundation/text/input/TextFieldLineLimits$SingleLine.INSTANCE:Landroidx/compose/foundation/text/input/TextFieldLineLimits$SingleLine;
+        77: astore        19
+        79: aload_3
+        80: aload         4
+        82: iload         5
+        84: iload         6
+        86: aload         18
+        88: aload         7
+        90: aload         8
+        92: aload         9
+        94: aload         19
+        96: checkcast     #619                // class androidx/compose/foundation/text/input/TextFieldLineLimits
+        99: aload         10
+       101: aload         11
+       103: aload         12
+       105: aload         13
+       107: aconst_null
+       108: aload         14
+       110: aload         15
+       112: iconst_1
+       113: aload         16
+       115: ldc           #51                 // int 100663296
+       117: ldc           #45                 // int 1572864
+       119: sipush        8192
+       122: invokestatic  #625                // Method androidx/compose/foundation/text/BasicTextFieldKt.BasicTextField:(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Landroidx/compose/foundation/text/input/TextFieldLineLimits;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/internal/CodepointTransformation;Landroidx/compose/foundation/text/input/OutputTransformation;Landroidx/compose/foundation/text/input/TextFieldDecorator;Landroidx/compose/foundation/ScrollState;ZLandroidx/compose/runtime/Composer;III)V
+       125: invokestatic  #154                // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+       128: ifeq          144
+       131: invokestatic  #352                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+       134: goto          144
+       137: aload         16
+       139: invokeinterface #148,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+       144: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+       147: areturn
+
+  private static final kotlin.Unit BasicSecureTextField_ltb6GB4$lambda$7(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, androidx.compose.foundation.ScrollState, int, int, int, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: iload_3
+         4: aload         4
+         6: aload         5
+         8: aload         6
+        10: aload         7
+        12: aload         8
+        14: aload         9
+        16: aload         10
+        18: aload         11
+        20: iload         12
+        22: iload         13
+        24: aload         14
+        26: aload         18
+        28: iload         15
+        30: iconst_1
+        31: ior
+        32: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        35: iload         16
+        37: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        40: iload         17
+        42: invokestatic  #538                // Method "BasicSecureTextField-ltb6GB4":(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/foundation/ScrollState;Landroidx/compose/runtime/Composer;III)V
+        45: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        48: areturn
+
+  private static final kotlin.Unit DisableCutCopy$lambda$1(kotlin.jvm.functions.Function2, int, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_0
+         1: aload_2
+         2: iload_1
+         3: iconst_1
+         4: ior
+         5: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+         8: invokestatic  #349                // Method DisableCutCopy:(Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+        11: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        14: areturn
+
+  private static final kotlin.Unit BasicSecureTextField_Jb9bMDk$lambda$0(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, int, int, int, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: aload_3
+         4: aload         4
+         6: aload         5
+         8: aload         6
+        10: aload         7
+        12: aload         8
+        14: aload         9
+        16: aload         10
+        18: iload         11
+        20: iload         12
+        22: aload         16
+        24: iload         13
+        26: iconst_1
+        27: ior
+        28: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        31: iload         14
+        33: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        36: iload         15
+        38: invokestatic  #657                // Method "BasicSecureTextField-Jb9bMDk":(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/runtime/Composer;III)V
+        41: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        44: areturn
+
+  private static final kotlin.Unit BasicSecureTextField_egD4TGM$lambda$0(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.ui.Modifier, boolean, boolean, androidx.compose.foundation.text.input.InputTransformation, androidx.compose.ui.text.TextStyle, androidx.compose.foundation.text.KeyboardOptions, androidx.compose.foundation.text.input.KeyboardActionHandler, kotlin.jvm.functions.Function2, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, androidx.compose.foundation.text.input.TextFieldDecorator, int, char, int, int, int, androidx.compose.runtime.Composer, int);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: iload_3
+         4: aload         4
+         6: aload         5
+         8: aload         6
+        10: aload         7
+        12: aload         8
+        14: aload         9
+        16: aload         10
+        18: aload         11
+        20: iload         12
+        22: iload         13
+        24: aload         17
+        26: iload         14
+        28: iconst_1
+        29: ior
+        30: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        33: iload         15
+        35: invokestatic  #647                // Method androidx/compose/runtime/RecomposeScopeImplKt.updateChangedFlags:(I)I
+        38: iload         16
+        40: invokestatic  #659                // Method "BasicSecureTextField-egD4TGM":(Landroidx/compose/foundation/text/input/TextFieldState;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/foundation/text/input/InputTransformation;Landroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/input/KeyboardActionHandler;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/foundation/text/input/TextFieldDecorator;ICLandroidx/compose/runtime/Composer;III)V
+        43: getstatic     #596                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+        46: areturn
+}

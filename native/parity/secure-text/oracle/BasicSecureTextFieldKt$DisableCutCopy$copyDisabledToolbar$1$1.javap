@@ -1,0 +1,57 @@
+Compiled from "BasicSecureTextField.kt"
+public final class androidx.compose.foundation.text.BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1 implements androidx.compose.ui.platform.TextToolbar {
+  private final androidx.compose.ui.platform.TextToolbar $$delegate_0;
+
+  final androidx.compose.ui.platform.TextToolbar $currentToolbar;
+
+  androidx.compose.foundation.text.BasicSecureTextFieldKt$DisableCutCopy$copyDisabledToolbar$1$1(androidx.compose.ui.platform.TextToolbar);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #12                 // Field $currentToolbar:Landroidx/compose/ui/platform/TextToolbar;
+         5: aload_0
+         6: invokespecial #15                 // Method java/lang/Object."<init>":()V
+         9: aload_0
+        10: aload_1
+        11: putfield      #18                 // Field $$delegate_0:Landroidx/compose/ui/platform/TextToolbar;
+        14: return
+
+  public void showMenu(androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>);
+    Code:
+         0: aload_0
+         1: getfield      #12                 // Field $currentToolbar:Landroidx/compose/ui/platform/TextToolbar;
+         4: aload_1
+         5: aconst_null
+         6: aload_3
+         7: aconst_null
+         8: aload         5
+        10: aload         6
+        12: invokeinterface #25,  7           // InterfaceMethod androidx/compose/ui/platform/TextToolbar.showMenu:(Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+        17: return
+
+  public void showMenu(androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>);
+    Code:
+         0: aload_0
+         1: getfield      #18                 // Field $$delegate_0:Landroidx/compose/ui/platform/TextToolbar;
+         4: aload_1
+         5: aload_2
+         6: aload_3
+         7: aload         4
+         9: aload         5
+        11: invokeinterface #37,  6           // InterfaceMethod androidx/compose/ui/platform/TextToolbar.showMenu:(Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+        16: return
+
+  public void hide();
+    Code:
+         0: aload_0
+         1: getfield      #18                 // Field $$delegate_0:Landroidx/compose/ui/platform/TextToolbar;
+         4: invokeinterface #40,  1           // InterfaceMethod androidx/compose/ui/platform/TextToolbar.hide:()V
+         9: return
+
+  public androidx.compose.ui.platform.TextToolbarStatus getStatus();
+    Code:
+         0: aload_0
+         1: getfield      #18                 // Field $$delegate_0:Landroidx/compose/ui/platform/TextToolbar;
+         4: invokeinterface #44,  1           // InterfaceMethod androidx/compose/ui/platform/TextToolbar.getStatus:()Landroidx/compose/ui/platform/TextToolbarStatus;
+         9: areturn
+}

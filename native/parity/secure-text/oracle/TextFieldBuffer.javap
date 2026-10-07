@@ -1,0 +1,2087 @@
+Compiled from "TextFieldBuffer.kt"
+public final class androidx.compose.foundation.text.input.TextFieldBuffer implements java.lang.Appendable {
+  private final androidx.compose.foundation.text.input.TextFieldCharSequence originalValue;
+
+  private final androidx.compose.foundation.text.input.internal.OffsetMappingCalculator offsetMappingCalculator;
+
+  private final androidx.compose.foundation.text.input.internal.PartialGapBuffer buffer;
+
+  private androidx.compose.foundation.text.input.internal.TextStyleBuffer<androidx.compose.ui.text.AnnotatedString$Annotation> textStyleBuffer;
+
+  private androidx.compose.foundation.text.input.internal.ChangeTracker backingChangeTracker;
+
+  private long selectionInChars;
+
+  private androidx.compose.ui.text.TextRange composition;
+
+  private androidx.compose.runtime.collection.MutableVector<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>> composingAnnotations;
+
+  private kotlin.Pair<androidx.compose.foundation.text.input.TextHighlightType, androidx.compose.ui.text.TextRange> highlight;
+
+  private boolean canCallAddStyle;
+
+  private java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>> outputTransformationAnnotations;
+
+  public static final int $stable;
+
+  public androidx.compose.foundation.text.input.TextFieldBuffer(androidx.compose.foundation.text.input.TextFieldCharSequence, androidx.compose.foundation.text.input.internal.ChangeTracker, androidx.compose.foundation.text.input.TextFieldCharSequence, androidx.compose.foundation.text.input.internal.OffsetMappingCalculator);
+    Code:
+         0: aload_0
+         1: invokespecial #13                 // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_3
+         6: putfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+         9: aload_0
+        10: aload         4
+        12: putfield      #21                 // Field offsetMappingCalculator:Landroidx/compose/foundation/text/input/internal/OffsetMappingCalculator;
+        15: aload_0
+        16: new           #23                 // class androidx/compose/foundation/text/input/internal/PartialGapBuffer
+        19: dup
+        20: aload_1
+        21: checkcast     #25                 // class java/lang/CharSequence
+        24: invokespecial #28                 // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer."<init>":(Ljava/lang/CharSequence;)V
+        27: putfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        30: aload_0
+        31: aload_1
+        32: invokevirtual #38                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getTextStyleBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        35: ifnull        55
+        38: new           #40                 // class androidx/compose/foundation/text/input/internal/TextStyleBuffer
+        41: dup
+        42: aload_1
+        43: invokevirtual #38                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getTextStyleBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        46: iconst_0
+        47: iconst_2
+        48: aconst_null
+        49: invokespecial #43                 // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer."<init>":(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+        52: goto          56
+        55: aconst_null
+        56: putfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        59: aload_0
+        60: aload_2
+        61: dup
+        62: ifnull        86
+        65: astore        6
+        67: astore        12
+        69: iconst_0
+        70: istore        7
+        72: new           #49                 // class androidx/compose/foundation/text/input/internal/ChangeTracker
+        75: dup
+        76: aload_2
+        77: invokespecial #52                 // Method androidx/compose/foundation/text/input/internal/ChangeTracker."<init>":(Landroidx/compose/foundation/text/input/internal/ChangeTracker;)V
+        80: aload         12
+        82: swap
+        83: goto          88
+        86: pop
+        87: aconst_null
+        88: putfield      #56                 // Field backingChangeTracker:Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+        91: aload_0
+        92: aload_1
+        93: invokevirtual #60                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence."getSelection-d9O1mEE":()J
+        96: putfield      #64                 // Field selectionInChars:J
+        99: aload_0
+       100: aload_1
+       101: invokevirtual #68                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence."getComposition-MzsxiRA":()Landroidx/compose/ui/text/TextRange;
+       104: putfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+       107: aload_0
+       108: aload_1
+       109: invokevirtual #76                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getComposingAnnotations:()Ljava/util/List;
+       112: checkcast     #78                 // class java/util/Collection
+       115: astore        5
+       117: aload         5
+       119: ifnull        132
+       122: aload         5
+       124: invokeinterface #82,  1           // InterfaceMethod java/util/Collection.isEmpty:()Z
+       129: ifeq          136
+       132: iconst_1
+       133: goto          137
+       136: iconst_0
+       137: ifne          229
+       140: aload_1
+       141: invokevirtual #76                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getComposingAnnotations:()Ljava/util/List;
+       144: invokeinterface #88,  1           // InterfaceMethod java/util/List.size:()I
+       149: istore        5
+       151: aload_1
+       152: invokedynamic #108,  0            // InvokeDynamic #0:invoke:(Landroidx/compose/foundation/text/input/TextFieldCharSequence;)Lkotlin/jvm/functions/Function1;
+       157: astore        6
+       159: astore        12
+       161: iconst_0
+       162: istore        7
+       164: iconst_0
+       165: istore        8
+       167: iload         5
+       169: anewarray     #110                // class androidx/compose/ui/text/AnnotatedString$Range
+       172: astore        9
+       174: iload         8
+       176: iload         5
+       178: if_icmpge     208
+       181: iload         8
+       183: istore        10
+       185: aload         9
+       187: iload         10
+       189: aload         6
+       191: iload         10
+       193: invokestatic  #116                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       196: invokeinterface #120,  2          // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       201: aastore
+       202: iinc          8, 1
+       205: goto          174
+       208: aload         9
+       210: astore        11
+       212: new           #122                // class androidx/compose/runtime/collection/MutableVector
+       215: dup
+       216: aload         11
+       218: iload         5
+       220: invokespecial #125                // Method androidx/compose/runtime/collection/MutableVector."<init>":([Ljava/lang/Object;I)V
+       223: aload         12
+       225: swap
+       226: goto          230
+       229: aconst_null
+       230: putfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+       233: aload_0
+       234: aload_0
+       235: getfield      #21                 // Field offsetMappingCalculator:Landroidx/compose/foundation/text/input/internal/OffsetMappingCalculator;
+       238: ifnull        245
+       241: iconst_1
+       242: goto          246
+       245: iconst_0
+       246: putfield      #133                // Field canCallAddStyle:Z
+       249: return
+
+  public androidx.compose.foundation.text.input.TextFieldBuffer(androidx.compose.foundation.text.input.TextFieldCharSequence, androidx.compose.foundation.text.input.internal.ChangeTracker, androidx.compose.foundation.text.input.TextFieldCharSequence, androidx.compose.foundation.text.input.internal.OffsetMappingCalculator, int, kotlin.jvm.internal.DefaultConstructorMarker);
+    Code:
+         0: iload         5
+         2: iconst_2
+         3: iand
+         4: ifeq          9
+         7: aconst_null
+         8: astore_2
+         9: iload         5
+        11: iconst_4
+        12: iand
+        13: ifeq          18
+        16: aload_1
+        17: astore_3
+        18: iload         5
+        20: bipush        8
+        22: iand
+        23: ifeq          29
+        26: aconst_null
+        27: astore        4
+        29: aload_0
+        30: aload_1
+        31: aload_2
+        32: aload_3
+        33: aload         4
+        35: invokespecial #153                // Method "<init>":(Landroidx/compose/foundation/text/input/TextFieldCharSequence;Landroidx/compose/foundation/text/input/internal/ChangeTracker;Landroidx/compose/foundation/text/input/TextFieldCharSequence;Landroidx/compose/foundation/text/input/internal/OffsetMappingCalculator;)V
+        38: return
+
+  public final androidx.compose.foundation.text.input.TextFieldCharSequence getOriginalValue$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+         4: areturn
+
+  public final androidx.compose.foundation.text.input.internal.TextStyleBuffer<androidx.compose.ui.text.AnnotatedString$Annotation> getTextStyleBuffer$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+         4: areturn
+
+  public final void setTextStyleBuffer$foundation(androidx.compose.foundation.text.input.internal.TextStyleBuffer<androidx.compose.ui.text.AnnotatedString$Annotation>);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+         5: return
+
+  public final androidx.compose.foundation.text.input.internal.ChangeTracker getChangeTracker$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #56                 // Field backingChangeTracker:Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+         4: dup
+         5: ifnonnull     30
+         8: pop
+         9: new           #49                 // class androidx/compose/foundation/text/input/internal/ChangeTracker
+        12: dup
+        13: aconst_null
+        14: iconst_1
+        15: aconst_null
+        16: invokespecial #166                // Method androidx/compose/foundation/text/input/internal/ChangeTracker."<init>":(Landroidx/compose/foundation/text/input/internal/ChangeTracker;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+        19: astore_1
+        20: aload_1
+        21: astore_2
+        22: iconst_0
+        23: istore_3
+        24: aload_0
+        25: aload_2
+        26: putfield      #56                 // Field backingChangeTracker:Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+        29: aload_1
+        30: areturn
+
+  public final int getLength();
+    Code:
+         0: aload_0
+         1: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         4: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+         7: ireturn
+
+  public final java.lang.CharSequence getOriginalText();
+    Code:
+         0: aload_0
+         1: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+         4: invokevirtual #176                // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getText:()Ljava/lang/CharSequence;
+         7: areturn
+
+  public final long getOriginalSelection-d9O1mEE();
+    Code:
+         0: aload_0
+         1: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+         4: invokevirtual #60                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence."getSelection-d9O1mEE":()J
+         7: lreturn
+
+  public final androidx.compose.foundation.text.input.TextFieldBuffer$ChangeList getChanges();
+    Code:
+         0: aload_0
+         1: invokevirtual #181                // Method getChangeTracker$foundation:()Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+         4: checkcast     #183                // class androidx/compose/foundation/text/input/TextFieldBuffer$ChangeList
+         7: areturn
+
+  public static void getChanges$annotations();
+    Code:
+         0: return
+
+  public final boolean hasSelection();
+    Code:
+         0: aload_0
+         1: invokevirtual #189                // Method "getSelection-d9O1mEE":()J
+         4: invokestatic  #195                // Method androidx/compose/ui/text/TextRange."getCollapsed-impl":(J)Z
+         7: ifne          14
+        10: iconst_1
+        11: goto          15
+        14: iconst_0
+        15: ireturn
+
+  public final long getSelection-d9O1mEE();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field selectionInChars:J
+         4: lreturn
+
+  public final void setSelection-5zc-tL8(long);
+    Code:
+         0: aload_0
+         1: lload_1
+         2: invokespecial #200                // Method "requireValidRange-5zc-tL8":(J)V
+         5: aload_0
+         6: lload_1
+         7: putfield      #64                 // Field selectionInChars:J
+        10: aload_0
+        11: aconst_null
+        12: putfield      #204                // Field highlight:Lkotlin/Pair;
+        15: return
+
+  public final androidx.compose.ui.text.TextRange getComposition-MzsxiRA$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+         4: areturn
+
+  private final void setComposition-OEnZFl4(androidx.compose.ui.text.TextRange);
+    Code:
+         0: aload_1
+         1: ifnull        14
+         4: aload_1
+         5: invokevirtual #211                // Method androidx/compose/ui/text/TextRange."unbox-impl":()J
+         8: invokestatic  #195                // Method androidx/compose/ui/text/TextRange."getCollapsed-impl":(J)Z
+        11: ifeq          37
+        14: aload_0
+        15: aconst_null
+        16: putfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+        19: aload_0
+        20: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+        23: dup
+        24: ifnull        33
+        27: invokevirtual #214                // Method androidx/compose/runtime/collection/MutableVector.clear:()V
+        30: goto          42
+        33: pop
+        34: goto          42
+        37: aload_0
+        38: aload_1
+        39: putfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+        42: return
+
+  public final androidx.compose.runtime.collection.MutableVector<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>> getComposingAnnotations$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+         4: areturn
+
+  public final boolean hasComposition$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+         4: ifnull        11
+         7: iconst_1
+         8: goto          12
+        11: iconst_0
+        12: ireturn
+
+  public final void commitComposition$foundation();
+    Code:
+         0: aload_0
+         1: aconst_null
+         2: invokespecial #221                // Method "setComposition-OEnZFl4":(Landroidx/compose/ui/text/TextRange;)V
+         5: return
+
+  public final void setComposition$foundation(int, int, java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>>);
+    Code:
+         0: iload_1
+         1: iflt          15
+         4: iload_1
+         5: aload_0
+         6: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         9: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        12: if_icmple     57
+        15: new           #226                // class java/lang/IndexOutOfBoundsException
+        18: dup
+        19: new           #228                // class java/lang/StringBuilder
+        22: dup
+        23: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        26: ldc           #231                // String start (
+        28: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        31: iload_1
+        32: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        35: ldc           #240                // String ) offset is outside of text region
+        37: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        40: aload_0
+        41: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        44: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        47: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        50: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        53: invokespecial #247                // Method java/lang/IndexOutOfBoundsException."<init>":(Ljava/lang/String;)V
+        56: athrow
+        57: iload_2
+        58: iflt          72
+        61: iload_2
+        62: aload_0
+        63: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        66: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        69: if_icmple     114
+        72: new           #226                // class java/lang/IndexOutOfBoundsException
+        75: dup
+        76: new           #228                // class java/lang/StringBuilder
+        79: dup
+        80: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        83: ldc           #249                // String end (
+        85: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        88: iload_2
+        89: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        92: ldc           #240                // String ) offset is outside of text region
+        94: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        97: aload_0
+        98: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+       101: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+       104: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       107: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       110: invokespecial #247                // Method java/lang/IndexOutOfBoundsException."<init>":(Ljava/lang/String;)V
+       113: athrow
+       114: iload_1
+       115: iload_2
+       116: if_icmplt     155
+       119: new           #251                // class java/lang/IllegalArgumentException
+       122: dup
+       123: new           #228                // class java/lang/StringBuilder
+       126: dup
+       127: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+       130: ldc           #253                // String Do not set reversed or empty range:
+       132: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       135: iload_1
+       136: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       139: ldc           #255                // String  >
+       141: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       144: iload_2
+       145: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       148: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       151: invokespecial #256                // Method java/lang/IllegalArgumentException."<init>":(Ljava/lang/String;)V
+       154: athrow
+       155: aload_0
+       156: iload_1
+       157: iload_2
+       158: invokestatic  #262                // Method androidx/compose/ui/text/TextRangeKt.TextRange:(II)J
+       161: invokestatic  #266                // Method androidx/compose/ui/text/TextRange."box-impl":(J)Landroidx/compose/ui/text/TextRange;
+       164: invokespecial #221                // Method "setComposition-OEnZFl4":(Landroidx/compose/ui/text/TextRange;)V
+       167: aload_0
+       168: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+       171: dup
+       172: ifnull        181
+       175: invokevirtual #214                // Method androidx/compose/runtime/collection/MutableVector.clear:()V
+       178: goto          182
+       181: pop
+       182: aload_3
+       183: checkcast     #78                 // class java/util/Collection
+       186: astore        4
+       188: aload         4
+       190: ifnull        203
+       193: aload         4
+       195: invokeinterface #82,  1           // InterfaceMethod java/util/Collection.isEmpty:()Z
+       200: ifeq          207
+       203: iconst_1
+       204: goto          208
+       207: iconst_0
+       208: ifne          345
+       211: aload_0
+       212: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+       215: ifnonnull     247
+       218: aload_0
+       219: iconst_0
+       220: istore        4
+       222: nop
+       223: bipush        16
+       225: istore        5
+       227: iconst_0
+       228: istore        6
+       230: new           #122                // class androidx/compose/runtime/collection/MutableVector
+       233: dup
+       234: iload         5
+       236: anewarray     #110                // class androidx/compose/ui/text/AnnotatedString$Range
+       239: iconst_0
+       240: invokespecial #125                // Method androidx/compose/runtime/collection/MutableVector."<init>":([Ljava/lang/Object;I)V
+       243: nop
+       244: putfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+       247: aload_3
+       248: astore        4
+       250: iconst_0
+       251: istore        5
+       253: iconst_0
+       254: istore        6
+       256: aload         4
+       258: checkcast     #78                 // class java/util/Collection
+       261: invokeinterface #267,  1          // InterfaceMethod java/util/Collection.size:()I
+       266: istore        7
+       268: iload         6
+       270: iload         7
+       272: if_icmpge     344
+       275: aload         4
+       277: iload         6
+       279: invokeinterface #271,  2          // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+       284: astore        8
+       286: aload         8
+       288: checkcast     #110                // class androidx/compose/ui/text/AnnotatedString$Range
+       291: astore        9
+       293: iconst_0
+       294: istore        10
+       296: aload_0
+       297: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+       300: dup
+       301: ifnull        335
+       304: aload         9
+       306: aconst_null
+       307: aload         9
+       309: invokevirtual #274                // Method androidx/compose/ui/text/AnnotatedString$Range.getStart:()I
+       312: iload_1
+       313: iadd
+       314: aload         9
+       316: invokevirtual #277                // Method androidx/compose/ui/text/AnnotatedString$Range.getEnd:()I
+       319: iload_1
+       320: iadd
+       321: aconst_null
+       322: bipush        9
+       324: aconst_null
+       325: invokestatic  #281                // Method androidx/compose/ui/text/AnnotatedString$Range.copy$default:(Landroidx/compose/ui/text/AnnotatedString$Range;Ljava/lang/Object;IILjava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/text/AnnotatedString$Range;
+       328: invokevirtual #285                // Method androidx/compose/runtime/collection/MutableVector.add:(Ljava/lang/Object;)Z
+       331: pop
+       332: goto          336
+       335: pop
+       336: nop
+       337: nop
+       338: iinc          6, 1
+       341: goto          268
+       344: nop
+       345: return
+
+  public static void setComposition$foundation$default(androidx.compose.foundation.text.input.TextFieldBuffer, int, int, java.util.List, int, java.lang.Object);
+    Code:
+         0: iload         4
+         2: iconst_4
+         3: iand
+         4: ifeq          9
+         7: aconst_null
+         8: astore_3
+         9: aload_0
+        10: iload_1
+        11: iload_2
+        12: aload_3
+        13: invokevirtual #302                // Method setComposition$foundation:(IILjava/util/List;)V
+        16: return
+
+  public final kotlin.Pair<androidx.compose.foundation.text.input.TextHighlightType, androidx.compose.ui.text.TextRange> getHighlight$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #204                // Field highlight:Lkotlin/Pair;
+         4: areturn
+
+  public final void setHighlight-K7f2yys$foundation(int, int, int);
+    Code:
+         0: iload_2
+         1: iload_3
+         2: if_icmplt     41
+         5: new           #251                // class java/lang/IllegalArgumentException
+         8: dup
+         9: new           #228                // class java/lang/StringBuilder
+        12: dup
+        13: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        16: ldc           #253                // String Do not set reversed or empty range:
+        18: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        21: iload_2
+        22: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        25: ldc           #255                // String  >
+        27: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        30: iload_3
+        31: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        34: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        37: invokespecial #256                // Method java/lang/IllegalArgumentException."<init>":(Ljava/lang/String;)V
+        40: athrow
+        41: iload_2
+        42: iconst_0
+        43: aload_0
+        44: invokevirtual #309                // Method getLength:()I
+        47: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+        50: istore        4
+        52: iload_3
+        53: iconst_0
+        54: aload_0
+        55: invokevirtual #309                // Method getLength:()I
+        58: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+        61: istore        5
+        63: aload_0
+        64: new           #317                // class kotlin/Pair
+        67: dup
+        68: iload_1
+        69: invokestatic  #322                // Method androidx/compose/foundation/text/input/TextHighlightType."box-impl":(I)Landroidx/compose/foundation/text/input/TextHighlightType;
+        72: iload         4
+        74: iload         5
+        76: invokestatic  #262                // Method androidx/compose/ui/text/TextRangeKt.TextRange:(II)J
+        79: invokestatic  #266                // Method androidx/compose/ui/text/TextRange."box-impl":(J)Landroidx/compose/ui/text/TextRange;
+        82: invokespecial #325                // Method kotlin/Pair."<init>":(Ljava/lang/Object;Ljava/lang/Object;)V
+        85: putfield      #204                // Field highlight:Lkotlin/Pair;
+        88: return
+
+  public final void clearHighlight$foundation();
+    Code:
+         0: aload_0
+         1: aconst_null
+         2: putfield      #204                // Field highlight:Lkotlin/Pair;
+         5: return
+
+  public final void replace(int, int, java.lang.CharSequence);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: iload_2
+         3: aload_3
+         4: iconst_0
+         5: aload_3
+         6: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        11: invokevirtual #336                // Method replace$foundation:(IILjava/lang/CharSequence;II)V
+        14: return
+
+  public final void replace$foundation(int, int, java.lang.CharSequence, int, int);
+    Code:
+         0: iload_1
+         1: iload_2
+         2: if_icmpgt     9
+         5: iconst_1
+         6: goto          10
+         9: iconst_0
+        10: istore        6
+        12: iconst_0
+        13: istore        7
+        15: iload         6
+        17: ifne          56
+        20: iconst_0
+        21: istore        8
+        23: new           #228                // class java/lang/StringBuilder
+        26: dup
+        27: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        30: ldc_w         #340                // String Expected start=
+        33: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        36: iload_1
+        37: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        40: ldc_w         #342                // String  <= end=
+        43: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        46: iload_2
+        47: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        50: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        53: invokestatic  #347                // Method androidx/compose/foundation/internal/InlineClassHelperKt.throwIllegalArgumentException:(Ljava/lang/String;)V
+        56: nop
+        57: iload         4
+        59: iload         5
+        61: if_icmpgt     68
+        64: iconst_1
+        65: goto          69
+        68: iconst_0
+        69: istore        6
+        71: iconst_0
+        72: istore        7
+        74: iload         6
+        76: ifne          117
+        79: iconst_0
+        80: istore        8
+        82: new           #228                // class java/lang/StringBuilder
+        85: dup
+        86: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        89: ldc_w         #349                // String Expected textStart=
+        92: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        95: iload         4
+        97: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       100: ldc_w         #351                // String  <= textEnd=
+       103: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       106: iload         5
+       108: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       111: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       114: invokestatic  #347                // Method androidx/compose/foundation/internal/InlineClassHelperKt.throwIllegalArgumentException:(Ljava/lang/String;)V
+       117: nop
+       118: iload_1
+       119: iconst_0
+       120: aload_0
+       121: invokevirtual #309                // Method getLength:()I
+       124: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+       127: istore        6
+       129: iload_2
+       130: iconst_0
+       131: aload_0
+       132: invokevirtual #309                // Method getLength:()I
+       135: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+       138: istore        7
+       140: iload         4
+       142: iconst_0
+       143: aload_3
+       144: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+       149: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+       152: istore        8
+       154: iload         5
+       156: iconst_0
+       157: aload_3
+       158: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+       163: invokestatic  #315                // Method kotlin/ranges/RangesKt.coerceIn:(III)I
+       166: istore        9
+       168: aload_0
+       169: iload         6
+       171: iload         7
+       173: iload         9
+       175: iload         8
+       177: isub
+       178: invokespecial #354                // Method onTextWillChange:(III)V
+       181: aload_0
+       182: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+       185: iload         6
+       187: iload         7
+       189: aload_3
+       190: iload         8
+       192: iload         9
+       194: invokevirtual #356                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.replace:(IILjava/lang/CharSequence;II)V
+       197: aload_0
+       198: invokevirtual #358                // Method commitComposition$foundation:()V
+       201: aload_0
+       202: invokevirtual #360                // Method clearHighlight$foundation:()V
+       205: return
+
+  public static void replace$foundation$default(androidx.compose.foundation.text.input.TextFieldBuffer, int, int, java.lang.CharSequence, int, int, int, java.lang.Object);
+    Code:
+         0: iload         6
+         2: bipush        8
+         4: iand
+         5: ifeq          11
+         8: iconst_0
+         9: istore        4
+        11: iload         6
+        13: bipush        16
+        15: iand
+        16: ifeq          27
+        19: aload_3
+        20: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        25: istore        5
+        27: aload_0
+        28: iload_1
+        29: iload_2
+        30: aload_3
+        31: iload         4
+        33: iload         5
+        35: invokevirtual #336                // Method replace$foundation:(IILjava/lang/CharSequence;II)V
+        38: return
+
+  public final void setTextIfChanged$foundation(java.lang.CharSequence);
+    Code:
+         0: aload_0
+         1: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         4: checkcast     #25                 // class java/lang/CharSequence
+         7: astore_2
+         8: aload_1
+         9: astore_3
+        10: iconst_0
+        11: istore        4
+        13: iconst_0
+        14: istore        5
+        16: aload_2
+        17: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        22: istore        6
+        24: iconst_0
+        25: istore        7
+        27: aload_3
+        28: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        33: istore        8
+        35: aload_2
+        36: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        41: ifle          48
+        44: iconst_1
+        45: goto          49
+        48: iconst_0
+        49: ifeq          175
+        52: aload_3
+        53: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        58: ifle          65
+        61: iconst_1
+        62: goto          66
+        65: iconst_0
+        66: ifeq          175
+        69: iconst_0
+        70: istore        9
+        72: iconst_0
+        73: istore        10
+        75: iload         9
+        77: ifne          111
+        80: aload_2
+        81: iload         5
+        83: invokeinterface #377,  2          // InterfaceMethod java/lang/CharSequence.charAt:(I)C
+        88: aload_3
+        89: iload         7
+        91: invokeinterface #377,  2          // InterfaceMethod java/lang/CharSequence.charAt:(I)C
+        96: if_icmpne     108
+        99: iinc          5, 1
+       102: iinc          7, 1
+       105: goto          111
+       108: iconst_1
+       109: istore        9
+       111: iload         10
+       113: ifne          151
+       116: aload_2
+       117: iload         6
+       119: iconst_1
+       120: isub
+       121: invokeinterface #377,  2          // InterfaceMethod java/lang/CharSequence.charAt:(I)C
+       126: aload_3
+       127: iload         8
+       129: iconst_1
+       130: isub
+       131: invokeinterface #377,  2          // InterfaceMethod java/lang/CharSequence.charAt:(I)C
+       136: if_icmpne     148
+       139: iinc          6, -1
+       142: iinc          8, -1
+       145: goto          151
+       148: iconst_1
+       149: istore        10
+       151: iload         5
+       153: iload         6
+       155: if_icmpge     175
+       158: iload         7
+       160: iload         8
+       162: if_icmpge     175
+       165: iload         9
+       167: ifeq          75
+       170: iload         10
+       172: ifeq          75
+       175: iload         5
+       177: iload         6
+       179: if_icmplt     192
+       182: iload         7
+       184: iload         8
+       186: if_icmplt     192
+       189: goto          227
+       192: iload         5
+       194: iload         6
+       196: iload         7
+       198: iload         8
+       200: istore        11
+       202: istore        12
+       204: istore        13
+       206: istore        14
+       208: iconst_0
+       209: istore        15
+       211: aload_0
+       212: iload         14
+       214: iload         13
+       216: aload_1
+       217: iload         12
+       219: iload         11
+       221: invokevirtual #336                // Method replace$foundation:(IILjava/lang/CharSequence;II)V
+       224: nop
+       225: nop
+       226: nop
+       227: return
+
+  public java.lang.Appendable append(java.lang.CharSequence);
+    Code:
+         0: aload_0
+         1: astore_2
+         2: aload_2
+         3: checkcast     #2                  // class androidx/compose/foundation/text/input/TextFieldBuffer
+         6: astore_3
+         7: iconst_0
+         8: istore        4
+        10: aload_1
+        11: ifnull        59
+        14: aload_3
+        15: aload_3
+        16: invokevirtual #309                // Method getLength:()I
+        19: aload_3
+        20: invokevirtual #309                // Method getLength:()I
+        23: aload_1
+        24: invokeinterface #332,  1          // InterfaceMethod java/lang/CharSequence.length:()I
+        29: invokespecial #354                // Method onTextWillChange:(III)V
+        32: aload_3
+        33: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        36: aload_3
+        37: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        40: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        43: aload_3
+        44: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        47: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        50: aload_1
+        51: iconst_0
+        52: iconst_0
+        53: bipush        24
+        55: aconst_null
+        56: invokestatic  #397                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.replace$default:(Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;IILjava/lang/CharSequence;IIILjava/lang/Object;)V
+        59: nop
+        60: aload_2
+        61: checkcast     #6                  // class java/lang/Appendable
+        64: areturn
+
+  public java.lang.Appendable append(java.lang.CharSequence, int, int);
+    Code:
+         0: aload_0
+         1: astore        4
+         3: aload         4
+         5: checkcast     #2                  // class androidx/compose/foundation/text/input/TextFieldBuffer
+         8: astore        5
+        10: iconst_0
+        11: istore        6
+        13: aload_1
+        14: ifnull        72
+        17: aload         5
+        19: aload         5
+        21: invokevirtual #309                // Method getLength:()I
+        24: aload         5
+        26: invokevirtual #309                // Method getLength:()I
+        29: iload_3
+        30: iload_2
+        31: isub
+        32: invokespecial #354                // Method onTextWillChange:(III)V
+        35: aload         5
+        37: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        40: aload         5
+        42: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        45: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        48: aload         5
+        50: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        53: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        56: aload_1
+        57: iload_2
+        58: iload_3
+        59: invokeinterface #404,  3          // InterfaceMethod java/lang/CharSequence.subSequence:(II)Ljava/lang/CharSequence;
+        64: iconst_0
+        65: iconst_0
+        66: bipush        24
+        68: aconst_null
+        69: invokestatic  #397                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.replace$default:(Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;IILjava/lang/CharSequence;IIILjava/lang/Object;)V
+        72: nop
+        73: aload         4
+        75: checkcast     #6                  // class java/lang/Appendable
+        78: areturn
+
+  public java.lang.Appendable append(char);
+    Code:
+         0: aload_0
+         1: astore_2
+         2: aload_2
+         3: checkcast     #2                  // class androidx/compose/foundation/text/input/TextFieldBuffer
+         6: astore_3
+         7: iconst_0
+         8: istore        4
+        10: aload_3
+        11: aload_3
+        12: invokevirtual #309                // Method getLength:()I
+        15: aload_3
+        16: invokevirtual #309                // Method getLength:()I
+        19: iconst_1
+        20: invokespecial #354                // Method onTextWillChange:(III)V
+        23: aload_3
+        24: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        27: aload_3
+        28: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        31: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        34: aload_3
+        35: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+        38: invokevirtual #171                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.length:()I
+        41: iload_1
+        42: invokestatic  #412                // Method java/lang/String.valueOf:(C)Ljava/lang/String;
+        45: checkcast     #25                 // class java/lang/CharSequence
+        48: iconst_0
+        49: iconst_0
+        50: bipush        24
+        52: aconst_null
+        53: invokestatic  #397                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.replace$default:(Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;IILjava/lang/CharSequence;IIILjava/lang/Object;)V
+        56: nop
+        57: aload_2
+        58: checkcast     #6                  // class java/lang/Appendable
+        61: areturn
+
+  private final void onTextWillChange(int, int, int);
+    Code:
+         0: aload_0
+         1: invokevirtual #181                // Method getChangeTracker$foundation:()Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+         4: iload_1
+         5: iload_2
+         6: iload_3
+         7: invokevirtual #419                // Method androidx/compose/foundation/text/input/internal/ChangeTracker.trackChange:(III)V
+        10: aload_0
+        11: getfield      #21                 // Field offsetMappingCalculator:Landroidx/compose/foundation/text/input/internal/OffsetMappingCalculator;
+        14: dup
+        15: ifnull        27
+        18: iload_1
+        19: iload_2
+        20: iload_3
+        21: invokevirtual #422                // Method androidx/compose/foundation/text/input/internal/OffsetMappingCalculator.recordEditOperation:(III)V
+        24: goto          28
+        27: pop
+        28: aload_0
+        29: aload_0
+        30: invokevirtual #189                // Method "getSelection-d9O1mEE":()J
+        33: iload_1
+        34: iload_2
+        35: iload_3
+        36: invokestatic  #428                // Method androidx/compose/foundation/text/input/TextFieldBufferKt."adjustTextRange-vJH6DeI":(JIII)J
+        39: putfield      #64                 // Field selectionInChars:J
+        42: aload_0
+        43: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        46: dup
+        47: ifnull        60
+        50: iload_1
+        51: iload_2
+        52: iload_3
+        53: invokevirtual #432                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.replaceText:(III)Z
+        56: pop
+        57: goto          61
+        60: pop
+        61: return
+
+  public final char charAt(int);
+    Code:
+         0: aload_0
+         1: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         4: iload_1
+         5: invokevirtual #436                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.charAt:(I)C
+         8: ireturn
+
+  public java.lang.String toString();
+    Code:
+         0: aload_0
+         1: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         4: invokevirtual #438                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.toString:()Ljava/lang/String;
+         7: areturn
+
+  public final java.lang.CharSequence asCharSequence();
+    Code:
+         0: aload_0
+         1: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         4: checkcast     #25                 // class java/lang/CharSequence
+         7: areturn
+
+  private final void clearChangeList();
+    Code:
+         0: aload_0
+         1: invokevirtual #181                // Method getChangeTracker$foundation:()Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+         4: invokevirtual #443                // Method androidx/compose/foundation/text/input/internal/ChangeTracker.clearChanges:()V
+         7: return
+
+  public final void revertAllChanges();
+    Code:
+         0: aload_0
+         1: iconst_0
+         2: aload_0
+         3: invokevirtual #309                // Method getLength:()I
+         6: aload_0
+         7: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+        10: invokevirtual #445                // Method androidx/compose/foundation/text/input/TextFieldCharSequence.toString:()Ljava/lang/String;
+        13: checkcast     #25                 // class java/lang/CharSequence
+        16: invokevirtual #447                // Method replace:(IILjava/lang/CharSequence;)V
+        19: aload_0
+        20: aload_0
+        21: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+        24: invokevirtual #60                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence."getSelection-d9O1mEE":()J
+        27: invokevirtual #449                // Method "setSelection-5zc-tL8":(J)V
+        30: aload_0
+        31: invokespecial #451                // Method clearChangeList:()V
+        34: getstatic     #456                // Field androidx/compose/foundation/ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled:Z
+        37: ifeq          82
+        40: aload_0
+        41: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+        44: invokevirtual #38                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getTextStyleBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        47: ifnull        67
+        50: aload_0
+        51: invokespecial #459                // Method requireTextFieldBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        54: aload_0
+        55: getfield      #17                 // Field originalValue:Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+        58: invokevirtual #38                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getTextStyleBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        61: invokevirtual #462                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.syncTo:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;)V
+        64: goto          82
+        67: aload_0
+        68: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        71: dup
+        72: ifnull        81
+        75: invokevirtual #463                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.clear:()V
+        78: goto          82
+        81: pop
+        82: return
+
+  public final void placeCursorBeforeCharAt(int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: iconst_1
+         3: iconst_0
+         4: invokespecial #469                // Method requireValidIndex:(IZZ)V
+         7: aload_0
+         8: iload_1
+         9: invokestatic  #472                // Method androidx/compose/ui/text/TextRangeKt.TextRange:(I)J
+        12: putfield      #64                 // Field selectionInChars:J
+        15: return
+
+  public final void placeCursorAfterCharAt(int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: iconst_0
+         3: iconst_1
+         4: invokespecial #469                // Method requireValidIndex:(IZZ)V
+         7: aload_0
+         8: iload_1
+         9: iconst_1
+        10: iadd
+        11: aload_0
+        12: invokevirtual #309                // Method getLength:()I
+        15: invokestatic  #477                // Method kotlin/ranges/RangesKt.coerceAtMost:(II)I
+        18: invokestatic  #472                // Method androidx/compose/ui/text/TextRangeKt.TextRange:(I)J
+        21: putfield      #64                 // Field selectionInChars:J
+        24: return
+
+  public final androidx.compose.foundation.text.input.TextFieldCharSequence toTextFieldCharSequence-wFTz33Y$foundation(long, androidx.compose.ui.text.TextRange, java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>>, java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>>);
+    Code:
+         0: new           #34                 // class androidx/compose/foundation/text/input/TextFieldCharSequence
+         3: dup
+         4: aload_0
+         5: getfield      #32                 // Field buffer:Landroidx/compose/foundation/text/input/internal/PartialGapBuffer;
+         8: invokevirtual #438                // Method androidx/compose/foundation/text/input/internal/PartialGapBuffer.toString:()Ljava/lang/String;
+        11: checkcast     #25                 // class java/lang/CharSequence
+        14: lload_1
+        15: aload_3
+        16: aconst_null
+        17: aload         4
+        19: aload         5
+        21: getstatic     #456                // Field androidx/compose/foundation/ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled:Z
+        24: ifeq          46
+        27: aload_0
+        28: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        31: dup
+        32: ifnull        41
+        35: invokevirtual #483                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.toImmutable:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        38: goto          47
+        41: pop
+        42: aconst_null
+        43: goto          47
+        46: aconst_null
+        47: bipush        8
+        49: aconst_null
+        50: invokespecial #486                // Method androidx/compose/foundation/text/input/TextFieldCharSequence."<init>":(Ljava/lang/CharSequence;JLandroidx/compose/ui/text/TextRange;Lkotlin/Pair;Ljava/util/List;Ljava/util/List;Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+        53: areturn
+
+  public static androidx.compose.foundation.text.input.TextFieldCharSequence toTextFieldCharSequence-wFTz33Y$foundation$default(androidx.compose.foundation.text.input.TextFieldBuffer, long, androidx.compose.ui.text.TextRange, java.util.List, java.util.List, int, java.lang.Object);
+    Code:
+         0: iload         6
+         2: iconst_1
+         3: iand
+         4: ifeq          12
+         7: aload_0
+         8: invokevirtual #189                // Method "getSelection-d9O1mEE":()J
+        11: lstore_1
+        12: iload         6
+        14: iconst_2
+        15: iand
+        16: ifeq          24
+        19: aload_0
+        20: getfield      #72                 // Field composition:Landroidx/compose/ui/text/TextRange;
+        23: astore_3
+        24: iload         6
+        26: iconst_4
+        27: iand
+        28: ifeq          90
+        31: aload_0
+        32: getfield      #129                // Field composingAnnotations:Landroidx/compose/runtime/collection/MutableVector;
+        35: dup
+        36: ifnull        86
+        39: invokevirtual #493                // Method androidx/compose/runtime/collection/MutableVector.asMutableList:()Ljava/util/List;
+        42: dup
+        43: ifnull        86
+        46: astore        8
+        48: aload         8
+        50: astore        9
+        52: iconst_0
+        53: istore        10
+        55: aload         9
+        57: checkcast     #78                 // class java/util/Collection
+        60: invokeinterface #82,  1           // InterfaceMethod java/util/Collection.isEmpty:()Z
+        65: ifne          72
+        68: iconst_1
+        69: goto          73
+        72: iconst_0
+        73: nop
+        74: ifeq          82
+        77: aload         8
+        79: goto          88
+        82: aconst_null
+        83: goto          88
+        86: pop
+        87: aconst_null
+        88: astore        4
+        90: iload         6
+        92: bipush        8
+        94: iand
+        95: ifeq          101
+        98: aconst_null
+        99: astore        5
+       101: aload_0
+       102: lload_1
+       103: aload_3
+       104: aload         4
+       106: aload         5
+       108: invokevirtual #495                // Method "toTextFieldCharSequence-wFTz33Y$foundation":(JLandroidx/compose/ui/text/TextRange;Ljava/util/List;Ljava/util/List;)Landroidx/compose/foundation/text/input/TextFieldCharSequence;
+       111: areturn
+
+  private final void requireValidIndex(int, boolean, boolean);
+    Code:
+         0: iload_2
+         1: ifeq          8
+         4: iconst_0
+         5: goto          9
+         8: iconst_m1
+         9: istore        4
+        11: iload_3
+        12: ifeq          22
+        15: aload_0
+        16: invokevirtual #309                // Method getLength:()I
+        19: goto          28
+        22: aload_0
+        23: invokevirtual #309                // Method getLength:()I
+        26: iconst_1
+        27: iadd
+        28: istore        5
+        30: iload         4
+        32: iload_1
+        33: if_icmpgt     50
+        36: iload_1
+        37: iload         5
+        39: if_icmpge     46
+        42: iconst_1
+        43: goto          51
+        46: iconst_0
+        47: goto          51
+        50: iconst_0
+        51: istore        6
+        53: iconst_0
+        54: istore        7
+        56: iload         6
+        58: ifne          114
+        61: iconst_0
+        62: istore        8
+        64: new           #228                // class java/lang/StringBuilder
+        67: dup
+        68: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        71: ldc_w         #498                // String Expected
+        74: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        77: iload_1
+        78: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        81: ldc_w         #500                // String  to be in [
+        84: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        87: iload         4
+        89: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        92: ldc_w         #502                // String ,
+        95: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        98: iload         5
+       100: invokevirtual #238                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       103: bipush        41
+       105: invokevirtual #505                // Method java/lang/StringBuilder.append:(C)Ljava/lang/StringBuilder;
+       108: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       111: invokestatic  #347                // Method androidx/compose/foundation/internal/InlineClassHelperKt.throwIllegalArgumentException:(Ljava/lang/String;)V
+       114: nop
+       115: return
+
+  private final void requireValidRange-5zc-tL8(long);
+    Code:
+         0: iconst_0
+         1: aload_0
+         2: invokevirtual #309                // Method getLength:()I
+         5: invokestatic  #262                // Method androidx/compose/ui/text/TextRangeKt.TextRange:(II)J
+         8: lstore_3
+         9: lload_3
+        10: lload_1
+        11: invokestatic  #512                // Method androidx/compose/ui/text/TextRange."contains-5zc-tL8":(JJ)Z
+        14: istore        5
+        16: iconst_0
+        17: istore        6
+        19: iload         5
+        21: ifne          66
+        24: iconst_0
+        25: istore        7
+        27: new           #228                // class java/lang/StringBuilder
+        30: dup
+        31: invokespecial #229                // Method java/lang/StringBuilder."<init>":()V
+        34: ldc_w         #498                // String Expected
+        37: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        40: lload_1
+        41: invokestatic  #516                // Method androidx/compose/ui/text/TextRange."toString-impl":(J)Ljava/lang/String;
+        44: invokevirtual #519                // Method java/lang/StringBuilder.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+        47: ldc_w         #521                // String  to be in
+        50: invokevirtual #235                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        53: lload_3
+        54: invokestatic  #516                // Method androidx/compose/ui/text/TextRange."toString-impl":(J)Ljava/lang/String;
+        57: invokevirtual #519                // Method java/lang/StringBuilder.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+        60: invokevirtual #244                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        63: invokestatic  #347                // Method androidx/compose/foundation/internal/InlineClassHelperKt.throwIllegalArgumentException:(Ljava/lang/String;)V
+        66: nop
+        67: return
+
+  public final boolean getCanCallAddStyle$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #133                // Field canCallAddStyle:Z
+         4: ireturn
+
+  public final void setCanCallAddStyle$foundation(boolean);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: putfield      #133                // Field canCallAddStyle:Z
+         5: return
+
+  public final java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>> getOutputTransformationAnnotations$foundation();
+    Code:
+         0: aload_0
+         1: getfield      #532                // Field outputTransformationAnnotations:Ljava/util/List;
+         4: areturn
+
+  public final void setOutputTransformationAnnotations$foundation(java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.AnnotatedString$Annotation>>);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #532                // Field outputTransformationAnnotations:Ljava/util/List;
+         5: return
+
+  public final void addAnnotation$foundation(androidx.compose.ui.text.AnnotatedString$Annotation, int, int);
+    Code:
+         0: aload_0
+         1: getfield      #133                // Field canCallAddStyle:Z
+         4: istore        4
+         6: iconst_0
+         7: istore        5
+         9: iload         4
+        11: ifne          23
+        14: iconst_0
+        15: istore        6
+        17: ldc_w         #539                // String You can add styling to a [TextFieldBuffer] only from an [OutputTransformation].
+        20: invokestatic  #542                // Method androidx/compose/foundation/internal/InlineClassHelperKt.throwIllegalStateException:(Ljava/lang/String;)V
+        23: nop
+        24: aload_0
+        25: getfield      #532                // Field outputTransformationAnnotations:Ljava/util/List;
+        28: ifnonnull     45
+        31: aload_0
+        32: new           #544                // class java/util/ArrayList
+        35: dup
+        36: invokespecial #545                // Method java/util/ArrayList."<init>":()V
+        39: checkcast     #84                 // class java/util/List
+        42: putfield      #532                // Field outputTransformationAnnotations:Ljava/util/List;
+        45: aload_0
+        46: getfield      #532                // Field outputTransformationAnnotations:Ljava/util/List;
+        49: dup
+        50: ifnull        72
+        53: new           #110                // class androidx/compose/ui/text/AnnotatedString$Range
+        56: dup
+        57: aload_1
+        58: iload_2
+        59: iload_3
+        60: invokespecial #548                // Method androidx/compose/ui/text/AnnotatedString$Range."<init>":(Ljava/lang/Object;II)V
+        63: invokeinterface #549,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        68: pop
+        69: goto          73
+        72: pop
+        73: return
+
+  private final androidx.compose.foundation.text.input.internal.TextStyleBuffer<androidx.compose.ui.text.AnnotatedString$Annotation> requireTextFieldBuffer();
+    Code:
+         0: aload_0
+         1: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+         4: dup
+         5: ifnonnull     31
+         8: pop
+         9: new           #40                 // class androidx/compose/foundation/text/input/internal/TextStyleBuffer
+        12: dup
+        13: aconst_null
+        14: iconst_0
+        15: iconst_3
+        16: aconst_null
+        17: invokespecial #43                 // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer."<init>":(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+        20: astore_1
+        21: aload_1
+        22: astore_2
+        23: iconst_0
+        24: istore_3
+        25: aload_0
+        26: aload_2
+        27: putfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        30: aload_1
+        31: areturn
+
+  public final void addAnnotationToBuffer$foundation(androidx.compose.ui.text.AnnotatedString$Annotation, int, int);
+    Code:
+         0: aload_0
+         1: invokevirtual #181                // Method getChangeTracker$foundation:()Landroidx/compose/foundation/text/input/internal/ChangeTracker;
+         4: iload_2
+         5: iload_3
+         6: iload_3
+         7: iload_2
+         8: isub
+         9: invokevirtual #419                // Method androidx/compose/foundation/text/input/internal/ChangeTracker.trackChange:(III)V
+        12: aload_0
+        13: invokespecial #459                // Method requireTextFieldBuffer:()Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+        16: aload_1
+        17: iload_2
+        18: iload_3
+        19: iconst_0
+        20: iconst_1
+        21: invokestatic  #561                // Method androidx/compose/foundation/text/input/internal/Interval."constructor-impl":(IIZZ)J
+        24: invokevirtual #565                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer."addStyle-l7BaIrg":(Ljava/lang/Object;J)Z
+        27: pop
+        28: return
+
+  public final void addStyle(androidx.compose.ui.text.SpanStyle, int, int);
+    Code:
+         0: getstatic     #456                // Field androidx/compose/foundation/ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled:Z
+         3: ifeq          19
+         6: aload_0
+         7: aload_1
+         8: checkcast     #569                // class androidx/compose/ui/text/AnnotatedString$Annotation
+        11: iload_2
+        12: iload_3
+        13: invokevirtual #571                // Method addAnnotationToBuffer$foundation:(Landroidx/compose/ui/text/AnnotatedString$Annotation;II)V
+        16: goto          29
+        19: aload_0
+        20: aload_1
+        21: checkcast     #569                // class androidx/compose/ui/text/AnnotatedString$Annotation
+        24: iload_2
+        25: iload_3
+        26: invokevirtual #573                // Method addAnnotation$foundation:(Landroidx/compose/ui/text/AnnotatedString$Annotation;II)V
+        29: return
+
+  public final void addStyle(androidx.compose.ui.text.ParagraphStyle, int, int);
+    Code:
+         0: getstatic     #456                // Field androidx/compose/foundation/ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled:Z
+         3: ifeq          19
+         6: aload_0
+         7: aload_1
+         8: checkcast     #569                // class androidx/compose/ui/text/AnnotatedString$Annotation
+        11: iload_2
+        12: iload_3
+        13: invokevirtual #571                // Method addAnnotationToBuffer$foundation:(Landroidx/compose/ui/text/AnnotatedString$Annotation;II)V
+        16: goto          29
+        19: aload_0
+        20: aload_1
+        21: checkcast     #569                // class androidx/compose/ui/text/AnnotatedString$Annotation
+        24: iload_2
+        25: iload_3
+        26: invokevirtual #573                // Method addAnnotation$foundation:(Landroidx/compose/ui/text/AnnotatedString$Annotation;II)V
+        29: return
+
+  public final java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.SpanStyle>> getSpanStyles$foundation(int, int);
+    Code:
+         0: aload_0
+         1: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+         4: dup
+         5: ifnull        714
+         8: astore_3
+         9: iload_1
+        10: istore        4
+        12: iload_2
+        13: istore        5
+        15: iconst_0
+        16: istore        6
+        18: iload         4
+        20: iload         5
+        22: if_icmple     31
+        25: invokestatic  #586                // Method kotlin/collections/CollectionsKt.emptyList:()Ljava/util/List;
+        28: goto          710
+        31: iconst_0
+        32: istore        7
+        34: iconst_0
+        35: istore        8
+        37: iload         4
+        39: iload         5
+        41: if_icmpne     68
+        44: iload         4
+        46: aload_3
+        47: invokevirtual #589                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapStart:()I
+        50: if_icmpne     68
+        53: aload_3
+        54: invokevirtual #592                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapEnd:()I
+        57: istore        7
+        59: aload_3
+        60: invokevirtual #592                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapEnd:()I
+        63: istore        8
+        65: goto          88
+        68: aload_3
+        69: iload         4
+        71: iconst_1
+        72: iconst_1
+        73: invokestatic  #596                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$originalIndexToGapBuffer:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;IZZ)I
+        76: istore        7
+        78: aload_3
+        79: iload         5
+        81: iconst_0
+        82: iconst_1
+        83: invokestatic  #596                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$originalIndexToGapBuffer:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;IZZ)I
+        86: istore        8
+        88: aload_3
+        89: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+        92: astore        9
+        94: iload         7
+        96: istore        10
+        98: iload         8
+       100: istore        11
+       102: nop
+       103: iconst_0
+       104: istore        12
+       106: aload         9
+       108: invokestatic  #606                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree.access$getTempArray:(Landroidx/compose/foundation/text/input/internal/IntIntervalTree;)Landroidx/collection/MutableIntList;
+       111: astore        13
+       113: aload         9
+       115: astore        14
+       117: iload         10
+       119: istore        15
+       121: iload         11
+       123: istore        16
+       125: iconst_0
+       126: istore        17
+       128: aload         14
+       130: astore        18
+       132: iload         15
+       134: istore        19
+       136: iload         16
+       138: istore        20
+       140: iconst_0
+       141: istore        21
+       143: aload         18
+       145: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       148: aload         18
+       150: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       153: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       156: ifne          494
+       159: aload         18
+       161: aload         18
+       163: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       166: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       169: iload         19
+       171: if_icmplt     494
+       174: aload         18
+       176: aload         18
+       178: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       181: invokevirtual #625                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMin-330cO7A":(I)I
+       184: iload         20
+       186: if_icmple     192
+       189: goto          494
+       192: iconst_0
+       193: istore        22
+       195: aload         18
+       197: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       200: istore        23
+       202: iload         23
+       204: aload         18
+       206: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       209: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       212: ifne          493
+       215: iload         22
+       217: tableswitch   { // 0 to 2
+                       0: 244
+                       1: 300
+                       2: 436
+                 default: 490
+            }
+       244: aload         18
+       246: iload         23
+       248: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       251: aload         18
+       253: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       256: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       259: ifne          294
+       262: aload         18
+       264: aload         18
+       266: iload         23
+       268: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       271: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       274: iload         19
+       276: if_icmplt     294
+       279: aload         18
+       281: iload         23
+       283: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       286: istore        23
+       288: iconst_0
+       289: istore        22
+       291: goto          202
+       294: iconst_1
+       295: istore        22
+       297: goto          202
+       300: iload         23
+       302: istore        24
+       304: iconst_0
+       305: istore        25
+       307: iload         24
+       309: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       312: istore        26
+       314: aload         14
+       316: iload         26
+       318: iload         15
+       320: iload         16
+       322: invokevirtual #633                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."overlaps-XzpGiIY":(III)Z
+       325: ifeq          361
+       328: iload         26
+       330: istore        27
+       332: iconst_0
+       333: istore        28
+       335: aload         9
+       337: iload         27
+       339: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       342: invokevirtual #636                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-330cO7A":(I)Ljava/lang/Object;
+       345: instanceof    #638                // class androidx/compose/ui/text/SpanStyle
+       348: ifeq          359
+       351: aload         13
+       353: iload         27
+       355: invokevirtual #643                // Method androidx/collection/MutableIntList.add:(I)Z
+       358: pop
+       359: nop
+       360: nop
+       361: nop
+       362: nop
+       363: aload         18
+       365: iload         23
+       367: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       370: aload         18
+       372: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       375: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       378: ifne          430
+       381: aload         18
+       383: aload         18
+       385: iload         23
+       387: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       390: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       393: iload         19
+       395: if_icmplt     430
+       398: aload         18
+       400: aload         18
+       402: iload         23
+       404: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       407: invokevirtual #625                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMin-330cO7A":(I)I
+       410: iload         20
+       412: if_icmpgt     430
+       415: aload         18
+       417: iload         23
+       419: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       422: istore        23
+       424: iconst_0
+       425: istore        22
+       427: goto          202
+       430: iconst_2
+       431: istore        22
+       433: goto          202
+       436: aload         18
+       438: iload         23
+       440: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       443: aload         18
+       445: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       448: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       451: ifne          481
+       454: iload         23
+       456: aload         18
+       458: aload         18
+       460: iload         23
+       462: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       465: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       468: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       471: ifeq          478
+       474: iconst_1
+       475: goto          479
+       478: iconst_2
+       479: istore        22
+       481: aload         18
+       483: iload         23
+       485: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       488: istore        23
+       490: goto          202
+       493: nop
+       494: nop
+       495: aload         13
+       497: invokevirtual #652                // Method androidx/collection/MutableIntList.sort:()V
+       500: aload         13
+       502: checkcast     #654                // class androidx/collection/IntList
+       505: astore        15
+       507: iconst_0
+       508: istore        16
+       510: aload         15
+       512: getfield      #657                // Field androidx/collection/IntList._size:I
+       515: istore        15
+       517: new           #544                // class java/util/ArrayList
+       520: dup
+       521: iload         15
+       523: invokespecial #659                // Method java/util/ArrayList."<init>":(I)V
+       526: astore        16
+       528: iconst_0
+       529: istore        17
+       531: iload         17
+       533: iload         15
+       535: if_icmpge     695
+       538: iload         17
+       540: istore        18
+       542: aload         16
+       544: iload         18
+       546: istore        19
+       548: astore        29
+       550: iconst_0
+       551: istore        20
+       553: aload         13
+       555: iload         19
+       557: invokevirtual #661                // Method androidx/collection/MutableIntList.get:(I)I
+       560: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       563: istore        21
+       565: aload         9
+       567: iload         21
+       569: invokevirtual #636                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-330cO7A":(I)Ljava/lang/Object;
+       572: astore        22
+       574: aload         22
+       576: ifnull        670
+       579: aload         9
+       581: iload         21
+       583: invokevirtual #664                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getId-330cO7A":(I)I
+       586: iload         21
+       588: invokestatic  #668                // Method androidx/compose/foundation/text/input/internal/IntervalHandle."constructor-impl":(II)J
+       591: lstore        30
+       593: iconst_0
+       594: istore        32
+       596: lload         30
+       598: invokestatic  #671                // Method androidx/compose/foundation/text/input/internal/IntervalHandle."constructor-impl":(J)J
+       601: lstore        33
+       603: aload_3
+       604: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+       607: lload         33
+       609: invokevirtual #674                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getInterval-veTUMZY":(J)J
+       612: lstore        35
+       614: new           #110                // class androidx/compose/ui/text/AnnotatedString$Range
+       617: dup
+       618: aload_3
+       619: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+       622: lload         33
+       624: invokevirtual #678                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-NDTVn_k":(J)Ljava/lang/Object;
+       627: dup
+       628: ifnonnull     642
+       631: new           #680                // class java/lang/NullPointerException
+       634: dup
+       635: ldc_w         #682                // String null cannot be cast to non-null type androidx.compose.ui.text.SpanStyle
+       638: invokespecial #683                // Method java/lang/NullPointerException."<init>":(Ljava/lang/String;)V
+       641: athrow
+       642: checkcast     #638                // class androidx/compose/ui/text/SpanStyle
+       645: aload_3
+       646: lload         35
+       648: invokestatic  #687                // Method androidx/compose/foundation/text/input/internal/Interval."getStart-impl":(J)I
+       651: invokestatic  #691                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$gapBufferToOriginalIndex:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;I)I
+       654: aload_3
+       655: lload         35
+       657: invokestatic  #694                // Method androidx/compose/foundation/text/input/internal/Interval."getEnd-impl":(J)I
+       660: invokestatic  #691                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$gapBufferToOriginalIndex:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;I)I
+       663: invokespecial #548                // Method androidx/compose/ui/text/AnnotatedString$Range."<init>":(Ljava/lang/Object;II)V
+       666: nop
+       667: goto          681
+       670: new           #696                // class java/lang/IllegalStateException
+       673: dup
+       674: ldc_w         #698                // String IntIntervalTree\'s item should not be null
+       677: invokespecial #699                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+       680: athrow
+       681: nop
+       682: aload         29
+       684: swap
+       685: invokevirtual #700                // Method java/util/ArrayList.add:(Ljava/lang/Object;)Z
+       688: pop
+       689: iinc          17, 1
+       692: goto          531
+       695: aload         16
+       697: checkcast     #84                 // class java/util/List
+       700: astore        14
+       702: aload         13
+       704: invokevirtual #701                // Method androidx/collection/MutableIntList.clear:()V
+       707: aload         14
+       709: nop
+       710: dup
+       711: ifnonnull     718
+       714: pop
+       715: invokestatic  #586                // Method kotlin/collections/CollectionsKt.emptyList:()Ljava/util/List;
+       718: areturn
+
+  public final java.util.List<androidx.compose.ui.text.AnnotatedString$Range<androidx.compose.ui.text.ParagraphStyle>> getParagraphStyles$foundation(int, int);
+    Code:
+         0: aload_0
+         1: getfield      #47                 // Field textStyleBuffer:Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;
+         4: dup
+         5: ifnull        714
+         8: astore_3
+         9: iload_1
+        10: istore        4
+        12: iload_2
+        13: istore        5
+        15: iconst_0
+        16: istore        6
+        18: iload         4
+        20: iload         5
+        22: if_icmple     31
+        25: invokestatic  #586                // Method kotlin/collections/CollectionsKt.emptyList:()Ljava/util/List;
+        28: goto          710
+        31: iconst_0
+        32: istore        7
+        34: iconst_0
+        35: istore        8
+        37: iload         4
+        39: iload         5
+        41: if_icmpne     68
+        44: iload         4
+        46: aload_3
+        47: invokevirtual #589                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapStart:()I
+        50: if_icmpne     68
+        53: aload_3
+        54: invokevirtual #592                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapEnd:()I
+        57: istore        7
+        59: aload_3
+        60: invokevirtual #592                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getGapEnd:()I
+        63: istore        8
+        65: goto          88
+        68: aload_3
+        69: iload         4
+        71: iconst_1
+        72: iconst_1
+        73: invokestatic  #596                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$originalIndexToGapBuffer:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;IZZ)I
+        76: istore        7
+        78: aload_3
+        79: iload         5
+        81: iconst_0
+        82: iconst_1
+        83: invokestatic  #596                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$originalIndexToGapBuffer:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;IZZ)I
+        86: istore        8
+        88: aload_3
+        89: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+        92: astore        9
+        94: iload         7
+        96: istore        10
+        98: iload         8
+       100: istore        11
+       102: nop
+       103: iconst_0
+       104: istore        12
+       106: aload         9
+       108: invokestatic  #606                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree.access$getTempArray:(Landroidx/compose/foundation/text/input/internal/IntIntervalTree;)Landroidx/collection/MutableIntList;
+       111: astore        13
+       113: aload         9
+       115: astore        14
+       117: iload         10
+       119: istore        15
+       121: iload         11
+       123: istore        16
+       125: iconst_0
+       126: istore        17
+       128: aload         14
+       130: astore        18
+       132: iload         15
+       134: istore        19
+       136: iload         16
+       138: istore        20
+       140: iconst_0
+       141: istore        21
+       143: aload         18
+       145: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       148: aload         18
+       150: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       153: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       156: ifne          494
+       159: aload         18
+       161: aload         18
+       163: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       166: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       169: iload         19
+       171: if_icmplt     494
+       174: aload         18
+       176: aload         18
+       178: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       181: invokevirtual #625                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMin-330cO7A":(I)I
+       184: iload         20
+       186: if_icmple     192
+       189: goto          494
+       192: iconst_0
+       193: istore        22
+       195: aload         18
+       197: invokevirtual #609                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRoot-27flxzM":()I
+       200: istore        23
+       202: iload         23
+       204: aload         18
+       206: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       209: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       212: ifne          493
+       215: iload         22
+       217: tableswitch   { // 0 to 2
+                       0: 244
+                       1: 300
+                       2: 436
+                 default: 490
+            }
+       244: aload         18
+       246: iload         23
+       248: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       251: aload         18
+       253: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       256: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       259: ifne          294
+       262: aload         18
+       264: aload         18
+       266: iload         23
+       268: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       271: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       274: iload         19
+       276: if_icmplt     294
+       279: aload         18
+       281: iload         23
+       283: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       286: istore        23
+       288: iconst_0
+       289: istore        22
+       291: goto          202
+       294: iconst_1
+       295: istore        22
+       297: goto          202
+       300: iload         23
+       302: istore        24
+       304: iconst_0
+       305: istore        25
+       307: iload         24
+       309: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       312: istore        26
+       314: aload         14
+       316: iload         26
+       318: iload         15
+       320: iload         16
+       322: invokevirtual #633                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."overlaps-XzpGiIY":(III)Z
+       325: ifeq          361
+       328: iload         26
+       330: istore        27
+       332: iconst_0
+       333: istore        28
+       335: aload         9
+       337: iload         27
+       339: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       342: invokevirtual #636                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-330cO7A":(I)Ljava/lang/Object;
+       345: instanceof    #743                // class androidx/compose/ui/text/ParagraphStyle
+       348: ifeq          359
+       351: aload         13
+       353: iload         27
+       355: invokevirtual #643                // Method androidx/collection/MutableIntList.add:(I)Z
+       358: pop
+       359: nop
+       360: nop
+       361: nop
+       362: nop
+       363: aload         18
+       365: iload         23
+       367: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       370: aload         18
+       372: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       375: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       378: ifne          430
+       381: aload         18
+       383: aload         18
+       385: iload         23
+       387: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       390: invokevirtual #622                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMax-330cO7A":(I)I
+       393: iload         19
+       395: if_icmplt     430
+       398: aload         18
+       400: aload         18
+       402: iload         23
+       404: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       407: invokevirtual #625                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getMin-330cO7A":(I)I
+       410: iload         20
+       412: if_icmpgt     430
+       415: aload         18
+       417: iload         23
+       419: invokevirtual #646                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getRight-bLpG9ms":(I)I
+       422: istore        23
+       424: iconst_0
+       425: istore        22
+       427: goto          202
+       430: iconst_2
+       431: istore        22
+       433: goto          202
+       436: aload         18
+       438: iload         23
+       440: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       443: aload         18
+       445: invokevirtual #612                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getTerminator-27flxzM":()I
+       448: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       451: ifne          481
+       454: iload         23
+       456: aload         18
+       458: aload         18
+       460: iload         23
+       462: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       465: invokevirtual #628                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getLeft-bLpG9ms":(I)I
+       468: invokestatic  #618                // Method androidx/compose/foundation/text/input/internal/Node."equals-impl0":(II)Z
+       471: ifeq          478
+       474: iconst_1
+       475: goto          479
+       478: iconst_2
+       479: istore        22
+       481: aload         18
+       483: iload         23
+       485: invokevirtual #649                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getParent-bLpG9ms":(I)I
+       488: istore        23
+       490: goto          202
+       493: nop
+       494: nop
+       495: aload         13
+       497: invokevirtual #652                // Method androidx/collection/MutableIntList.sort:()V
+       500: aload         13
+       502: checkcast     #654                // class androidx/collection/IntList
+       505: astore        15
+       507: iconst_0
+       508: istore        16
+       510: aload         15
+       512: getfield      #657                // Field androidx/collection/IntList._size:I
+       515: istore        15
+       517: new           #544                // class java/util/ArrayList
+       520: dup
+       521: iload         15
+       523: invokespecial #659                // Method java/util/ArrayList."<init>":(I)V
+       526: astore        16
+       528: iconst_0
+       529: istore        17
+       531: iload         17
+       533: iload         15
+       535: if_icmpge     695
+       538: iload         17
+       540: istore        18
+       542: aload         16
+       544: iload         18
+       546: istore        19
+       548: astore        29
+       550: iconst_0
+       551: istore        20
+       553: aload         13
+       555: iload         19
+       557: invokevirtual #661                // Method androidx/collection/MutableIntList.get:(I)I
+       560: invokestatic  #630                // Method androidx/compose/foundation/text/input/internal/Node."constructor-impl":(I)I
+       563: istore        21
+       565: aload         9
+       567: iload         21
+       569: invokevirtual #636                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-330cO7A":(I)Ljava/lang/Object;
+       572: astore        22
+       574: aload         22
+       576: ifnull        670
+       579: aload         9
+       581: iload         21
+       583: invokevirtual #664                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getId-330cO7A":(I)I
+       586: iload         21
+       588: invokestatic  #668                // Method androidx/compose/foundation/text/input/internal/IntervalHandle."constructor-impl":(II)J
+       591: lstore        30
+       593: iconst_0
+       594: istore        32
+       596: lload         30
+       598: invokestatic  #671                // Method androidx/compose/foundation/text/input/internal/IntervalHandle."constructor-impl":(J)J
+       601: lstore        33
+       603: aload_3
+       604: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+       607: lload         33
+       609: invokevirtual #674                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getInterval-veTUMZY":(J)J
+       612: lstore        35
+       614: new           #110                // class androidx/compose/ui/text/AnnotatedString$Range
+       617: dup
+       618: aload_3
+       619: invokevirtual #600                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.getIntervalTree:()Landroidx/compose/foundation/text/input/internal/IntIntervalTree;
+       622: lload         33
+       624: invokevirtual #678                // Method androidx/compose/foundation/text/input/internal/IntIntervalTree."getItem-NDTVn_k":(J)Ljava/lang/Object;
+       627: dup
+       628: ifnonnull     642
+       631: new           #680                // class java/lang/NullPointerException
+       634: dup
+       635: ldc_w         #745                // String null cannot be cast to non-null type androidx.compose.ui.text.ParagraphStyle
+       638: invokespecial #683                // Method java/lang/NullPointerException."<init>":(Ljava/lang/String;)V
+       641: athrow
+       642: checkcast     #743                // class androidx/compose/ui/text/ParagraphStyle
+       645: aload_3
+       646: lload         35
+       648: invokestatic  #687                // Method androidx/compose/foundation/text/input/internal/Interval."getStart-impl":(J)I
+       651: invokestatic  #691                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$gapBufferToOriginalIndex:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;I)I
+       654: aload_3
+       655: lload         35
+       657: invokestatic  #694                // Method androidx/compose/foundation/text/input/internal/Interval."getEnd-impl":(J)I
+       660: invokestatic  #691                // Method androidx/compose/foundation/text/input/internal/TextStyleBuffer.access$gapBufferToOriginalIndex:(Landroidx/compose/foundation/text/input/internal/TextStyleBuffer;I)I
+       663: invokespecial #548                // Method androidx/compose/ui/text/AnnotatedString$Range."<init>":(Ljava/lang/Object;II)V
+       666: nop
+       667: goto          681
+       670: new           #696                // class java/lang/IllegalStateException
+       673: dup
+       674: ldc_w         #698                // String IntIntervalTree\'s item should not be null
+       677: invokespecial #699                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+       680: athrow
+       681: nop
+       682: aload         29
+       684: swap
+       685: invokevirtual #700                // Method java/util/ArrayList.add:(Ljava/lang/Object;)Z
+       688: pop
+       689: iinc          17, 1
+       692: goto          531
+       695: aload         16
+       697: checkcast     #84                 // class java/util/List
+       700: astore        14
+       702: aload         13
+       704: invokevirtual #701                // Method androidx/collection/MutableIntList.clear:()V
+       707: aload         14
+       709: nop
+       710: dup
+       711: ifnonnull     718
+       714: pop
+       715: invokestatic  #586                // Method kotlin/collections/CollectionsKt.emptyList:()Ljava/util/List;
+       718: areturn
+
+  private static final androidx.compose.ui.text.AnnotatedString$Range composingAnnotations$lambda$0(androidx.compose.foundation.text.input.TextFieldCharSequence, int);
+    Code:
+         0: aload_0
+         1: invokevirtual #76                 // Method androidx/compose/foundation/text/input/TextFieldCharSequence.getComposingAnnotations:()Ljava/util/List;
+         4: iload_1
+         5: invokeinterface #271,  2          // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+        10: checkcast     #110                // class androidx/compose/ui/text/AnnotatedString$Range
+        13: areturn
+
+  static {};
+    Code:
+         0: bipush        8
+         2: putstatic     #750                // Field $stable:I
+         5: return
+}
