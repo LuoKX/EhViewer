@@ -1,6 +1,9 @@
 //! Focused std-only synthetic preference codec/runtime tests.
 #![deny(missing_docs, unsafe_code, clippy::all, clippy::pedantic)]
 
+#[path = "../src/preference_lock.rs"]
+mod preference_lock;
+
 #[path = "../src/preferences.rs"]
 mod preferences;
 

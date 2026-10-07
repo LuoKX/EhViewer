@@ -35,7 +35,9 @@ TalkBack, secure text, autofill, typography, lifecycle, GPU or performance parit
 | DataStore preference format and Rust file runtime | Accepted valid-UTF8 codec + synthetic host store: 38 actual JVM cases, 25 focused Rust tests, 9 checker tests; owner lines98.64%/functions98.08% | Android storage, malformed-UTF8 equivalence, settings defaults/UI/upgrade and device durability pending; no live paths | Committed `1931379ed`; no product completion claim |
 | Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Committed `af7c40ea9`; no product completion claim |
 | Pinned JVM UTF8 replacement helper | Accepted standalone host foundation: 258,862 generated PreferenceMap value/set cases, 5 Rust tests, 14 proof/runtime tests; owner lines98.39%/functions100% | Original preference codec unchanged; Android libcore/device proof and production consumer integration open | Committed `f665e62eb`; no product completion claim |
-| SQLite data compatibility | Accepted original23-schema/FTS host foundation: 5 Rust tests, 40 Python negatives, actual SQLite differential; owner lines/functions100%; independent parent recheck passed | No persistent engine, migrations, live DB, Room/device or destructive operations | Own source-bound foundation commit; no engine/product completion claim |
+| SQLite data compatibility | Accepted original23-schema/FTS host foundation: 5 Rust tests, 40 Python negatives, actual SQLite differential; owner lines/functions100%; independent parent recheck passed | No persistent engine, migrations, live DB, Room/device or destructive operations | Committed `1d7125e93`; no engine/product completion claim |
+| Safe private preference descriptors and locks | Accepted exact rustix1.1.5 Linux/Android descriptor seam, stable crash-released lock inode, no-follow/FIFO rejection and anchored atomic fixture updates;125 aggregate Rust; runtime100%/lock99.20% line and100% function gates | Actual Android locks/storage, power loss, retained bare-fork descriptors, MSRV1.95 and full F1/settings/UI remain open | Own bounded filesystem feature commit; no product cutover |
+| Favorite name/count snapshot policy | Reviewed isolated ten-key/default/read-only Number.intValue projections and owned exact-ten atomic plans;356 JVM records/9 favorite tests;69/69 lines14/14 functions; declaration excerpt P2 closed | Current-root reconciliation/replay/integration pending; per-index concurrency, persistence/flows/UI/Android/device/full F1 not accepted | Not committed; retain frozen original source and disclosed failures |
 | Full F1–F8 application responsibilities | Pending; reuse existing Rust owners | All original behavior/data/device/cutover obligations open | One finished bounded feature per commit |
 
 Secure-text integration gate (2026-10-07): prior P1 proof gaps and P2 toolbar
@@ -83,15 +85,42 @@ JVM UTF8258,862 replays remain exact. Logs: ignored
 ee53fc4a-2998-412d-889d-83b596a12fb6 found no issues and accepts host foundation
 only. Missing Eh1–3, migrations/persistent engine and Android/Room/UI gates open.
 
-Next component: safe Rustix Android filesystem ownership. Its two proof
-packaging/binding P1s and test-only coverage denominator P2 are fixed and
-independently closed by b0653c8c-34ca-4885-b4b5-ba6b3b20926c. Current-root
-Cargo/secure-text/library reconciliation and full integration gates remain pending.
-Source-only Python-B replay needs no generated cache; real new-owner hash
-mismatch/omission negatives reject, production lock coverage124/125lines14/14
-functions. Original runtime/source/Cargo/fixture identities preserved.
-Parallel source scout prepares exact original settings/default/array/locale policy
-contract; no implementation or product cutover implied.
+Filesystem parent gate (2026-10-07): private proof packaging/binding P1s and
+production-only coverage P2 closed by b0653c8c-34ca-4885-b4b5-ba6b3b20926c.
+Current parent integrates exact reviewed owner/tests/Cargo bytes, preserving
+current UTF8/schema modules and original codec byte region/JVM goldens. Exactly
+one existing rustix1.1.5 target dependency/root edge; no package/version/checksum
+or other-edge changes. Native-library registration and selected owned input
+hashes reconciled; secure-text classes/cases and schema data unchanged. Three JSON
+parse sites now normalize payload-free failures; direct negative raises checker
+suite to12. Original codec checker9 retained. Source-only Python-B replay depends
+on no generated cache; actual source/test mismatches and omitted bindings reject.
+
+Parent125 aggregate Rust tests, focused52-command replay, repeated kernel/process
+stress, exact preferences/JVM UTF8/23-schema regressions and all-target strict
+Clippy completion passed. Dead-code warnings retained, not warning-free claim.
+Runtime51/51lines5/5functions; production lock124/125lines14/14functions. Review
+af0de463-887a-4177-95a2-b5b0f2733888 accepts source/host integration with notes.
+
+ABI evidence correction: initial `--jobs 2` builder invocation was arm64-only;
+its claimed three-ABI APK result explicitly withdrawn. Fresh command repeats
+`--abi arm64-v8a --abi armeabi-v7a --abi x86_64 --jobs 2`, passes actual build,
+GameActivity JNI staging, APK library/ELF/frame-class/signature/alignment/identity
+checks. Exact argv/result/source/library/APK identity packet retained under
+ignored `native/build/logs/preference-lock-parent-three-abi-proof.json`; old log
+preserved. Targeted reviewer89e0e69d-e59c-495c-877a-463e5cdfd387 closes this P2;
+new evidence is not retroactive pass. No install/device/runtime/power-loss,
+arbitrary bare-fork, MSRV1.95, global-cache isolation, product/UI/full F1 acceptance.
+
+Next integration: original favorite snapshot policy. Real pinned compiler/JVM
+Number.intValue discovery supersedes parent's early nonInteger rejection
+assumption; stored numeric kind/bits/wire remain unchanged. Fresh isolated review
+fee6a7e2-764d-4821-9029-bb016f41d79f accepts bounded policy with notes; parent
+adds exact original declarations73-74 while retaining historical omission,
+targeted recheckb9c68002-055c-4994-b09a-71ab7c85c11c closes excerpt P2. Initial
+rustup/network attempt, imported-test output violation, timeout, moving-root hash
+assertion and generic-stdout misplacement remain disclosed failures. Snapshot
+proof never relabeled current-root/UI/storage/device completion.
 
 Resource failures
 are not accepted work: temporary storage was exhausted, two workers paused or

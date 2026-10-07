@@ -1,0 +1,5 @@
+preferences owner functions: 5/5 = 100.00%
+preferences owner lines: 51/51 = 100.00%
+preference_lock owner functions: 14/14 = 100.00%
+preference_lock owner lines: 124/125 = 99.20%
+Host filesystem owner coverage; no Android/device durability inference.

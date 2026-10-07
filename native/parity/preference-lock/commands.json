@@ -1,0 +1,487 @@
+[
+  {
+    "command": [
+      "/home/ngnl/.local/bin/python3",
+      "-B",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/test_evidence.py"
+    ],
+    "result": 0,
+    "label": "redacted filesystem checker negatives"
+  },
+  {
+    "command": [
+      "/home/ngnl/.local/bin/python3",
+      "-B",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preferences/test_coverage_summary.py"
+    ],
+    "result": 0,
+    "label": "parent checker nine negatives"
+  },
+  {
+    "command": [
+      "/home/ngnl/.local/bin/python3",
+      "-B",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/prepare.py"
+    ],
+    "result": 0,
+    "label": "private cached dependency preparation"
+  },
+  {
+    "command": [
+      "cargo",
+      "generate-lockfile",
+      "--offline"
+    ],
+    "result": 0,
+    "label": "private frozen-closure lock initialization"
+  },
+  {
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/src/preferences.rs",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/src/preference_lock.rs",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/tests/preferences.rs",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/tests/preference_lock.rs"
+    ],
+    "result": 0,
+    "label": "focused formatting"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--all-targets",
+      "--",
+      "-Dmissing_docs",
+      "-Dunsafe_code",
+      "-Drust_2018_idioms",
+      "-Dunused_lifetimes",
+      "-Dclippy::all",
+      "-Dclippy::pedantic"
+    ],
+    "result": 0,
+    "label": "focused strict library/test lints"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--tests"
+    ],
+    "result": 0,
+    "label": "host descriptor/codec/runtime tests"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--tests",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "result": 0,
+    "label": "focused executable inventory"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_filesystem_harness-8f652b7b72f17990"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preference_lock-a467842f8ae806c6"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/target/debug/deps/preferences-4e47c4171d467a0d"
+    ],
+    "result": 0,
+    "label": "bounded parallel stress"
+  },
+  {
+    "command": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--bin",
+      "stale_snapshot"
+    ],
+    "result": 101,
+    "label": "expected stale editor rejection"
+  },
+  {
+    "command": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--lib",
+      "--target",
+      "aarch64-linux-android"
+    ],
+    "result": 0,
+    "label": "Android compile-only aarch64-linux-android"
+  },
+  {
+    "command": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--lib",
+      "--target",
+      "armv7-linux-androideabi"
+    ],
+    "result": 0,
+    "label": "Android compile-only armv7-linux-androideabi"
+  },
+  {
+    "command": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--lib",
+      "--target",
+      "x86_64-linux-android"
+    ],
+    "result": 0,
+    "label": "Android compile-only x86_64-linux-android"
+  },
+  {
+    "command": [
+      "javac",
+      "-cp",
+      "/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-proto/1.2.1/5d062b556fb45141138c3d86284bbdcbe07cc770/datastore-preferences-proto-1.2.1.jar:/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar",
+      "-d",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/java",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preferences/Oracle.java"
+    ],
+    "result": 0,
+    "label": "cached JVM oracle compile"
+  },
+  {
+    "command": [
+      "java",
+      "-cp",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/java:/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-proto/1.2.1/5d062b556fb45141138c3d86284bbdcbe07cc770/datastore-preferences-proto-1.2.1.jar:/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar",
+      "Oracle",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/oracle"
+    ],
+    "result": 0,
+    "label": "cached JVM oracle execution"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--tests"
+    ],
+    "result": 0,
+    "label": "fresh host instrumentation"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-j2",
+      "--tests",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "result": 0,
+    "label": "coverage executable inventory"
+  },
+  {
+    "command": [
+      "rustc",
+      "--print",
+      "sysroot"
+    ],
+    "result": 0,
+    "label": "installed compiler identity"
+  },
+  {
+    "command": [
+      "/home/ngnl/.rustup/toolchains/nightly-2026-05-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata",
+      "merge",
+      "-sparse",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1454946-11855779913685933318_0.profraw",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1455544-1087477021119567120_0.profraw",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1455563-4085856001580687045_0.profraw",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1455568-4085856001580687045_0.profraw",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1455553-4085856001580687045_0.profraw",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-1455573-4897518115363259621_0.profraw",
+      "-o",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh.profdata"
+    ],
+    "result": 0,
+    "label": "fresh profile merge"
+  },
+  {
+    "command": [
+      "/home/ngnl/.rustup/toolchains/nightly-2026-05-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-cov",
+      "export",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preference_filesystem_harness-71243925d2f5f9af",
+      "--object=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preference_lock-ab2442f19804acd4",
+      "--object=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preferences-02ffdc31c8995d11",
+      "-instr-profile=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh.profdata"
+    ],
+    "result": 0,
+    "label": "owner coverage export"
+  },
+  {
+    "command": [
+      "/home/ngnl/.rustup/toolchains/nightly-2026-05-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-cov",
+      "show",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preference_filesystem_harness-71243925d2f5f9af",
+      "--object=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preference_lock-ab2442f19804acd4",
+      "--object=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/coverage-target/debug/deps/preferences-02ffdc31c8995d11",
+      "-instr-profile=/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh.profdata",
+      "-ignore-filename-regex=(vendor|\\.rustup|native/tests/(preferences|preference_lock)\\.rs)"
+    ],
+    "result": 0,
+    "label": "all lexical source aliases"
+  },
+  {
+    "command": [
+      "/home/ngnl/.local/bin/python3",
+      "-B",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/coverage.py",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-coverage.json",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-preferences.txt",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-preference_lock.txt"
+    ],
+    "result": 0,
+    "label": "independent filesystem owner95 gates"
+  },
+  {
+    "command": [
+      "/home/ngnl/.local/bin/python3",
+      "-B",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preferences/coverage-summary.py",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-coverage.json",
+      "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source/native/parity/preference-lock/build/fresh-preferences.txt"
+    ],
+    "result": 0,
+    "label": "original preference owner95 gate"
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-07",
+  "review_findings": [
+    "P1 omitted generated cache binding",
+    "P1 missing consumed lock source/test hashes",
+    "P2 test-only accessor denominator"
+  ],
+  "archive": {
+    "archive": "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-proof-archive-5ad023a931614fa5994f8d9d4d9981c9",
+    "index_sha256": "70c9612af70ea9bcea09a9fa1636f53518c9e06e6135fd4c390fb7d3abbc4134"
+  },
+  "clean_source_root": "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/source",
+  "clean_outputs": "/home/ngnl/Projects/.BF/EhViewer/native/build/parallel/full2/scratch/android-file-runtime-build/p1-clean-source-only-0e8053d44d43484e834c4153a18aa449/outputs",
+  "copied_source_file_count": 120,
+  "source_only_no_pyc_before_after": true,
+  "old_missing_cache_failure_reproduced": true,
+  "runtime_cargo_lib_unchanged": {
+    "native/src/preference_lock.rs": "46a1a02276b6effb75be90e94894a90741ddcf4cca21826135aeace230825234",
+    "native/tests/preference_lock.rs": "9e08a1a459a7994c621230b6c337f90bff50584a45426e4aaf06d8b87cc8af0b",
+    "native/src/preferences.rs": "ce9ea4f49612d88f2552711627b9bff4d3f3df9e58637634dcdd25c1c0c7e15b",
+    "native/tests/preferences.rs": "cfa84929aa1fc21cc0e4e360f35af39a033b5ef11c7720103557f847f4b91722",
+    "native/src/lib.rs": "299c7b496e52743e5f61e9a69347dde48c52ded135f1cef1ddfd3e060cf5fc5d",
+    "native/Cargo.toml": "075855821364328f1bdcc062890c08acb2d88bb590b1695cb5c9ac22cf7f57cf",
+    "native/Cargo.lock": "3aa8a7f840dc0376aaf4617b37cfaaa68d93269d578dc986ebdbb95560ea64b5"
+  },
+  "replay_commands": 52,
+  "host_case_executions": 48,
+  "bounded_stress_executions": 480,
+  "jvm_cases": 38,
+  "new_checker_tests": 11,
+  "production_owner_functions": "14/14",
+  "production_owner_lines": "124/125",
+  "new_ratio": "99.20%",
+  "historical_ratio": "127/128=99.22%; cfg(test) helper wrongly included",
+  "local_lens": "Runtime-only three disabled settings; no source ignores/global isolation assertion.",
+  "boundaries": [
+    "No product/settings/UI/cutover acceptance",
+    "Three Android metadata checks, no Android device execution",
+    "Controlled descriptor faults, no disk-fault/power-loss proof",
+    "No arbitrary retained bare-fork ownership proof",
+    "Installed1.97 nightly; MSRV1.95 unexecuted",
+    "No new root UTF8/lib copied; parent reconciliation/device/full builds remain"
+  ]
+}

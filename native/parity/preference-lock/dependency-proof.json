@@ -1,0 +1,106 @@
+{
+  "rustix_archive_sha256": "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d",
+  "primary_source": {
+    "Cargo.toml": "f57824af546c008210d8d6d63bc0fe866a3887d06100469448de3432ffa108ec",
+    "build.rs": "f7609b919173e7121493266d0f89db724a1e47bb105ebd05397f869639603eec",
+    "src/fs/abs.rs": "393c537e13cd1436b88fdc8fe124f5cfa4f53d7914c9d291fb265fe2afbede02",
+    "src/fs/at.rs": "ebc1b1d64e6e41c793454025293bcd018934f97f72e642cd32a2dda1487bd760",
+    "src/fs/fd.rs": "cdeddb69610f9bab80cefd74449dce842d7f1c16123958bbd7ea0a3520fdc7bc",
+    "src/backend/linux_raw/fs/types.rs": "2ceffce6b2e5aea7d0f81f374ffbdeae5a9086c1c07cbc2228ea07012b42817d",
+    "src/backend/libc/fs/types.rs": "354d2ffe66965986c6062efd8bf630a6f6f3710e690ccd773b5c2199719602ab"
+  },
+  "cached_lock_closure": [
+    {
+      "name": "bitflags",
+      "version": "2.13.2",
+      "sha256": "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
+    },
+    {
+      "name": "errno",
+      "version": "0.3.14",
+      "sha256": "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
+    },
+    {
+      "name": "libc",
+      "version": "0.2.190",
+      "sha256": "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+    },
+    {
+      "name": "linux-raw-sys",
+      "version": "0.12.1",
+      "sha256": "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
+    },
+    {
+      "name": "rustix",
+      "version": "1.1.5",
+      "sha256": "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
+    },
+    {
+      "name": "windows-link",
+      "version": "0.2.1",
+      "sha256": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+    },
+    {
+      "name": "windows-sys",
+      "version": "0.60.2",
+      "sha256": "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb"
+    },
+    {
+      "name": "windows-targets",
+      "version": "0.53.5",
+      "sha256": "4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3"
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.53.1",
+      "sha256": "a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53"
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.53.1",
+      "sha256": "b9d782e804c2f632e395708e99a94275910eb9100b2114651e04744e9b125006"
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.53.1",
+      "sha256": "960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3"
+    },
+    {
+      "name": "windows_i686_gnullvm",
+      "version": "0.53.1",
+      "sha256": "fa7359d10048f68ab8b09fa71c3daccfb0e9b559aed648a8f95469c27057180c"
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.53.1",
+      "sha256": "1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2"
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.53.1",
+      "sha256": "9c3842cdd74a865a8066ab39c8a7a473c0778a3f29370b5fd6b4b9aa7df4a499"
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.53.1",
+      "sha256": "0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1"
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.53.1",
+      "sha256": "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
+    }
+  ],
+  "old_native_inputs": {
+    "native/Cargo.toml": "c11b24159a78e2337bcf21534dc16786a88968d8617f188bb5137bb1c5114a70",
+    "native/Cargo.lock": "35e4b4d1026b4b40827f668c2b85cf38ff2a87821a254976bf84262d9ca366d7",
+    "native/src/lib.rs": "e40ff2bcc280c9577aea1f280df577bafa94ca767d66ae7a1371cd0f5f2b1106"
+  },
+  "new_native_inputs": {
+    "native/Cargo.toml": "075855821364328f1bdcc062890c08acb2d88bb590b1695cb5c9ac22cf7f57cf",
+    "native/Cargo.lock": "3aa8a7f840dc0376aaf4617b37cfaaa68d93269d578dc986ebdbb95560ea64b5",
+    "native/src/lib.rs": "299c7b496e52743e5f61e9a69347dde48c52ded135f1cef1ddfd3e060cf5fc5d"
+  },
+  "cargo_delta": "Only exact target-specific rustix1.1.5 fs/std direct dependency; no existing package/version/checksum/other edge changes.",
+  "secure_text_rebind": "Parent manual reconciliation of secure-text whole native/Cargo input proof; no worker edit."
+}

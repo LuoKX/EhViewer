@@ -1,0 +1,60 @@
+PASS: frozen source/fixture/additive dependency gates
+PASS: redacted filesystem checker negatives
+PASS: parent checker nine negatives
+PASS: private cached dependency preparation
+PASS: private frozen-closure lock initialization
+PASS: focused formatting
+PASS: focused strict library/test lints
+PASS: host descriptor/codec/runtime tests
+PASS: focused executable inventory
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: bounded parallel stress
+PASS: expected stale editor type rejection
+PASS: Android compile-only aarch64-linux-android
+PASS: Android compile-only armv7-linux-androideabi
+PASS: Android compile-only x86_64-linux-android
+PASS: cached JVM oracle compile
+PASS: cached JVM oracle execution
+PASS: every JVM golden unchanged
+PASS: fresh host instrumentation
+PASS: coverage executable inventory
+PASS: installed compiler identity
+PASS: fresh profile merge
+PASS: owner coverage export
+PASS: all lexical source aliases
+PASS: independent filesystem owner95 gates
+preferences owner functions: 5/5 = 100.00%
+preferences owner lines: 51/51 = 100.00%
+preference_lock owner functions: 14/14 = 100.00%
+preference_lock owner lines: 124/125 = 99.20%
+Host filesystem owner coverage; no Android/device durability inference.
+PASS: original preference owner95 gate
+PASS: isolated filesystem slice; Android device/cutover approval not implied

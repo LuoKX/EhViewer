@@ -26,6 +26,10 @@ path = "src/main.rs"
 eframe = { version = "=0.36.2", default-features = false, features = ["default_fonts", "glow", "accesskit"] }
 eh_net = { path = "../app/src/main/rust/crates/net" }
 
+# Safe crash-released descriptor ownership; exact existing lockfile version.
+[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
+rustix = { version = "=1.1.5", default-features = false, features = ["fs", "std"] }
+
 [target.'cfg(target_os = "android")'.dependencies]
 eframe = { version = "=0.36.2", default-features = false, features = ["android-game-activity"] }
 winit = { version = "=0.30.13", default-features = false, features = ["android-game-activity"] }

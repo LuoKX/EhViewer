@@ -12,6 +12,6 @@
   "native/parity/database-schema/verify.sh": "af2ef2c6826cfa6b88ab2527a28aa9dc500df2aee350477b137a69b953df272d",
   "native/src/database_schema.rs": "ff0e02e2b5960bb514e32d7d8eb0e414fc80e866cdd6efb11c6bff03b25a511d",
   "native/src/database_schema_data.rs": "ffa6b76d6ffc47239f5eca4eb092073fd4e5bb07debad7055986db29381a80fd",
-  "native/src/lib.rs": "e00e20c2fe4045694af38c9d82b2975a3120e80e2ef141667fff86e058388e11",
+  "native/src/lib.rs": "21d0499168d147c01d3618cec953b20676c4139957432ec8232c0c9c9401740b",
   "native/tests/database_schema.rs": "63a622a1d2d162c6d387fab698c6d34b45756c8776fad4da626213d453319d24"
 }

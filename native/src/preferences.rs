@@ -9,17 +9,19 @@
 //! `FixtureStore` is a synchronous, cooperating-writer, synthetic-file runtime,
 //! not a production `DataStore` replacement. Callers supply an existing private
 //! directory; no application path discovery, migration, or settings defaults.
-//! Linux host locking is crash-released. Android persistent execution is blocked
-//! (installed std's Android file locking is unsupported); unsupported hosts fail
+//! Linux/Android locking uses safe pinned rustix. Host crash recovery is tested;
+//! Android compilation is not device runtime acceptance. Unsupported hosts fail
 //! closed. Neither byte comparison nor advisory locks protect against a writer
 //! that ignores the ownership contract or replaces the lock inode/directory.
 
+#[cfg(test)]
+use crate::preference_lock::{DATA_FILE, LOCK_FILE, TEMP_SEQUENCE};
+use crate::preference_lock::{DirectoryLock, Temporary};
 use std::collections::BTreeMap;
 use std::fmt;
-use std::fs::{self, File, OpenOptions, TryLockError};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::path::Path;
+#[cfg(test)]
+use std::{fs, path::PathBuf, sync::atomic::Ordering};
 
 /// Maximum encoded document size, including unknown fields: one MiB.
 pub const MAX_BYTES: usize = 1_048_576;
@@ -29,9 +31,6 @@ pub const MAX_ENTRIES: usize = 4096;
 pub const MAX_SET_STRINGS: usize = 4096;
 const MAX_FIELDS: usize = 65_536;
 const MAX_GROUP_DEPTH: usize = 32;
-const DATA_FILE: &str = "preferences.pb";
-const LOCK_FILE: &str = ".preferences.lock";
-static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 /// Redacted error categories: never contain paths, keys, values, or OS messages.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -594,8 +593,7 @@ impl FixtureEdit<'_> {
 /// Runtime holds no live-app paths and does not coordinate with JVM `DataStore`.
 /// Each update starts from owned current snapshot, not caller's stale document.
 pub struct FixtureStore {
-    directory: PathBuf,
-    _ownership: Ownership,
+    filesystem: DirectoryLock,
     baseline: Option<Vec<u8>>,
     preferences: Preferences,
 }
@@ -604,50 +602,20 @@ impl fmt::Debug for FixtureStore {
         f.write_str("FixtureStore([redacted])")
     }
 }
-struct Ownership(File);
-impl Drop for Ownership {
-    fn drop(&mut self) {
-        // Release now, not when an unrelated concurrently spawning process closes
-        // its transient fork-inherited descriptor on exec. File close remains
-        // fallback if unlock fails; abrupt process death is kernel-released.
-        let _ = self.0.unlock();
-    }
-}
 impl FixtureStore {
     /// Open an existing private fixture directory and acquire nonblocking lock.
     /// Missing data file yields empty preferences without creating data file.
     ///
     /// # Errors
-    /// Android returns `LockUnsupported` without filesystem writes. Other hosts
-    /// return lock, filesystem, or decode errors; corrupt file is not overwritten.
+    /// Unsupported targets return `LockUnsupported` before filesystem effects.
+    /// Linux/Android return redacted lock/filesystem/decode errors. No-follow,
+    /// nonblocking opens reject symlink/FIFO leaves before reading or locking.
     pub fn open(directory: &Path) -> Result<Self, Error> {
-        if cfg!(target_os = "android") {
-            return Err(Error::LockUnsupported);
-        }
-        let mut options = OpenOptions::new();
-        options.read(true).write(true).create(true).truncate(false);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt as _;
-            options.mode(0o600);
-        }
-        let lock = options
-            .open(directory.join(LOCK_FILE))
-            .map_err(|_| Error::Io)?;
-        lock.try_lock().map_err(|error| match error {
-            TryLockError::WouldBlock => Error::Owned,
-            TryLockError::Error(error) if error.kind() == std::io::ErrorKind::Unsupported => {
-                Error::LockUnsupported
-            }
-            TryLockError::Error(_) => Error::Io,
-        })?;
-        // Guard also releases on load/decode failure before a store exists.
-        let ownership = Ownership(lock);
-        let baseline = read_optional(&directory.join(DATA_FILE))?;
+        let filesystem = DirectoryLock::open(directory)?;
+        let baseline = filesystem.read()?;
         let preferences = Preferences::decode(baseline.as_deref().unwrap_or_default())?;
         Ok(Self {
-            directory: directory.to_path_buf(),
-            _ownership: ownership,
+            filesystem,
             baseline,
             preferences,
         })
@@ -672,8 +640,7 @@ impl FixtureStore {
         &mut self,
         change: impl FnOnce(&mut FixtureEdit<'_>) -> Result<(), Error>,
     ) -> Result<CommitOutcome, Error> {
-        let path = self.directory.join(DATA_FILE);
-        if read_optional(&path)? != self.baseline {
+        if self.filesystem.read()? != self.baseline {
             return Err(Error::ExternalChange);
         }
         if self.preferences.is_read_only() {
@@ -684,90 +651,31 @@ impl FixtureStore {
             preferences: &mut next,
         })?;
         let bytes = next.encode()?;
-        let mut temp = Temporary::create(&self.directory)?;
+        let mut temp = Temporary::create(&self.filesystem)?;
         #[cfg(test)]
         tests::fault(tests::Fault::Write)?;
-        temp.file.write_all(&bytes).map_err(|_| Error::Io)?;
+        temp.write(&bytes)?;
         #[cfg(test)]
         tests::fault(tests::Fault::FileSync)?;
-        temp.file.sync_all().map_err(|_| Error::Io)?;
+        temp.sync()?;
         // Recheck immediately before commit; only cooperating writers are atomic.
-        if read_optional(&path)? != self.baseline {
+        if self.filesystem.read()? != self.baseline {
             return Err(Error::ExternalChange);
         }
         #[cfg(test)]
         tests::fault(tests::Fault::Rename)?;
-        fs::rename(&temp.path, &path).map_err(|_| Error::Io)?;
+        temp.commit()?;
         self.baseline = Some(bytes);
         self.preferences = next;
-        Ok(sync_directory(&self.directory))
+        Ok(sync_directory(&self.filesystem))
     }
 }
-fn read_optional(path: &Path) -> Result<Option<Vec<u8>>, Error> {
-    let file = match File::open(path) {
-        Ok(file) => file,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(_) => return Err(Error::Io),
-    };
-    if !file.metadata().map_err(|_| Error::Io)?.is_file() {
-        return Err(Error::Io);
-    }
-    let mut bytes = Vec::new();
-    file.take(u64::try_from(MAX_BYTES + 1).map_err(|_| Error::LimitExceeded)?)
-        .read_to_end(&mut bytes)
-        .map_err(|_| Error::Io)?;
-    if bytes.len() > MAX_BYTES {
-        return Err(Error::LimitExceeded);
-    }
-    Ok(Some(bytes))
-}
-fn sync_directory(path: &Path) -> CommitOutcome {
+fn sync_directory(directory: &DirectoryLock) -> CommitOutcome {
     #[cfg(test)]
     if tests::fault(tests::Fault::DirectorySync).is_err() {
         return CommitOutcome::DirectorySyncUnavailable;
     }
-    if File::open(path).and_then(|file| file.sync_all()).is_ok() {
-        CommitOutcome::Synced
-    } else {
-        CommitOutcome::DirectorySyncUnavailable
-    }
-}
-struct Temporary {
-    path: PathBuf,
-    file: File,
-}
-impl Temporary {
-    fn create(directory: &Path) -> Result<Self, Error> {
-        Self::create_from(directory, TEMP_SEQUENCE.fetch_add(32, Ordering::Relaxed))
-    }
-    fn create_from(directory: &Path, start: u64) -> Result<Self, Error> {
-        // Bounded retries; never adopt/delete another process's stale temp file.
-        for offset in 0..32 {
-            let sequence = start.wrapping_add(offset);
-            let path = directory.join(format!(
-                ".preferences-{}-{sequence}.tmp",
-                std::process::id()
-            ));
-            let mut options = OpenOptions::new();
-            options.write(true).create_new(true);
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::OpenOptionsExt as _;
-                options.mode(0o600);
-            }
-            match options.open(&path) {
-                Ok(file) => return Ok(Self { path, file }),
-                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
-                Err(_) => return Err(Error::Io),
-            }
-        }
-        Err(Error::Io)
-    }
-}
-impl Drop for Temporary {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
-    }
+    directory.sync()
 }
 
 #[cfg(test)]
@@ -869,10 +777,10 @@ mod tests {
                 .get("x"),
             Some(&Value::Integer(2))
         );
-        assert_eq!(
-            sync_directory(&directory.0.join("absent")),
-            CommitOutcome::DirectorySyncUnavailable
-        );
+        assert!(matches!(
+            DirectoryLock::open(&directory.0.join("absent")),
+            Err(Error::Io)
+        ));
     }
 
     #[test]
@@ -906,8 +814,13 @@ mod tests {
             std::process::id()
         ));
         fs::write(&stale, b"synthetic stale temp").unwrap();
-        let temporary = Temporary::create_from(&directory.0, sequence).unwrap();
-        assert_ne!(temporary.path, stale);
+        let lock = DirectoryLock::open(&directory.0).unwrap();
+        let temporary = Temporary::create_from(&lock, sequence).unwrap();
+        assert!(
+            temporary
+                .name()
+                .ne(stale.file_name().unwrap().to_str().unwrap())
+        );
         drop(temporary);
         assert_eq!(fs::read(&stale).unwrap(), b"synthetic stale temp");
         // Private-directory deterministic candidates; safe with parallel tests.
@@ -923,10 +836,10 @@ mod tests {
             .unwrap();
         }
         assert!(matches!(
-            Temporary::create_from(&directory.0, start),
+            Temporary::create_from(&lock, start),
             Err(Error::Io)
         ));
-        assert_eq!(fs::read_dir(&directory.0).unwrap().count(), 33);
+        assert_eq!(fs::read_dir(&directory.0).unwrap().count(), 34);
     }
 
     #[test]
@@ -942,7 +855,10 @@ mod tests {
             let path = directory.0.join(DATA_FILE);
             fs::write(&path, []).unwrap();
             fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).unwrap();
-            assert_eq!(read_optional(&path), Err(Error::Io));
+            assert_eq!(
+                DirectoryLock::open(&directory.0).unwrap().read(),
+                Err(Error::Io)
+            );
             fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
             let mut store = FixtureStore::open(&directory.0).unwrap();
             store

@@ -17,11 +17,11 @@
     },
     {
       "path": "native/Cargo.toml",
-      "sha256": "c11b24159a78e2337bcf21534dc16786a88968d8617f188bb5137bb1c5114a70"
+      "sha256": "075855821364328f1bdcc062890c08acb2d88bb590b1695cb5c9ac22cf7f57cf"
     },
     {
       "path": "native/Cargo.lock",
-      "sha256": "35e4b4d1026b4b40827f668c2b85cf38ff2a87821a254976bf84262d9ca366d7"
+      "sha256": "3aa8a7f840dc0376aaf4617b37cfaaa68d93269d578dc986ebdbb95560ea64b5"
     }
   ],
   "artifacts": [

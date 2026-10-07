@@ -944,6 +944,7 @@ dependencies = [
  "eframe",
  "eh_net",
  "log",
+ "rustix 1.1.5",
  "winit",
 ]
 

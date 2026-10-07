@@ -12,6 +12,7 @@ pub mod ime_session;
 pub mod jvm_utf8;
 pub mod login_state;
 mod navigation;
+pub mod preference_lock;
 pub mod preferences;
 pub mod secure_text;
 pub mod signin_artwork;
