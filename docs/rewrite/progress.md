@@ -32,9 +32,10 @@ TalkBack, secure text, autofill, typography, lifecycle, GPU or performance parit
 | --- | --- | --- | --- |
 | Existing Rust core and seven category rules | Already production-wired in original app; prior audit records retained | Original Android effect/device gates remain | Existing commits retained |
 | Isolated Rust foundation | Accepted bounded diagnostic slice, gates above | Not production screen or cutover | Committed `858529fe3` |
-| DataStore preference format and Rust file runtime | Accepted valid-UTF8 codec + synthetic host store: 38 actual JVM cases, 25 focused Rust tests, 9 checker tests; owner lines98.64%/functions98.08% | Android storage, malformed-UTF8 equivalence, settings defaults/UI/upgrade and device durability pending; no live paths | Separate bounded primitive commit after independent rechecks |
+| DataStore preference format and Rust file runtime | Accepted valid-UTF8 codec + synthetic host store: 38 actual JVM cases, 25 focused Rust tests, 9 checker tests; owner lines98.64%/functions98.08% | Android storage, malformed-UTF8 equivalence, settings defaults/UI/upgrade and device durability pending; no live paths | Committed `1931379ed`; no product completion claim |
 | Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Committed `af7c40ea9`; no product completion claim |
-| SQLite data compatibility | Inventory historical schemas and copied fixture plan | No live DB or destructive migrations | Own feature commits only after implemented gates |
+| Pinned JVM UTF8 replacement helper | Accepted standalone host foundation: 258,862 generated PreferenceMap value/set cases, 5 Rust tests, 14 proof/runtime tests; owner lines98.39%/functions100% | Original preference codec unchanged; Android libcore/device proof and production consumer integration open | Own bounded helper commit after parent recheck; no product completion claim |
+| SQLite data compatibility | Reviewed original23-schema/FTS foundation; parent integration pending | No persistent engine, migrations, live DB or destructive operations | Own feature commits only after implemented gates |
 | Full F1–F8 application responsibilities | Pending; reuse existing Rust owners | All original behavior/data/device/cutover obligations open | One finished bounded feature per commit |
 
 Secure-text integration gate (2026-10-07): prior P1 proof gaps and P2 toolbar
@@ -55,8 +56,26 @@ Root application never calls fixture storage. Logs: ignored
 `native/build/logs/preferences-final-*`. These checks do not accept Android
 persistence, full F1, minimum-toolchain execution or original UI/device behavior.
 
-Next isolated components: safe Rustix Android filesystem ownership, exact JVM
-UTF8 replacement helper and original23-schema/FTS contracts. Resource failures
+JVM UTF8 integration gate (2026-10-07): original decoder/Oracle/golden/JDK/cache
+identities unchanged, pinned absolute JVM launchers retained. Parent separately
+preserves exact archived92 isolation inventory and live-checks77 original parser/
+bytecode/fixture inputs; no rollback or relabeling of accepted preference proofs.
+Rejected output directories/symlink/traversal cannot receive failure ledgers;
+JSON errors remain payload-free. Parent integration review
+c301a6ea-fcdd-4d1b-a1e2-76e9b71b3599 accepts standalone host foundation with no
+P0/P1. Its clean-checkout oracle prerequisite P2 is fixed in native/README.md.
+Parent reran 102 aggregate native Rust tests, strict all-target Clippy, exact
+258,862-case JVM replay/owner coverage,14 proof tests, unchanged38-case preference
+replay and three-ABI APK/v1-v2 validation. Logs: ignored
+`native/build/logs/jvm-utf8-parent-*`. Original value/key decoding and all UI/
+Android behavior remain unswitched; host JDK proof is not Android libcore proof.
+
+Next isolated components: safe Rustix Android filesystem ownership and original
+23-schema/FTS contracts. Filesystem review found two proof packaging/binding P1s
+and a test-only coverage denominator P2; retained worker fixes those before merge.
+Schema verifier whitespace drift restored to original pinned bytes, independently
+rechecked; parent current-root replay/registration binding remains pending.
+Resource failures
 are not accepted work: temporary storage was exhausted, two workers paused or
 failed before validation. Parent preserved partial source and moved only owned
 generated caches to private disk storage; retained native runs recover and rerun

@@ -8,6 +8,7 @@
 mod android_ime;
 mod app;
 pub mod ime_session;
+pub mod jvm_utf8;
 pub mod login_state;
 mod navigation;
 pub mod preferences;

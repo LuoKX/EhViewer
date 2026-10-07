@@ -1,0 +1,24 @@
+{
+  "files": {
+    "/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-core-android/1.2.1/1c6a56a2802d44f6d451101eed3420488a75ca85/datastore-preferences-core.aar": "48c2235e576fb015f861726e79ee9474948e37da31d2c887c16ebeb46817059f",
+    "/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar": "4f09ba7fca2a073a5c5527a9b637582b93e262c2b6a89977c584d28cea838ebc",
+    "/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-proto/1.2.1/5d062b556fb45141138c3d86284bbdcbe07cc770/datastore-preferences-proto-1.2.1.jar": "d9bbd94f78e9a6c93308eed26b8a7ed46b1f128a19c282fe36f96804e9d7c184",
+    "native/parity/jvm-utf8/Oracle.java": "29030dfe8d691c4cfa34ef5850c2b349fcd9f5b9462ff4124122d37ce16b2f1e",
+    "native/parity/jvm-utf8/README.md": "9094be4e73ccbf6f66dcba18384587cd91c0c11dd6afb5d3222c380b5ee00c62",
+    "native/parity/jvm-utf8/evidence.py": "e2d262569774e2e21cdab21a4839f4ca43f9c4e65cb48d069caec2af462b8215",
+    "native/parity/jvm-utf8/frozen-jvm.json": "26afdd97982c1ed98a8d120aa533d4a7ccb6adc984aa27a85e0ff4df5ddca5b8",
+    "native/parity/jvm-utf8/integration-proposal.md": "478e3e261b1b65ac4439a385ea7854c537ae5cd86cf379d807914bad94b47848",
+    "native/parity/jvm-utf8/test_evidence.py": "ecb6a747f73f6a18011d2084dd6a8f02bbe3028c6afe865107f48f67958829cd",
+    "native/parity/jvm-utf8/verify.py": "1a523608e1252b20f98f18377c822ea56de54c7e90c50a48f4d307b181038917",
+    "native/src/jvm_utf8.rs": "9f7ccc15c78f37e161ed6b4924e0a5d1350292217290a24934a35d6361b00e64",
+    "native/parity/jvm-utf8/historical-snapshot.json": "dcee6b145b076f95b47f4bf585daed188a4504d470a35316d9bcfb9e56a6d7d1",
+    "native/tests/jvm_utf8.rs": "b5cff6e4839d2566cd8279853792c3723a98bf46b881402144962a10d24b6ba8",
+    "/usr/lib/jvm/java-25-openjdk-amd64/bin/java": "8122d0376609cd3b75feda8f8eaf3cae24986f8cea55f0d2ce386e241084fedb",
+    "/usr/lib/jvm/java-25-openjdk-amd64/bin/javac": "733da53132edd4d48a84e1867f399f26d018b766bb8ea3c1997bdcf9cdfdbe28",
+    "/usr/lib/jvm/java-25-openjdk-amd64/bin/javap": "3f00ae60fe624f9811a7191913b01d557a3e5ec46ead7b07597c97e53145b678",
+    "/usr/lib/jvm/java-25-openjdk-amd64/lib/modules": "3bef2c6f236e54e3cb4c2a3ec13033cf1d7cbff2b0008d5d7b4626f059610d8a",
+    "/usr/lib/jvm/java-25-openjdk-amd64/lib/server/libjvm.so": "2503c6a2b9c6baef22e8cb7e12b1b9f689d7ae5c597f1d68fb35cbff246db504",
+    "/usr/lib/jvm/java-25-openjdk-amd64/release": "bda5693fcfcc27e8f84ad677b856681ac2397bc2dc6f2b3ff5d7b7bca9b2be19"
+  },
+  "snapshot_sha256": "dcee6b145b076f95b47f4bf585daed188a4504d470a35316d9bcfb9e56a6d7d1"
+}

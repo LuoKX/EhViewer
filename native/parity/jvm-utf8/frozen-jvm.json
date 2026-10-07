@@ -1,0 +1,19 @@
+{
+  "format": "JU01",
+  "byte_length": 5174663,
+  "cases": 258862,
+  "sha256": "6ad30e1b16a84cc3a0e4de263fd6e878c9ffa55a32d5f483a02d5b8797a0fc42",
+  "record": "u8 input length; input bytes; u8 UTF16 unit count; big-endian UTF16 units; u16 canonical UTF8 length; canonical UTF8 bytes",
+  "trailer": "0xff then big-endian u32 record count; no trailing bytes",
+  "proof_scope": "Synthetic pinned host JVM and actual cached generated PreferenceMap value/set parser; not Android SDK/runtime/device",
+  "families": {
+    "empty": 1,
+    "single_bytes_exhaustive": 256,
+    "two_bytes_exhaustive": 65536,
+    "three_byte_leads_all_second_boundary_third": 40960,
+    "four_byte_leads_all_second_boundary_truncated_third": 12800,
+    "four_byte_leads_all_second_boundary_third_fourth": 128000,
+    "all_encoded_surrogates": 2048,
+    "adjacent_ascii_error_multibyte_extreme_triples": 9261
+  }
+}
