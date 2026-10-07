@@ -1,0 +1,197 @@
+{
+  "versions": {
+    "android_activity": "0.6.1",
+    "game_activity_java": "4.4.0",
+    "head": "cd07574903bdf83e79f28975359c34ef98908ad6",
+    "dirty_tree": "inherited; untouched"
+  },
+  "evidence": {
+    "classes_jar": "/home/ngnl/.gradle/caches/9.5.1/transforms/831e13571b2dd7b79fd9b703035257b2/transformed/games-activity-4.4.0/jars/classes.jar",
+    "classes_sha256": "441028ef8dc126836e9be4ad935ee2534a3b24c44e9fa3413b8d30e4a45ad503",
+    "javap_sha256": "602ff50f932148f591375a47084122efd2ab7d95e0432822081e69f3e2746d0a",
+    "aar_header_sha256": "52339b6ca1f9e8457f2e2a00be2087cfbfccc79f8b013ff527db3310a6ecec6e",
+    "existing_gameactivity_javap_sha256": "7dc8a497ee35bca1e8ba18679414b3e15df7ccddb5d5008597a20ed910f54537",
+    "selection": "InputConnection.getSelection bytecode 8/15 calls Selection.getSelectionStart/End; composing getComposingRegion 8/15 calls getComposingSpanStart/End; stateUpdated 0..37 carries ints into State constructor; JNI R gametextinput.cpp:344-352 copies ints",
+    "rust": "R/src/game_activity/mod.rs:340-367,719-735 copies indices unchanged",
+    "public_docs": "C/game440-gametextinput.h:43-85: span docs no unit; text_length explicitly bytes. R/src/input.rs:874-909 also no byte/codepoint index promise. Do not infer span units from text length docs."
+  },
+  "units": {
+    "java_selection": "UTF16 code units",
+    "java_composing": "UTF16 code units",
+    "native_span": "UTF16 code units carried unchanged",
+    "rust_TextSpan": "UTF16 code units carried unchanged, selection clamp caveat",
+    "native_text_length": "modified UTF8 bytes excluding terminator",
+    "rust_text": "valid UTF8 String",
+    "scalar_boundary_mapping": "explicit app conversion needed; mid-surrogate UTF16 index has no Rust UTF8 scalar boundary"
+  },
+  "transport": {
+    "emoji": "surrogate pair encoded as six modified UTF8 bytes; Rust decode restores scalar",
+    "NUL": "C0 80 in modified UTF8, Rust String contains 00; not raw C terminator",
+    "isolated_surrogate": "not representable in Rust String; nonlossy mutf8 decode error path leaves default state, not preserving original",
+    "surrogate_evidence": "simd_cesu8-1.2.0/src/mutf8.rs:399 decode Result plus R/src/game_activity/mod.rs:718-740; no lossy decode call"
+  },
+  "actions": {
+    "Unspecified": 0,
+    "None": 1,
+    "Go": 2,
+    "Search": 3,
+    "Send": 4,
+    "Next": 5,
+    "Done": 6,
+    "Previous": 7,
+    "unknown": "__Unknown(i32)",
+    "source": "R/src/input.rs:926-946",
+    "java_performEditorAction": "0 delegates BaseInputConnection at offsets 26..35; nonzero sendEditorAction at 36..41; GameActivity.onEditorAction forwards integer at 8..13"
+  },
+  "ime_options": {
+    "IME_MASK_ACTION": "0x000000ff",
+    "IME_FLAG_FORCE_ASCII": "0x80000000",
+    "IME_FLAG_NAVIGATE_NEXT": "0x08000000",
+    "IME_FLAG_NAVIGATE_PREVIOUS": "0x04000000",
+    "IME_FLAG_NO_ACCESSORY_ACTION": "0x20000000",
+    "IME_FLAG_NO_ENTER_ACTION": "0x40000000",
+    "IMG_FLAG_NO_EXTRACT_UI": "0x10000000",
+    "IME_FLAG_NO_FULLSCREEN": "0x02000000",
+    "IME_FLAG_NO_PERSONALIZED_LEARNING": "0x01000000",
+    "IME_NULL": "0x00000000",
+    "source": "R/src/input.rs:953-1017; IMG spelling exact Rust API",
+    "action_configuration": "set_action replaces masked low bits; separate action argument writes actionId, options writes imeOptions without merging (GameActivity.setImeEditorInfoFields offsets 6..21)"
+  },
+  "input_type": {
+    "text_class": "0x1",
+    "normal_variation": "0x0",
+    "username_default_text": "0x1; no dedicated username variation",
+    "text_password": "0x81 = text class | password variation 0x80",
+    "visible_password": "0x91",
+    "web_password": "0xe1",
+    "number_password": "0x12 = number class 0x2 | number-password variation 0x10",
+    "source": "R/src/game_activity/ffi_aarch64.rs:2476-2535"
+  },
+  "original_signin": {
+    "username": "KeyboardOptions(imeAction = ImeAction.Next), SingleLine, SignInScreen.kt:168-169",
+    "password": "KeyboardOptions(keyboardType = KeyboardType.Password), onKeyboardAction signIn(), lines183-184",
+    "effective_default_Done": "UNVERIFIED: declaration omits action; pinned Compose Android EditorInfo conversion not inspected; cannot claim Done",
+    "undo_baseline": "not investigated; no assumption"
+  },
+  "state_write": {
+    "java": "setState offsets86..118 clears Editable/spans and inserts filtered text;119..131 setSelection;132..155 composing if unequal;157 restartInput",
+    "editor_info": "setEditorInfo offsets8..13 replaces settings EditorInfo;23..65 non-multiline installs LengthFilter(5000) and singleLineFilter;73..81 multiline removes filters; no restartInput in this method",
+    "feedback": "setSelection path may notify state update; no session field/ack. Java stateUpdated offsets48..66 updates initialSelStart/End then listener stateChanged(State,false) at80..84"
+  },
+  "ordering": {
+    "text": "dirty flag coalesces updates; take clears flag then fetches latest shared state",
+    "action": "pending boolean and one int; later action overwrites earlier; warning message misleadingly says dropping incoming but assignment stores incoming",
+    "iterator": "text checked once before action once; text callback can change focus before following action arrives",
+    "sessions": "app may stamp local outgoing writes and locally received snapshots with current owner/generation; cannot recover originating focus/session from Java State/TextEvent/TextAction, cannot distinguish stale callback from current callback by native payload, cannot attach session ID through exposed setters",
+    "atomicity": "no atomic snapshot text+action or synchronization barrier; Rust source flags races; native state mutex exists so old Rust comment claiming no state lock is stale"
+  },
+  "hard_limits": [
+    "Only valid Unicode scalar strings roundtrip; lone surrogates and mid-pair scalar-boundary conversion unsupported. Decode failure becomes empty/default TextEvent, not preservation.",
+    "Bounded transport/filter: native default buffer65536 bytes, copied at most buffer-1; registry copy keeps original text_length after truncation (R gametextinput.cpp:246-253). Java non-multiline LengthFilter5000 UTF16 units. Do not promise arbitrarily long text or safe truncated roundtrip.",
+    "Single coalesced state and single action slot have no session provenance/transactional ordering; focus switch cannot retroactively classify stale native events. EditorInfo defaults/keyboard acceptance require pinned conversion/device proof."
+  ],
+  "dummy_vectors": [
+    {
+      "text": "A😀B",
+      "utf16_units": [
+        65,
+        55357,
+        56832,
+        66
+      ],
+      "utf8_hex": "41 f0 9f 98 80 42",
+      "mutf8_hex": "41 ed a0 bd ed b8 80 42",
+      "selection_utf16": [
+        3,
+        3
+      ],
+      "compose_utf16": [
+        1,
+        3
+      ],
+      "equivalent_utf8_selection": [
+        5,
+        5
+      ],
+      "equivalent_utf8_compose": [
+        1,
+        5
+      ]
+    },
+    {
+      "text": "x\u0000y",
+      "utf16_units": [
+        120,
+        0,
+        121
+      ],
+      "utf8_hex": "78 00 79",
+      "mutf8_hex": "78 c0 80 79",
+      "selection_utf16": [
+        2,
+        2
+      ],
+      "compose_utf16": null
+    },
+    {
+      "text": "é中",
+      "utf16_units": [
+        233,
+        20013
+      ],
+      "utf8_hex": "c3 a9 e4 b8 ad",
+      "mutf8_hex": "c3 a9 e4 b8 ad",
+      "selection_utf16": [
+        2,
+        0
+      ],
+      "equivalent_utf8_selection": [
+        5,
+        0
+      ]
+    },
+    {
+      "java_utf16_units": [
+        55357
+      ],
+      "mutf8_hex": "ed a0 bd",
+      "expected": "decode error; Rust state default empty text, selection0/0, compositionNone"
+    },
+    {
+      "text": "😀",
+      "selection_utf16": [
+        1,
+        1
+      ],
+      "expected": "mid-surrogate offset passes unchanged; no exact Rust UTF8 boundary; policy unspecified"
+    },
+    {
+      "text": "abc",
+      "compose_outgoing": [
+        1,
+        1
+      ],
+      "expected_native_compose": [
+        -1,
+        -1
+      ]
+    },
+    {
+      "pending_actions": [
+        5,
+        6
+      ],
+      "consume_after_both": 6,
+      "lost_action": 5
+    },
+    {
+      "pending_states": [
+        "q",
+        "qr"
+      ],
+      "consume_after_both": "qr",
+      "lost_intermediate": "q"
+    }
+  ],
+  "validation": "manual source/bytecode inspection only; vectors specified, not executed; no device/app/network/install run"
+}

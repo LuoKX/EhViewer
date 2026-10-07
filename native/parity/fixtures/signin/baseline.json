@@ -1,0 +1,4016 @@
+{
+  "dimensions": {
+    "configurations": [
+      {
+        "files": [
+          "app/src/main/res/values/dimens.xml"
+        ],
+        "qualifier": "values",
+        "resources": {
+          "keyline_margin": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "keyline_margin"
+                },
+                "dp": 16.0,
+                "source": {
+                  "line": 22,
+                  "path": "app/src/main/res/values/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "16dp",
+                "xml_element_raw": "<dimen name=\"keyline_margin\">16dp</dimen>",
+                "xml_inner_raw": "16dp",
+                "xml_text": "16dp"
+              }
+            ],
+            "overrides_main_base": false,
+            "status": "declared"
+          },
+          "signinscreen_landscape_caption_frame_width": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "signinscreen_landscape_caption_frame_width"
+                },
+                "dp": 480.0,
+                "source": {
+                  "line": 19,
+                  "path": "app/src/main/res/values/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "480dp",
+                "xml_element_raw": "<dimen name=\"signinscreen_landscape_caption_frame_width\">480dp</dimen>",
+                "xml_inner_raw": "480dp",
+                "xml_text": "480dp"
+              }
+            ],
+            "overrides_main_base": false,
+            "status": "declared"
+          },
+          "single_max_width": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "single_max_width"
+                },
+                "dp": 260.0,
+                "source": {
+                  "line": 23,
+                  "path": "app/src/main/res/values/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "260dp",
+                "xml_element_raw": "<dimen name=\"single_max_width\">260dp</dimen>",
+                "xml_inner_raw": "260dp",
+                "xml_text": "260dp"
+              }
+            ],
+            "overrides_main_base": false,
+            "status": "declared"
+          }
+        },
+        "source_set": "main"
+      },
+      {
+        "files": [
+          "app/src/main/res/values-sw600dp/dimens.xml"
+        ],
+        "qualifier": "values-sw600dp",
+        "resources": {
+          "keyline_margin": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "keyline_margin"
+                },
+                "dp": 24.0,
+                "source": {
+                  "line": 19,
+                  "path": "app/src/main/res/values-sw600dp/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "24dp",
+                "xml_element_raw": "<dimen name=\"keyline_margin\">24dp</dimen>",
+                "xml_inner_raw": "24dp",
+                "xml_text": "24dp"
+              }
+            ],
+            "overrides_main_base": true,
+            "status": "declared"
+          },
+          "signinscreen_landscape_caption_frame_width": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          },
+          "single_max_width": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "single_max_width"
+                },
+                "dp": 480.0,
+                "source": {
+                  "line": 20,
+                  "path": "app/src/main/res/values-sw600dp/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "480dp",
+                "xml_element_raw": "<dimen name=\"single_max_width\">480dp</dimen>",
+                "xml_inner_raw": "480dp",
+                "xml_text": "480dp"
+              }
+            ],
+            "overrides_main_base": true,
+            "status": "declared"
+          }
+        },
+        "source_set": "main"
+      },
+      {
+        "files": [
+          "app/src/main/res/values-sw720dp-land/dimens.xml"
+        ],
+        "qualifier": "values-sw720dp-land",
+        "resources": {
+          "keyline_margin": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          },
+          "signinscreen_landscape_caption_frame_width": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          },
+          "single_max_width": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          }
+        },
+        "source_set": "main"
+      },
+      {
+        "files": [
+          "app/src/main/res/values-television/dimens.xml"
+        ],
+        "qualifier": "values-television",
+        "resources": {
+          "keyline_margin": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          },
+          "signinscreen_landscape_caption_frame_width": {
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "signinscreen_landscape_caption_frame_width"
+                },
+                "dp": 640.0,
+                "source": {
+                  "line": 24,
+                  "path": "app/src/main/res/values-television/dimens.xml"
+                },
+                "value_kind": "dp_literal",
+                "value_raw": "640dp",
+                "xml_element_raw": "<dimen name=\"signinscreen_landscape_caption_frame_width\">640dp</dimen>",
+                "xml_inner_raw": "640dp",
+                "xml_text": "640dp"
+              }
+            ],
+            "overrides_main_base": true,
+            "status": "declared"
+          },
+          "single_max_width": {
+            "declarations": [],
+            "overrides_main_base": false,
+            "status": "missing_in_configuration"
+          }
+        },
+        "source_set": "main"
+      }
+    ],
+    "selection": "Android qualifier/source-set precedence not resolved for a device. Missing entries are explicit; do not treat sw600dp as expanded width breakpoint.",
+    "unit": "dp (logical density-independent units, not device pixels)"
+  },
+  "exact_parity_not_established": [
+    "Numeric expanded lower bound requires dependency definition with provenance",
+    "Android resource/locale/source-set resolution and Moko/Android runtime text escapes/formatting",
+    "Material3 expressive widget shapes, typography, interaction states and motion tokens",
+    "OS/wallpaper-dependent dynamic colors and system dark-mode preference behavior",
+    "IME, autofill, accessibility, focus/scroll/insets and password reveal animations",
+    "Vector rasterization, density/font scaling and device-pixel/screenshot equivalence",
+    "WebView/browser navigation, session/network outcomes and runtime exception displayString()"
+  ],
+  "interactions": {
+    "actions": {
+      "guest": "active signInJob guard then launchIO { sessionController.enterGuest() }",
+      "register": {
+        "call": "openBrowser(EhUrl.URL_REGISTER)",
+        "source": {
+          "anchor": "const val URL_REGISTER",
+          "line": 43,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/client/EhUrl.kt"
+        },
+        "url": "https://forums.e-hentai.org/index.php?act=Reg&CODE=00"
+      },
+      "sign_in": "sessionController.beginSignIn(); EhEngine.signIn(username.text.toString(), password.text.toString()); postLogin(attempt, signedInUsername)",
+      "webview": "navigate(WebViewSignInScreenDestination)"
+    },
+    "failure_dialog": {
+      "before_dialog": "clearFocus(); isProgressIndicatorVisible = false",
+      "cancellation": "CancellationException rethrown; failure dialog not shown",
+      "confirm_resource": "get_it",
+      "message_parts": [
+        "it.displayString() (runtime exception display; not fixed translation)",
+        "stringResource(R.string.sign_in_failed_tip, stringResource(R.string.sign_in_via_webview))"
+      ],
+      "message_source": "\"\"\"\n                                ${it.displayString()}\n                                ${stringResource(R.string.sign_in_failed_tip, stringResource(R.string.sign_in_via_webview))}\n                                \"\"\"\n                      .trimIndent()",
+      "post_login_false": "isProgressIndicatorVisible = false",
+      "showCancelButton": false,
+      "title_resource": "sign_in_failed"
+    },
+    "initial_state": {
+      "isProgressIndicatorVisible": false,
+      "password": "",
+      "passwordHidden": true,
+      "showPasswordError": false,
+      "showUsernameError": false,
+      "signInJob": null,
+      "username": ""
+    },
+    "password": {
+      "autofill": "ContentType.Password",
+      "error_icon": "Icons.Filled.Info (replaces visibility button)",
+      "hidden_mode": "TextObfuscationMode.RevealLastTyped",
+      "icon_content_descriptions": null,
+      "keyboard_action": "signIn()",
+      "keyboard_type": "KeyboardType.Password",
+      "toggle": "passwordHidden = !passwordHidden",
+      "toggle_icons": [
+        "Icons.Filled.Visibility",
+        "Icons.Filled.VisibilityOff"
+      ],
+      "visible_mode": "TextObfuscationMode.Visible",
+      "widget": "OutlinedSecureTextField"
+    },
+    "source": {
+      "anchor": "fun signIn()",
+      "line": 97,
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+    },
+    "username": {
+      "autofill": "ContentType.Username",
+      "error_icon": "Icons.Filled.Info",
+      "ime_action": "ImeAction.Next",
+      "line_limits": "TextFieldLineLimits.SingleLine",
+      "widget": "OutlinedTextField"
+    },
+    "validation_note": "No trim/whitespace rejection; username error returns before password check. Error reset only on next submit reaching that field, not on edit.",
+    "validation_steps": [
+      {
+        "action": "return; no validation/state changes",
+        "condition": "signInJob?.isActive == true"
+      },
+      {
+        "condition": "username.text.isEmpty()",
+        "field": "username",
+        "on_empty": "showUsernameError = true; return; password state untouched",
+        "otherwise": "showUsernameError = false"
+      },
+      {
+        "condition": "password.text.isEmpty()",
+        "field": "password",
+        "on_empty": "showPasswordError = true; return",
+        "otherwise": "showPasswordError = false"
+      },
+      {
+        "action": "focusManager.clearFocus(); isProgressIndicatorVisible = true; launchIO sign-in job"
+      }
+    ]
+  },
+  "layout": {
+    "button_roles": {
+      "guest_mode": "TextButton",
+      "register": "FilledTonalButton",
+      "sign_in": "Button",
+      "sign_in_via_webview": "TextButton"
+    },
+    "compact": {
+      "component_order": [
+        "logo",
+        "username",
+        "password",
+        "app_waring",
+        "app_waring_2",
+        "keyline_spacer",
+        "primary_button_row",
+        "secondary_button_row"
+      ],
+      "container": "Column; horizontalAlignment = Alignment.CenterHorizontally",
+      "primary_button_order": [
+        "register",
+        "sign_in"
+      ],
+      "primary_buttons": {
+        "horizontal_padding_dp": 4,
+        "weight_each": 1
+      },
+      "primary_row_top_padding_resource": "keyline_margin",
+      "secondary_button_order": [
+        "sign_in_via_webview",
+        "guest_mode"
+      ],
+      "secondary_row": {
+        "horizontal_padding_dp": 4,
+        "spacing_dp": 8,
+        "text_decoration": "Underline",
+        "weight_each": 1
+      },
+      "source": {
+        "anchor": "!windowSizeClass.isExpanded ->",
+        "line": 207,
+        "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+      },
+      "spacer_height_resource": "keyline_margin",
+      "warning_max_width_resource": "single_max_width",
+      "warning_top_padding_dp": [
+        24,
+        12
+      ]
+    },
+    "expanded": {
+      "axis": "window width dp; not orientation, height, or smallest-width resource qualifier",
+      "inclusive": true,
+      "non_expanded_branch": "!windowSizeClass.isExpanded (includes both compact and medium AndroidX classes)",
+      "numeric_dp": null,
+      "predicate": "windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)",
+      "source": {
+        "anchor": "isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)",
+        "line": 10,
+        "path": "core/ui/src/commonMain/kotlin/com/ehviewer/core/ui/util/WindowSizeClass.kt"
+      },
+      "unresolved": "WIDTH_DP_EXPANDED_LOWER_BOUND belongs to androidx.window.core.layout.WindowSizeClass; numeric definition absent from canonical source. Resolve current dependency with separate provenance before implementing Rust breakpoint."
+    },
+    "expanded_layout": {
+      "button_horizontal_padding_dp": 4,
+      "button_modifier_order": [
+        "padding(horizontal = 4.dp)",
+        "width(128.dp)"
+      ],
+      "button_width_dp": 128,
+      "caption_component_order": [
+        "logo",
+        "app_waring",
+        "app_waring_2"
+      ],
+      "caption_padding_resource": "keyline_margin",
+      "caption_width_resource": "signinscreen_landscape_caption_frame_width",
+      "column_order": [
+        "caption",
+        "form"
+      ],
+      "container": "Row; verticalAlignment = Alignment.CenterVertically",
+      "form": "Column.fillMaxWidth; horizontalAlignment = Alignment.CenterHorizontally",
+      "form_component_order": [
+        "username",
+        "password",
+        "8dp_spacer",
+        "primary_button_row",
+        "8dp_spacer",
+        "secondary_button_row"
+      ],
+      "primary_button_order": [
+        "sign_in",
+        "register"
+      ],
+      "row_arrangement": "Arrangement.Center",
+      "secondary_button_order": [
+        "sign_in_via_webview",
+        "guest_mode"
+      ],
+      "secondary_text_decoration": "Underline",
+      "source": {
+        "anchor": "signinscreen_landscape_caption_frame_width",
+        "line": 312,
+        "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+      },
+      "warning_added_top_padding_dp": [
+        0,
+        0
+      ],
+      "warning_max_width_dp": 360
+    },
+    "inline_dp_occurrences": [
+      {
+        "dp": 16.0,
+        "source": {
+          "line": 158,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 16.0,
+        "source": {
+          "line": 177,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 24.0,
+        "source": {
+          "line": 229,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 12.0,
+        "source": {
+          "line": 238,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 252,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 259,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 265,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 8.0,
+        "source": {
+          "line": 266,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 360.0,
+        "source": {
+          "line": 330,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 360.0,
+        "source": {
+          "line": 335,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 8.0,
+        "source": {
+          "line": 344,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 349,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 128.0,
+        "source": {
+          "line": 349,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 356,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 128.0,
+        "source": {
+          "line": 356,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 8.0,
+        "source": {
+          "line": 361,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 366,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 128.0,
+        "source": {
+          "line": 366,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 4.0,
+        "source": {
+          "line": 380,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      },
+      {
+        "dp": 128.0,
+        "source": {
+          "line": 380,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        }
+      }
+    ],
+    "shared": {
+      "button_shapes": "ButtonDefaults.shapes() (Material3 dependency supplied)",
+      "fields": {
+        "error_bottom_padding": "normal 16dp padding omitted when respective error shown; supportingText rendered instead",
+        "normal_bottom_padding_dp": 16,
+        "order": [
+          "username",
+          "password"
+        ],
+        "source": {
+          "anchor": "fun UsernameAndPasswordTextField()",
+          "line": 152,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+        },
+        "width_operator": "Modifier.width (preferred width subject to parent constraints)",
+        "width_resource": "single_max_width"
+      },
+      "logo_padding_resource": "keyline_margin",
+      "outer": [
+        "Box(contentAlignment = Alignment.Center)",
+        "fillMaxSize",
+        "verticalScroll",
+        "systemBarsPadding",
+        "padding(@dimen/keyline_margin)"
+      ],
+      "progress_overlay": "CircularWavyProgressIndicator at Box center when isProgressIndicatorVisible",
+      "warnings_typography": {
+        "app_waring": "MaterialTheme.typography.titleMedium",
+        "app_waring_2": "MaterialTheme.typography.titleLarge"
+      }
+    },
+    "source": {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+    }
+  },
+  "logo": {
+    "asset": "assets/ic_launcher_foreground.xml",
+    "license": {
+      "asset": "assets/LICENSE",
+      "copyright": "Copyright 2022 Tarsin Norbin",
+      "notice": "Original XML copyright/license notice retained byte-for-byte; no artwork conversion",
+      "sha256": "8b1ba204bb69a0ade2bfcf65ef294a920f6bb361b317dba43c7ef29d96332b9b",
+      "source": {
+        "path": "LICENSE"
+      },
+      "spdx": "GPL-3.0-or-later"
+    },
+    "sha256": "7b5508de9a8564a86cd7461bfcf0d88b52a492653011f4b7e0bf20cc48570c89",
+    "source": {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml"
+    },
+    "variant_selection": "Canonical main drawable exported; listed variant/source-set overrides require explicit Android resource selection if present",
+    "variants": [
+      {
+        "is_canonical_main_drawable": true,
+        "sha256": "7b5508de9a8564a86cd7461bfcf0d88b52a492653011f4b7e0bf20cc48570c89",
+        "source": {
+          "path": "app/src/main/res/drawable/ic_launcher_foreground.xml"
+        }
+      }
+    ],
+    "vector": {
+      "attributes": {
+        "height": "108dp",
+        "viewportHeight": "108",
+        "viewportWidth": "108",
+        "width": "108dp"
+      },
+      "children": [
+        {
+          "attributes": {
+            "scaleX": "0.7425",
+            "scaleY": "0.7425",
+            "translateX": "30.68",
+            "translateY": "30.68"
+          },
+          "children": [
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M11,9H34",
+                "strokeColor": "#FBBD06",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M11,54H23",
+                "strokeColor": "#FBBD06",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M11,9L11,54",
+                "strokeColor": "#35AA53",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M11,31L52,31",
+                "strokeColor": "#FBBD06",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M52,31L52,54",
+                "strokeColor": "#4586F3",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#00000000",
+                "pathData": "M34,21L34,54",
+                "strokeColor": "#EB4334",
+                "strokeLineCap": "round",
+                "strokeWidth": "8"
+              },
+              "children": [],
+              "tag": "path"
+            },
+            {
+              "attributes": {
+                "fillColor": "#FBBD06",
+                "fillType": "evenOdd",
+                "pathData": "M15,35H11C8.791,35 7,33.209 7,31C7,28.791 8.791,27 11,27H15V35Z"
+              },
+              "children": [],
+              "tag": "path"
+            }
+          ],
+          "tag": "group"
+        }
+      ],
+      "tag": "vector"
+    }
+  },
+  "provenance": {
+    "expected_original_head": "cd07574903bdf83e79f28975359c34ef98908ad6",
+    "head_policy": "Reference revision is historical; live Git HEAD is reported by CLI only, never embedded in deterministic artifacts",
+    "source_state": "working_tree_bytes (existing user edits included; not claimed clean HEAD tree)"
+  },
+  "schema_version": 1,
+  "scope": "Canonical working-tree SignIn presentation/interaction source baseline; not a Kotlin runtime bridge or renderer redesign",
+  "sources": [
+    {
+      "path": "LICENSE",
+      "sha256": "8b1ba204bb69a0ade2bfcf65ef294a920f6bb361b317dba43c7ef29d96332b9b",
+      "size_bytes": 35148
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/Settings.kt",
+      "sha256": "8f864df70d074ad7e54f9853fb37088028dfe7e4545ea5d34d5408d7dfceed0b",
+      "size_bytes": 13451
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/SettingsCollector.kt",
+      "sha256": "b26f215334eb65625985c0c6fc791d1927198729bc9c68ffbba434510d6bbcbf",
+      "size_bytes": 2609
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/client/EhUrl.kt",
+      "sha256": "75e6636e9408d4fe3033942dda611a326d86cb7ede3332bf4ccbce1b0c24fde4",
+      "size_bytes": 5886
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/Theme.kt",
+      "sha256": "0e06ce3b3af4a60b16048b4d87b181519ad8817e92ab6c2667bafc1feab331aa",
+      "size_bytes": 2881
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt",
+      "sha256": "c295b63ed934e8b12c11314e757bad7eda42f96716f2a2965abe4199fbe7e689",
+      "size_bytes": 16411
+    },
+    {
+      "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/theme/Theme.kt",
+      "sha256": "5a51d2ecc055b1bf556e7bbed3aff9f4f6d4f3b630d967c6192314bc5d5f5e2b",
+      "size_bytes": 3542
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "sha256": "7b5508de9a8564a86cd7461bfcf0d88b52a492653011f4b7e0bf20cc48570c89",
+      "size_bytes": 2641
+    },
+    {
+      "path": "app/src/main/res/values-sw600dp/dimens.xml",
+      "sha256": "b3469e546c158817631efa3aa27a9c4091419383e5f861ed055dab0381b4de3f",
+      "size_bytes": 878
+    },
+    {
+      "path": "app/src/main/res/values-sw720dp-land/dimens.xml",
+      "sha256": "50a76deea90b5fdb8abe9b81845a32e36cd531dfdd36ef5bc5fd6c8d9af9b7d6",
+      "size_bytes": 731
+    },
+    {
+      "path": "app/src/main/res/values-television/dimens.xml",
+      "sha256": "a863d5e7a2ab423450d614cf9782e2d80a3ee495ad9609be098269d7ac183bba",
+      "size_bytes": 1011
+    },
+    {
+      "path": "app/src/main/res/values/dimens.xml",
+      "sha256": "411de4c248310262e3c96e9b8dd7681da9d32cf0fc9d2b2e4adb2a2ce8db9521",
+      "size_bytes": 1806
+    },
+    {
+      "path": "core/i18n/build.gradle.kts",
+      "sha256": "29e96e91628cfcdaeefedfb3c4d2bf49d3f8ca5804e61623b0b314eb231110a4",
+      "size_bytes": 420
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/base/plurals.xml",
+      "sha256": "c018c1fcf8a913e7765a313e2156d3a3e1d49692baef10590f67bfade6fbb634",
+      "size_bytes": 1133
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml",
+      "sha256": "f2fc7ad42b2b844519bcf2e0b3dbdfad9f070c4c2783724247482968807a51e6",
+      "size_bytes": 45312
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml",
+      "sha256": "b9dac00ac1ef52864b2931cd4ec4fd5e3f5eca9b4be29af57be6fce925b3ace2",
+      "size_bytes": 23314
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/es/plurals.xml",
+      "sha256": "55f1ae7dba35df5c701a2ecc717ee5c3c47057501f41cee516b51f2508debf38",
+      "size_bytes": 1162
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml",
+      "sha256": "ece7ab557d0bbde4cd1c2533ccc6789c7dcfe8f14bf8808c7b00146bb51540db",
+      "size_bytes": 23026
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/fr/plurals.xml",
+      "sha256": "bf9728702908fc36c7b2e79e9f31d68ccb4d00c4b3594513c3afb03ba6078a9b",
+      "size_bytes": 1163
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml",
+      "sha256": "ca9a9bbd3d17c85e694e2f1157b63d8f6f76aa9c7236837f14a2dfe1ca6bde3f",
+      "size_bytes": 25045
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/ja/plurals.xml",
+      "sha256": "3aad8b533634f308288fa217bc94feeb527cf2ae508b24a1f9c1060b4d180019",
+      "size_bytes": 782
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml",
+      "sha256": "fe9ed92e3c3e0d8b595761cd12da26dd655a1a734f9a498f1605f78d3fd93bcb",
+      "size_bytes": 47934
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/ko/plurals.xml",
+      "sha256": "6b30109c1b7631d129b8f115da4f38210d4d86ee637eb88ba1bdc242fa094f3e",
+      "size_bytes": 785
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml",
+      "sha256": "2bd9cb6e9d3352dc836204ed86cd9f0a3944b4cec059374aac101d7bba0db534",
+      "size_bytes": 22784
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/plurals.xml",
+      "sha256": "f9d356d0d2d838a282e145b0d99761d0abdc2029cfd41e71eb0f81c898477eee",
+      "size_bytes": 1140
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml",
+      "sha256": "dc7a65a2741e00e1355d0e8b76c8c0e153a054be1d5714c999d8c646796c6f83",
+      "size_bytes": 10706
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/th/plurals.xml",
+      "sha256": "ee77942bb4a8db62b5d11afa8162251d1090c96b82e75059349f9e097e91b933",
+      "size_bytes": 896
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml",
+      "sha256": "c76fe4ce0fdb81412946a077bbc3cd1c69c461b11aa10719cdfe59477b3e9c2d",
+      "size_bytes": 32742
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml",
+      "sha256": "96087adbeb5dd6f42e21a0df8a57298bd714093bbe5e2171656a7afb634ecf0f",
+      "size_bytes": 5202
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/plurals.xml",
+      "sha256": "ba3599f53737b25506e67999628b421557356d0c66b5d8fa1e75f585292c2254",
+      "size_bytes": 785
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml",
+      "sha256": "47d4f32d0531a89218d054d2e4c4966f4708a4dc3b1534b2b7fc6e22df33a8c5",
+      "size_bytes": 43603
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/plurals.xml",
+      "sha256": "9f29309a55cac29cca43b261a418e74fc8ed49589ef2711f97d09e493745e9a7",
+      "size_bytes": 785
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml",
+      "sha256": "46778dd55d98c71cc120ebc564e4a2823d91f884453a13ab3479069754f4bcdb",
+      "size_bytes": 28173
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/plurals.xml",
+      "sha256": "9f29309a55cac29cca43b261a418e74fc8ed49589ef2711f97d09e493745e9a7",
+      "size_bytes": 785
+    },
+    {
+      "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml",
+      "sha256": "6421519bdd41e7d83bc24d7386b7b3adbcfa054446cf5751e704fb3097bea19b",
+      "size_bytes": 39054
+    },
+    {
+      "path": "core/ui/build.gradle.kts",
+      "sha256": "bc8f44330ffbba33c59057bb015f438bf786b177d3486fd78a918af4a8700bb4",
+      "size_bytes": 870
+    },
+    {
+      "path": "core/ui/src/commonMain/kotlin/com/ehviewer/core/ui/util/WindowSizeClass.kt",
+      "sha256": "836482fba054507f85248def6415ef8f0960d09b223001fac76bee8d493b5bee",
+      "size_bytes": 456
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "sha256": "76d4b3b2bcb6ab48b0bfb679213b747cbc26377b64ec82f0929ed7356e81d180",
+      "size_bytes": 9430
+    }
+  ],
+  "strings": {
+    "encoding": "UTF-8; xml_inner_raw/xml_element_raw preserve XML entities, backslashes, markup and format markers. xml_text only decodes XML, not Android/Moko escapes or formatting.",
+    "fallback": "Missing local definitions have explicit base_fallback_candidate; generated Android/Moko locale selection and escaping are not verified here. Ambiguous definitions have no chosen value.",
+    "locales": {
+      "base": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/base/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 67,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms.</string>",
+                "xml_inner_raw": "The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms.",
+                "xml_text": "The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms."
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring_2"
+                },
+                "source": {
+                  "line": 68,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+                "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+                "xml_text": "By continuing to use it, you agree to the above terms."
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 70,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">Password cannot be empty</string>",
+                "xml_inner_raw": "Password cannot be empty",
+                "xml_text": "Password cannot be empty"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 69,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">Username cannot be empty</string>",
+                "xml_inner_raw": "Username cannot be empty",
+                "xml_text": "Username cannot be empty"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 74,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Got it</string>",
+                "xml_inner_raw": "Got it",
+                "xml_text": "Got it"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 71,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Guest mode</string>",
+                "xml_inner_raw": "Guest mode",
+                "xml_text": "Guest mode"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 40,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Password</string>",
+                "xml_inner_raw": "Password",
+                "xml_text": "Password"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 42,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Register</string>",
+                "xml_inner_raw": "Register",
+                "xml_text": "Register"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 41,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Sign in</string>",
+                "xml_inner_raw": "Sign in",
+                "xml_text": "Sign in"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 72,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">Sign in failed</string>",
+                "xml_inner_raw": "Sign in failed",
+                "xml_text": "Sign in failed"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 73,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+                "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+                "xml_text": "If this issue continues, try \\\"%s\\\"."
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 43,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">Sign in via WebView</string>",
+                "xml_inner_raw": "Sign in via WebView",
+                "xml_text": "Sign in via WebView"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 39,
+                  "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Username</string>",
+                "xml_inner_raw": "Username",
+                "xml_text": "Username"
+              }
+            ],
+            "overrides_base": false,
+            "status": "declared"
+          }
+        }
+      },
+      "de": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 290,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">Inhalt dieser App kommt aus dem Internet, von dem einige dir körperlichen oder emotionalen Schaden zufügen kann. Du hast es wirklich erfahrt und möchtest immer noch fortsetzen.</string>",
+                "xml_inner_raw": "Inhalt dieser App kommt aus dem Internet, von dem einige dir körperlichen oder emotionalen Schaden zufügen kann. Du hast es wirklich erfahrt und möchtest immer noch fortsetzen.",
+                "xml_text": "Inhalt dieser App kommt aus dem Internet, von dem einige dir körperlichen oder emotionalen Schaden zufügen kann. Du hast es wirklich erfahrt und möchtest immer noch fortsetzen."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 292,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">Gibt das Passwort ein</string>",
+                "xml_inner_raw": "Gibt das Passwort ein",
+                "xml_text": "Gibt das Passwort ein"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 291,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">Gibt den Nutzername ein</string>",
+                "xml_inner_raw": "Gibt den Nutzername ein",
+                "xml_text": "Gibt den Nutzername ein"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 51,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Verstanden</string>",
+                "xml_inner_raw": "Verstanden",
+                "xml_text": "Verstanden"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 293,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Anmeldung überspringen</string>",
+                "xml_inner_raw": "Anmeldung überspringen",
+                "xml_text": "Anmeldung überspringen"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 27,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Kennwort</string>",
+                "xml_inner_raw": "Kennwort",
+                "xml_text": "Kennwort"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Konto erstellen</string>",
+                "xml_inner_raw": "Konto erstellen",
+                "xml_text": "Konto erstellen"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Anmelden</string>",
+                "xml_inner_raw": "Anmelden",
+                "xml_text": "Anmelden"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 294,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">Anmeldung fehlgeschlagen</string>",
+                "xml_inner_raw": "Anmeldung fehlgeschlagen",
+                "xml_text": "Anmeldung fehlgeschlagen"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">Mit WebView anmelden</string>",
+                "xml_inner_raw": "Mit WebView anmelden",
+                "xml_text": "Mit WebView anmelden"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 26,
+                  "path": "core/i18n/src/commonMain/moko-resources/de/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Benutzername</string>",
+                "xml_inner_raw": "Benutzername",
+                "xml_text": "Benutzername"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "es": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/es/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 59,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">El contenido de esta aplicación es de Internet. Algunas de ellas pueden causarle daño psicológico. Ahora sabes los riesgos anteriormente mencionado y te gustaría asumirlos</string>",
+                "xml_inner_raw": "El contenido de esta aplicación es de Internet. Algunas de ellas pueden causarle daño psicológico. Ahora sabes los riesgos anteriormente mencionado y te gustaría asumirlos",
+                "xml_text": "El contenido de esta aplicación es de Internet. Algunas de ellas pueden causarle daño psicológico. Ahora sabes los riesgos anteriormente mencionado y te gustaría asumirlos"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 350,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">La contraseña no puede estar vacía</string>",
+                "xml_inner_raw": "La contraseña no puede estar vacía",
+                "xml_text": "La contraseña no puede estar vacía"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 60,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">El usuario no puede estar vacío</string>",
+                "xml_inner_raw": "El usuario no puede estar vacío",
+                "xml_text": "El usuario no puede estar vacío"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 63,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Entendido</string>",
+                "xml_inner_raw": "Entendido",
+                "xml_text": "Entendido"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 61,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Saltar inicio de sesión</string>",
+                "xml_inner_raw": "Saltar inicio de sesión",
+                "xml_text": "Saltar inicio de sesión"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Contraseña</string>",
+                "xml_inner_raw": "Contraseña",
+                "xml_text": "Contraseña"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 33,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Registrarse</string>",
+                "xml_inner_raw": "Registrarse",
+                "xml_text": "Registrarse"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 32,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Iniciar sesión</string>",
+                "xml_inner_raw": "Iniciar sesión",
+                "xml_text": "Iniciar sesión"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 62,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">Inicio de sesión fallido</string>",
+                "xml_inner_raw": "Inicio de sesión fallido",
+                "xml_text": "Inicio de sesión fallido"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 34,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">Iniciar sesión vía web</string>",
+                "xml_inner_raw": "Iniciar sesión vía web",
+                "xml_text": "Iniciar sesión vía web"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/es/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Usuario</string>",
+                "xml_inner_raw": "Usuario",
+                "xml_text": "Usuario"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "fr": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/fr/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 59,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">Le contenu de l\\'application provient de l\\'Internet, dont quelque chose peut vous causer le dommage physique ou mentale. Vous l\\'avez bien compris et voulez continuer quand même.</string>",
+                "xml_inner_raw": "Le contenu de l\\'application provient de l\\'Internet, dont quelque chose peut vous causer le dommage physique ou mentale. Vous l\\'avez bien compris et voulez continuer quand même.",
+                "xml_text": "Le contenu de l\\'application provient de l\\'Internet, dont quelque chose peut vous causer le dommage physique ou mentale. Vous l\\'avez bien compris et voulez continuer quand même."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 61,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">Mot de passe ne doit pas être une chaîne vide</string>",
+                "xml_inner_raw": "Mot de passe ne doit pas être une chaîne vide",
+                "xml_text": "Mot de passe ne doit pas être une chaîne vide"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 60,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">Nom d\\'ultilisateur ne doit pas être une chaîne vide</string>",
+                "xml_inner_raw": "Nom d\\'ultilisateur ne doit pas être une chaîne vide",
+                "xml_text": "Nom d\\'ultilisateur ne doit pas être une chaîne vide"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 64,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Compris</string>",
+                "xml_inner_raw": "Compris",
+                "xml_text": "Compris"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 62,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Continuer sans se connecter</string>",
+                "xml_inner_raw": "Continuer sans se connecter",
+                "xml_text": "Continuer sans se connecter"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Mot de passe</string>",
+                "xml_inner_raw": "Mot de passe",
+                "xml_text": "Mot de passe"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 33,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Créer un compte</string>",
+                "xml_inner_raw": "Créer un compte",
+                "xml_text": "Créer un compte"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 32,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Se connecter</string>",
+                "xml_inner_raw": "Se connecter",
+                "xml_text": "Se connecter"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 63,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">Impossible de se connecter</string>",
+                "xml_inner_raw": "Impossible de se connecter",
+                "xml_text": "Impossible de se connecter"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 34,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">Se connecter via WebView</string>",
+                "xml_inner_raw": "Se connecter via WebView",
+                "xml_text": "Se connecter via WebView"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/fr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Nom d\\'utilisateur</string>",
+                "xml_inner_raw": "Nom d\\'utilisateur",
+                "xml_text": "Nom d\\'utilisateur"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "ja": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/ja/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 54,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">このアプリの内容はインターネットから取得したものです。その内容の一部は心身に悪影響を与える可能性があります。それでも続行しますか？</string>",
+                "xml_inner_raw": "このアプリの内容はインターネットから取得したものです。その内容の一部は心身に悪影響を与える可能性があります。それでも続行しますか？",
+                "xml_text": "このアプリの内容はインターネットから取得したものです。その内容の一部は心身に悪影響を与える可能性があります。それでも続行しますか？"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring_2"
+                },
+                "source": {
+                  "line": 55,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring_2\">利用を続行することにより、上記の規約に同意したものとみなされます。</string>",
+                "xml_inner_raw": "利用を続行することにより、上記の規約に同意したものとみなされます。",
+                "xml_text": "利用を続行することにより、上記の規約に同意したものとみなされます。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 57,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">パスワードは空欄にできません</string>",
+                "xml_inner_raw": "パスワードは空欄にできません",
+                "xml_text": "パスワードは空欄にできません"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 56,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">ユーザー名は空欄にできません</string>",
+                "xml_inner_raw": "ユーザー名は空欄にできません",
+                "xml_text": "ユーザー名は空欄にできません"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 61,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">了解</string>",
+                "xml_inner_raw": "了解",
+                "xml_text": "了解"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 58,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">ゲストモード</string>",
+                "xml_inner_raw": "ゲストモード",
+                "xml_text": "ゲストモード"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">パスワード</string>",
+                "xml_inner_raw": "パスワード",
+                "xml_text": "パスワード"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">登録</string>",
+                "xml_inner_raw": "登録",
+                "xml_text": "登録"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">ログイン</string>",
+                "xml_inner_raw": "ログイン",
+                "xml_text": "ログイン"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 59,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">ログインに失敗しました</string>",
+                "xml_inner_raw": "ログインに失敗しました",
+                "xml_text": "ログインに失敗しました"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 60,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">この問題が続く場合は「%s」をお試しください。</string>",
+                "xml_inner_raw": "この問題が続く場合は「%s」をお試しください。",
+                "xml_text": "この問題が続く場合は「%s」をお試しください。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 31,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">ウェブでログイン</string>",
+                "xml_inner_raw": "ウェブでログイン",
+                "xml_text": "ウェブでログイン"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 27,
+                  "path": "core/i18n/src/commonMain/moko-resources/ja/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">ユーザー名</string>",
+                "xml_inner_raw": "ユーザー名",
+                "xml_text": "ユーザー名"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "ko": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/ko/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 61,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">이 앱의 내용은 인터넷에서 받아옵니다. 이 앱을 사용하기 위해서는 받아온 내용 중 일부가 사용자에게 가할 수 있는 신체적 또는 정신적 피해를 감수해야 합니다.</string>",
+                "xml_inner_raw": "이 앱의 내용은 인터넷에서 받아옵니다. 이 앱을 사용하기 위해서는 받아온 내용 중 일부가 사용자에게 가할 수 있는 신체적 또는 정신적 피해를 감수해야 합니다.",
+                "xml_text": "이 앱의 내용은 인터넷에서 받아옵니다. 이 앱을 사용하기 위해서는 받아온 내용 중 일부가 사용자에게 가할 수 있는 신체적 또는 정신적 피해를 감수해야 합니다."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 63,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">비밀번호는 비워둘 수 없습니다.</string>",
+                "xml_inner_raw": "비밀번호는 비워둘 수 없습니다.",
+                "xml_text": "비밀번호는 비워둘 수 없습니다."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 62,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">사용자 이름은 비워둘 수 없습니다.</string>",
+                "xml_inner_raw": "사용자 이름은 비워둘 수 없습니다.",
+                "xml_text": "사용자 이름은 비워둘 수 없습니다."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 66,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">알겠습니다</string>",
+                "xml_inner_raw": "알겠습니다",
+                "xml_text": "알겠습니다"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 64,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">로그인 없이 사용</string>",
+                "xml_inner_raw": "로그인 없이 사용",
+                "xml_text": "로그인 없이 사용"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">비밀번호</string>",
+                "xml_inner_raw": "비밀번호",
+                "xml_text": "비밀번호"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 32,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">회원가입</string>",
+                "xml_inner_raw": "회원가입",
+                "xml_text": "회원가입"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 31,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">로그인</string>",
+                "xml_inner_raw": "로그인",
+                "xml_text": "로그인"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 65,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">로그인 실패</string>",
+                "xml_inner_raw": "로그인 실패",
+                "xml_text": "로그인 실패"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 33,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">WebView를 통하여 로그인</string>",
+                "xml_inner_raw": "WebView를 통하여 로그인",
+                "xml_text": "WebView를 통하여 로그인"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/ko/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">사용자 이름</string>",
+                "xml_inner_raw": "사용자 이름",
+                "xml_text": "사용자 이름"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "nb-rNO": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/nb-rNO/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring"
+              },
+              "source": {
+                "line": 67,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring\">The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms.",
+              "xml_text": "The content of this application is from the Internet. Some of it may do physical or mental harm to you. You have learnt the risks above and would like to undertake them. By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "error_password_cannot_empty"
+              },
+              "source": {
+                "line": 70,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"error_password_cannot_empty\">Password cannot be empty</string>",
+              "xml_inner_raw": "Password cannot be empty",
+              "xml_text": "Password cannot be empty"
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "error_username_cannot_empty"
+              },
+              "source": {
+                "line": 69,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"error_username_cannot_empty\">Username cannot be empty</string>",
+              "xml_inner_raw": "Username cannot be empty",
+              "xml_text": "Username cannot be empty"
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 52,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Skjønner</string>",
+                "xml_inner_raw": "Skjønner",
+                "xml_text": "Skjønner"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Fortsett uten å logge inn</string>",
+                "xml_inner_raw": "Fortsett uten å logge inn",
+                "xml_text": "Fortsett uten å logge inn"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 10,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Passord</string>",
+                "xml_inner_raw": "Passord",
+                "xml_text": "Passord"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 13,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Registrering</string>",
+                "xml_inner_raw": "Registrering",
+                "xml_text": "Registrering"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 21,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Logg inn</string>",
+                "xml_inner_raw": "Logg inn",
+                "xml_text": "Logg inn"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed"
+              },
+              "source": {
+                "line": 72,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed\">Sign in failed</string>",
+              "xml_inner_raw": "Sign in failed",
+              "xml_text": "Sign in failed"
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 11,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">Logg inn via WebView</string>",
+                "xml_inner_raw": "Logg inn via WebView",
+                "xml_text": "Logg inn via WebView"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 20,
+                  "path": "core/i18n/src/commonMain/moko-resources/nb-rNO/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Brukernavn</string>",
+                "xml_inner_raw": "Brukernavn",
+                "xml_text": "Brukernavn"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "th": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/th/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 61,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">เนื้อหาภายในแอปพลิเคชั่นนี้มาจากอินเทอร์เน็ตทั้งหมด อาจมีเนื้อหาบางอย่างที่มีผลต่อร่างกายหรือจิตใจของคุณ คุณจะต้องยอมรับความเสี่ยงที่ดังกล่าว และดำเนินการต่อไป</string>",
+                "xml_inner_raw": "เนื้อหาภายในแอปพลิเคชั่นนี้มาจากอินเทอร์เน็ตทั้งหมด อาจมีเนื้อหาบางอย่างที่มีผลต่อร่างกายหรือจิตใจของคุณ คุณจะต้องยอมรับความเสี่ยงที่ดังกล่าว และดำเนินการต่อไป",
+                "xml_text": "เนื้อหาภายในแอปพลิเคชั่นนี้มาจากอินเทอร์เน็ตทั้งหมด อาจมีเนื้อหาบางอย่างที่มีผลต่อร่างกายหรือจิตใจของคุณ คุณจะต้องยอมรับความเสี่ยงที่ดังกล่าว และดำเนินการต่อไป"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 63,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">รหัสผ่านห้ามเว้นว่างไว้</string>",
+                "xml_inner_raw": "รหัสผ่านห้ามเว้นว่างไว้",
+                "xml_text": "รหัสผ่านห้ามเว้นว่างไว้"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 62,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">ชื่อผู้ใช้ห้ามเว้นว่างไว้</string>",
+                "xml_inner_raw": "ชื่อผู้ใช้ห้ามเว้นว่างไว้",
+                "xml_text": "ชื่อผู้ใช้ห้ามเว้นว่างไว้"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 66,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">เข้าใจแล้ว ไม่ต้องแสดงอีก</string>",
+                "xml_inner_raw": "เข้าใจแล้ว ไม่ต้องแสดงอีก",
+                "xml_text": "เข้าใจแล้ว ไม่ต้องแสดงอีก"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 64,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">ดำเนินการต่อโดยไม่ต้องลงชื่อเข้าระบบ</string>",
+                "xml_inner_raw": "ดำเนินการต่อโดยไม่ต้องลงชื่อเข้าระบบ",
+                "xml_text": "ดำเนินการต่อโดยไม่ต้องลงชื่อเข้าระบบ"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">รหัสผ่าน</string>",
+                "xml_inner_raw": "รหัสผ่าน",
+                "xml_text": "รหัสผ่าน"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 32,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">ลงทะเบียน</string>",
+                "xml_inner_raw": "ลงทะเบียน",
+                "xml_text": "ลงทะเบียน"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 31,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">ลงชื่อเข้าใช้</string>",
+                "xml_inner_raw": "ลงชื่อเข้าใช้",
+                "xml_text": "ลงชื่อเข้าใช้"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 65,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">การลงชื่อเข้าใช้ล้มเหลว</string>",
+                "xml_inner_raw": "การลงชื่อเข้าใช้ล้มเหลว",
+                "xml_text": "การลงชื่อเข้าใช้ล้มเหลว"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "sign_in_failed_tip"
+              },
+              "source": {
+                "line": 73,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"sign_in_failed_tip\">If this issue continues, try \\\"%s\\\".</string>",
+              "xml_inner_raw": "If this issue continues, try \\\"%s\\\".",
+              "xml_text": "If this issue continues, try \\\"%s\\\"."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 33,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">ลงชื่อเข้าใช้ผ่านมุมมองเว็บไซต์</string>",
+                "xml_inner_raw": "ลงชื่อเข้าใช้ผ่านมุมมองเว็บไซต์",
+                "xml_text": "ลงชื่อเข้าใช้ผ่านมุมมองเว็บไซต์"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/th/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">ชื่อผู้ใช้</string>",
+                "xml_inner_raw": "ชื่อผู้ใช้",
+                "xml_text": "ชื่อผู้ใช้"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "tr": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 68,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">Bu uygulamadaki içerikler internetten alınmaktadır. Bazı içerikler fiziksel veya zihinsel olarak size zararlı gelebilir.Yukarıda, riskleri öğrendiniz ve üstleneceksiniz.\n\\nKullanmaya devam ederek, yukarıdaki koşulları kabul edersiniz.</string>",
+                "xml_inner_raw": "Bu uygulamadaki içerikler internetten alınmaktadır. Bazı içerikler fiziksel veya zihinsel olarak size zararlı gelebilir.Yukarıda, riskleri öğrendiniz ve üstleneceksiniz.\n\\nKullanmaya devam ederek, yukarıdaki koşulları kabul edersiniz.",
+                "xml_text": "Bu uygulamadaki içerikler internetten alınmaktadır. Bazı içerikler fiziksel veya zihinsel olarak size zararlı gelebilir.Yukarıda, riskleri öğrendiniz ve üstleneceksiniz.\n\\nKullanmaya devam ederek, yukarıdaki koşulları kabul edersiniz."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 37,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">Şifre boş bir metin olamaz</string>",
+                "xml_inner_raw": "Şifre boş bir metin olamaz",
+                "xml_text": "Şifre boş bir metin olamaz"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 36,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">Kullanıcı adı boş bir metin olamaz</string>",
+                "xml_inner_raw": "Kullanıcı adı boş bir metin olamaz",
+                "xml_text": "Kullanıcı adı boş bir metin olamaz"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 40,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">Anladım</string>",
+                "xml_inner_raw": "Anladım",
+                "xml_text": "Anladım"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 38,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">Giriş yapmaksızın devam et</string>",
+                "xml_inner_raw": "Giriş yapmaksızın devam et",
+                "xml_text": "Giriş yapmaksızın devam et"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 12,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">Şifre</string>",
+                "xml_inner_raw": "Şifre",
+                "xml_text": "Şifre"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 14,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">Kaydol</string>",
+                "xml_inner_raw": "Kaydol",
+                "xml_text": "Kaydol"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 13,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">Giriş yap</string>",
+                "xml_inner_raw": "Giriş yap",
+                "xml_text": "Giriş yap"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 39,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">Giriş başarısız</string>",
+                "xml_inner_raw": "Giriş başarısız",
+                "xml_text": "Giriş başarısız"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 70,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">Bu sorun devam ederse, \\\"%s\\\" seçeneğini deneyin.</string>",
+                "xml_inner_raw": "Bu sorun devam ederse, \\\"%s\\\" seçeneğini deneyin.",
+                "xml_text": "Bu sorun devam ederse, \\\"%s\\\" seçeneğini deneyin."
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 15,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">WebView aracılığıyla giriş yap</string>",
+                "xml_inner_raw": "WebView aracılığıyla giriş yap",
+                "xml_text": "WebView aracılığıyla giriş yap"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 11,
+                  "path": "core/i18n/src/commonMain/moko-resources/tr/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">Kullanıcı adı</string>",
+                "xml_inner_raw": "Kullanıcı adı",
+                "xml_text": "Kullanıcı adı"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "zh-rCN": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/zh-rCN/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 53,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">本应用中内容来自互联网，部分内容可能对您的生理及心理造成难以恢复的伤害。本应用作者不会对由本应用造成的任何后果负责。未成年人应在监护人指导下使用本应用。请遵守所在地的法律法规。</string>",
+                "xml_inner_raw": "本应用中内容来自互联网，部分内容可能对您的生理及心理造成难以恢复的伤害。本应用作者不会对由本应用造成的任何后果负责。未成年人应在监护人指导下使用本应用。请遵守所在地的法律法规。",
+                "xml_text": "本应用中内容来自互联网，部分内容可能对您的生理及心理造成难以恢复的伤害。本应用作者不会对由本应用造成的任何后果负责。未成年人应在监护人指导下使用本应用。请遵守所在地的法律法规。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring_2"
+                },
+                "source": {
+                  "line": 54,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring_2\">继续使用即代表您同意上述条款。</string>",
+                "xml_inner_raw": "继续使用即代表您同意上述条款。",
+                "xml_text": "继续使用即代表您同意上述条款。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 56,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">密码不可为空</string>",
+                "xml_inner_raw": "密码不可为空",
+                "xml_text": "密码不可为空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 55,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">用户名不可为空</string>",
+                "xml_inner_raw": "用户名不可为空",
+                "xml_text": "用户名不可为空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 60,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">知道了</string>",
+                "xml_inner_raw": "知道了",
+                "xml_text": "知道了"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 57,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">游客模式</string>",
+                "xml_inner_raw": "游客模式",
+                "xml_text": "游客模式"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 26,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">密码</string>",
+                "xml_inner_raw": "密码",
+                "xml_text": "密码"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">注册</string>",
+                "xml_inner_raw": "注册",
+                "xml_text": "注册"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 27,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">登录</string>",
+                "xml_inner_raw": "登录",
+                "xml_text": "登录"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 58,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">登录失败</string>",
+                "xml_inner_raw": "登录失败",
+                "xml_text": "登录失败"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 59,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">若持续出错，请尝试“%s”。</string>",
+                "xml_inner_raw": "若持续出错，请尝试“%s”。",
+                "xml_text": "若持续出错，请尝试“%s”。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">通过网页登录</string>",
+                "xml_inner_raw": "通过网页登录",
+                "xml_text": "通过网页登录"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 25,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rCN/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">用户名</string>",
+                "xml_inner_raw": "用户名",
+                "xml_text": "用户名"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "zh-rHK": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/zh-rHK/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 62,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">本應用中內容來自互聯網，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用作者不會對由本應用造成的任何後果負責。\\n\\n未成年人應在監護人指導下使用本應用。</string>",
+                "xml_inner_raw": "本應用中內容來自互聯網，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用作者不會對由本應用造成的任何後果負責。\\n\\n未成年人應在監護人指導下使用本應用。",
+                "xml_text": "本應用中內容來自互聯網，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用作者不會對由本應用造成的任何後果負責。\\n\\n未成年人應在監護人指導下使用本應用。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": {
+              "attributes": {
+                "name": "app_waring_2"
+              },
+              "source": {
+                "line": 68,
+                "path": "core/i18n/src/commonMain/moko-resources/base/strings.xml"
+              },
+              "xml_element_raw": "<string name=\"app_waring_2\">By continuing to use it, you agree to the above terms.</string>",
+              "xml_inner_raw": "By continuing to use it, you agree to the above terms.",
+              "xml_text": "By continuing to use it, you agree to the above terms."
+            },
+            "declarations": [],
+            "overrides_base": false,
+            "status": "missing"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 64,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">密碼不可為空</string>",
+                "xml_inner_raw": "密碼不可為空",
+                "xml_text": "密碼不可為空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 63,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">用户名不可為空</string>",
+                "xml_inner_raw": "用户名不可為空",
+                "xml_text": "用户名不可為空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 68,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">知道了</string>",
+                "xml_inner_raw": "知道了",
+                "xml_text": "知道了"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 65,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">跳過登錄</string>",
+                "xml_inner_raw": "跳過登錄",
+                "xml_text": "跳過登錄"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 30,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">密碼</string>",
+                "xml_inner_raw": "密碼",
+                "xml_text": "密碼"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 33,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">註冊</string>",
+                "xml_inner_raw": "註冊",
+                "xml_text": "註冊"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 32,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">登錄</string>",
+                "xml_inner_raw": "登錄",
+                "xml_text": "登錄"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 66,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">登錄失敗</string>",
+                "xml_inner_raw": "登錄失敗",
+                "xml_text": "登錄失敗"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 67,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">若持續出錯，請嘗試“%s”。</string>",
+                "xml_inner_raw": "若持續出錯，請嘗試“%s”。",
+                "xml_text": "若持續出錯，請嘗試“%s”。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 34,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">通過網頁登錄</string>",
+                "xml_inner_raw": "通過網頁登錄",
+                "xml_text": "通過網頁登錄"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rHK/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">用户名</string>",
+                "xml_inner_raw": "用户名",
+                "xml_text": "用户名"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      },
+      "zh-rTW": {
+        "files": [
+          "core/i18n/src/commonMain/moko-resources/zh-rTW/plurals.xml",
+          "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+        ],
+        "resources": {
+          "app_waring": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring"
+                },
+                "source": {
+                  "line": 52,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring\">本應用程式中內容來自網際網路，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用程式的作者不會對由其所造成的任何影響負責。\\n\\n未成年人應在監護人指導下使用本應用程式。\\n\\n繼續使用即代表您同意上述條款。</string>",
+                "xml_inner_raw": "本應用程式中內容來自網際網路，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用程式的作者不會對由其所造成的任何影響負責。\\n\\n未成年人應在監護人指導下使用本應用程式。\\n\\n繼續使用即代表您同意上述條款。",
+                "xml_text": "本應用程式中內容來自網際網路，部分內容可能對您的生理及心理造成難以恢復的傷害。本應用程式的作者不會對由其所造成的任何影響負責。\\n\\n未成年人應在監護人指導下使用本應用程式。\\n\\n繼續使用即代表您同意上述條款。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "app_waring_2": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "app_waring_2"
+                },
+                "source": {
+                  "line": 53,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"app_waring_2\">繼續使用即表示您同意上述條款。</string>",
+                "xml_inner_raw": "繼續使用即表示您同意上述條款。",
+                "xml_text": "繼續使用即表示您同意上述條款。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_password_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_password_cannot_empty"
+                },
+                "source": {
+                  "line": 55,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_password_cannot_empty\">密碼欄位不能為空</string>",
+                "xml_inner_raw": "密碼欄位不能為空",
+                "xml_text": "密碼欄位不能為空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "error_username_cannot_empty": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "error_username_cannot_empty"
+                },
+                "source": {
+                  "line": 54,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"error_username_cannot_empty\">使用者名稱欄位不能為空</string>",
+                "xml_inner_raw": "使用者名稱欄位不能為空",
+                "xml_text": "使用者名稱欄位不能為空"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "get_it": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "get_it"
+                },
+                "source": {
+                  "line": 59,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"get_it\">知道了</string>",
+                "xml_inner_raw": "知道了",
+                "xml_text": "知道了"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "guest_mode": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "guest_mode"
+                },
+                "source": {
+                  "line": 56,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"guest_mode\">略過登入</string>",
+                "xml_inner_raw": "略過登入",
+                "xml_text": "略過登入"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "password": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "password"
+                },
+                "source": {
+                  "line": 26,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"password\">密碼</string>",
+                "xml_inner_raw": "密碼",
+                "xml_text": "密碼"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "register": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "register"
+                },
+                "source": {
+                  "line": 28,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"register\">註冊</string>",
+                "xml_inner_raw": "註冊",
+                "xml_text": "註冊"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in"
+                },
+                "source": {
+                  "line": 27,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in\">登入</string>",
+                "xml_inner_raw": "登入",
+                "xml_text": "登入"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed"
+                },
+                "source": {
+                  "line": 57,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed\">登入失敗</string>",
+                "xml_inner_raw": "登入失敗",
+                "xml_text": "登入失敗"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_failed_tip": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_failed_tip"
+                },
+                "source": {
+                  "line": 58,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_failed_tip\">若持續出錯，請嘗試“%s”。</string>",
+                "xml_inner_raw": "若持續出錯，請嘗試“%s”。",
+                "xml_text": "若持續出錯，請嘗試“%s”。"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "sign_in_via_webview": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "sign_in_via_webview"
+                },
+                "source": {
+                  "line": 29,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"sign_in_via_webview\">透過網頁登入</string>",
+                "xml_inner_raw": "透過網頁登入",
+                "xml_text": "透過網頁登入"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          },
+          "username": {
+            "base_fallback_candidate": null,
+            "declarations": [
+              {
+                "attributes": {
+                  "name": "username"
+                },
+                "source": {
+                  "line": 25,
+                  "path": "core/i18n/src/commonMain/moko-resources/zh-rTW/strings.xml"
+                },
+                "xml_element_raw": "<string name=\"username\">使用者名稱</string>",
+                "xml_inner_raw": "使用者名稱",
+                "xml_text": "使用者名稱"
+              }
+            ],
+            "overrides_base": true,
+            "status": "declared"
+          }
+        }
+      }
+    },
+    "resource_keys": [
+      "username",
+      "password",
+      "app_waring",
+      "app_waring_2",
+      "error_username_cannot_empty",
+      "error_password_cannot_empty",
+      "register",
+      "sign_in",
+      "guest_mode",
+      "sign_in_via_webview",
+      "sign_in_failed",
+      "sign_in_failed_tip",
+      "get_it"
+    ]
+  },
+  "theme": {
+    "amoled_override": {
+      "background": "Color.Black",
+      "onBackground": "Color.White",
+      "onSurface": "Color.White",
+      "surface": "Color.Black"
+    },
+    "color_branches": [
+      "Android S+: dynamicDarkColorScheme(context).amoled(amoled) or dynamicLightColorScheme(context)",
+      "Before S and at least O_MR1: system wallpaper primary/secondary/tertiary to materialkolor.dynamicColorScheme when wallpaper palette available",
+      "No wallpaper palette: darkColorScheme().amoled(amoled) or expressiveLightColorScheme()"
+    ],
+    "dark_mode_input": "setMD3Content: EhTheme(useDarkTheme = isSystemInDarkTheme())",
+    "defaults": {
+      "blackDarkTheme": {
+        "default": false,
+        "preference_key": "black_dark_theme",
+        "source": {
+          "anchor": "val blackDarkTheme =",
+          "line": 81,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/Settings.kt"
+        }
+      },
+      "harmonizeCategoryColor": {
+        "default": true,
+        "preference_key": "harmonize_category_color",
+        "source": {
+          "anchor": "val harmonizeCategoryColor =",
+          "line": 82,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/Settings.kt"
+        }
+      },
+      "theme": {
+        "default": -1,
+        "preference_key": "theme_2",
+        "source": {
+          "anchor": "val theme =",
+          "line": 80,
+          "path": "app/src/main/kotlin/com/hippo/ehviewer/Settings.kt"
+        }
+      }
+    },
+    "motion": "CustomMotionScheme delegates MotionScheme.expressive(); defaultSpatialSpec() = defaultEffectsSpec<T>()",
+    "runtime_values": "Wallpaper, OS API, system theme, library tokens, fonts and motion specs not captured by source-only baseline",
+    "source_text": {
+      "app/src/main/kotlin/com/hippo/ehviewer/SettingsCollector.kt": "package com.hippo.ehviewer\n\nimport android.app.UiModeManager\nimport androidx.appcompat.app.AppCompatDelegate\nimport arrow.core.Either.Companion.catch\nimport com.ehviewer.core.preferences.PrefDelegate\nimport com.ehviewer.core.util.isAtLeastS\nimport com.ehviewer.core.util.logcat\nimport com.ehviewer.core.util.withIOContext\nimport com.hippo.ehviewer.client.EhEngine\nimport com.hippo.ehviewer.client.EhTagDatabase\nimport com.hippo.ehviewer.dailycheck.updateDailyCheckWork\nimport com.hippo.ehviewer.ui.keepNoMediaFileStatus\nimport kotlinx.coroutines.CoroutineScope\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.SupervisorJob\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.flow.MutableSharedFlow\nimport kotlinx.coroutines.flow.collectLatest\nimport kotlinx.coroutines.flow.drop\nimport kotlinx.coroutines.flow.emitAll\nimport kotlinx.coroutines.launch\nimport splitties.init.appCtx\nimport splitties.systemservices.uiModeManager\n\nprivate const val TAG = \"SettingsCollector\"\n\nprivate val collectScope = CoroutineScope(Dispatchers.Main + SupervisorJob())\nfun <T, R : PrefDelegate<T>> R.observed(func: suspend (T) -> Unit) = apply { collectScope.launch { valueFlow().drop(1).collectLatest(func) } }\nfun <T, R : Settings.Delegate<T>> R.emitTo(flow: MutableSharedFlow<Unit>) = apply { collectScope.launch { flow.emitAll(changesFlow()) } }\nfun <T, R : PrefDelegate<T>> R.emitTo(flow: MutableSharedFlow<Unit>) = apply { collectScope.launch { flow.emitAll(changesFlow()) } }\n\nsuspend fun updateWhenKeepMediaStatusChanges(mediaScan: Boolean) {\n    withIOContext {\n        catch {\n            keepNoMediaFileStatus(mediaScan = mediaScan)\n        }.onLeft {\n            logcat(TAG, it)\n        }\n    }\n}\n\nsuspend fun updateWhenThemeChanges(theme: Int) {\n    delay(100) // Avoid recompose being cancelled\n    if (isAtLeastS) {\n        val mode = when (theme) {\n            AppCompatDelegate.MODE_NIGHT_NO -> UiModeManager.MODE_NIGHT_NO\n            AppCompatDelegate.MODE_NIGHT_YES -> UiModeManager.MODE_NIGHT_YES\n            else -> UiModeManager.MODE_NIGHT_AUTO\n        }\n        uiModeManager.setApplicationNightMode(mode)\n    }\n    AppCompatDelegate.setDefaultNightMode(theme)\n}\n\nfun updateWhenRequestNewsChanges() {\n    updateDailyCheckWork(appCtx)\n}\n\nsuspend fun updateWhenGallerySiteChanges(gallerySite: Int) {\n    if (Settings.hasSignedIn.value) {\n        catch {\n            EhEngine.getUConfig(gallerySite)\n        }.onLeft {\n            logcat(TAG, it)\n        }\n    }\n}\n\nfun updateWhenTagTranslationChanges(enabled: Boolean) {\n    if (enabled) {\n        EhTagDatabase.launchUpdate()\n    }\n}\n",
+      "app/src/main/kotlin/com/hippo/ehviewer/ui/Theme.kt": "package com.hippo.ehviewer.ui\n\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.compose.animation.AnimatedContentTransitionScope\nimport androidx.compose.animation.EnterTransition\nimport androidx.compose.animation.ExitTransition\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.CompositionLocalProvider\nimport androidx.compose.runtime.remember\nimport androidx.compose.ui.Modifier\nimport androidx.navigation.NavBackStackEntry\nimport com.ehviewer.core.ui.util.ProvideVectorPainterCache\nimport com.hippo.ehviewer.ui.theme.EhTheme\nimport com.hippo.ehviewer.ui.tools.DialogState\nimport com.hippo.ehviewer.ui.tools.LocalGlobalDialogState\nimport com.ramcosta.composedestinations.animations.NavHostAnimatedDestinationStyle\nimport me.zhanghai.compose.preference.ProvidePreferenceTheme\nimport me.zhanghai.compose.preference.preferenceTheme\nimport soup.compose.material.motion.animation.materialSharedAxisXIn\nimport soup.compose.material.motion.animation.materialSharedAxisXOut\nimport soup.compose.material.motion.animation.rememberSlideDistance\n\ninline fun ComponentActivity.setMD3Content(crossinline content: @Composable DialogState.() -> Unit) = setContent {\n    EhTheme(useDarkTheme = isSystemInDarkTheme()) {\n        val theme = preferenceTheme(\n            iconColor = MaterialTheme.colorScheme.primary,\n            titleTextStyle = MaterialTheme.typography.titleMedium,\n        )\n        ProvidePreferenceTheme(theme) {\n            ProvideVectorPainterCache {\n                val dialogState = remember { DialogState() }\n                CompositionLocalProvider(LocalGlobalDialogState provides dialogState) {\n                    Box(modifier = Modifier.fillMaxSize()) {\n                        content(dialogState)\n                        dialogState.Place()\n                    }\n                }\n            }\n        }\n    }\n}\n\nprivate typealias Ty = AnimatedContentTransitionScope<NavBackStackEntry>\n\n@Composable\nfun rememberEhNavAnim(): NavHostAnimatedDestinationStyle {\n    val slideDistance = rememberSlideDistance()\n    return remember(slideDistance) {\n        object : NavHostAnimatedDestinationStyle() {\n            override val enterTransition: Ty.() -> EnterTransition = { materialSharedAxisXIn(true, slideDistance) }\n            override val exitTransition: Ty.() -> ExitTransition = { materialSharedAxisXOut(true, slideDistance) }\n            override val popEnterTransition: Ty.() -> EnterTransition = { materialSharedAxisXIn(false, slideDistance) }\n            override val popExitTransition: Ty.() -> ExitTransition = { materialSharedAxisXOut(false, slideDistance) }\n        }\n    }\n}\n",
+      "app/src/main/kotlin/com/hippo/ehviewer/ui/theme/Theme.kt": "package com.hippo.ehviewer.ui.theme\n\nimport android.app.WallpaperManager\nimport android.os.Build\nimport androidx.annotation.RequiresApi\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.foundation.scrollbar.LocalScrollbarStyle\nimport androidx.compose.material3.ColorScheme\nimport androidx.compose.material3.LocalContentColor\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.MotionScheme\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.dynamicDarkColorScheme\nimport androidx.compose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.expressiveLightColorScheme\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.CompositionLocalProvider\nimport androidx.compose.runtime.getValue\nimport androidx.compose.ui.graphics.Color\nimport androidx.compose.ui.platform.LocalContext\nimport com.ehviewer.core.ui.component.scrollbarStyle\nimport com.ehviewer.core.util.isAtLeastOMR1\nimport com.ehviewer.core.util.isAtLeastS\nimport com.hippo.ehviewer.Settings\nimport com.hippo.ehviewer.collectAsState\nimport com.materialkolor.dynamicColorScheme\n\nfun ColorScheme.amoled(amoled: Boolean) = if (amoled) {\n    copy(\n        surface = Color.Black,\n        onSurface = Color.White,\n        background = Color.Black,\n        onBackground = Color.White,\n    )\n} else {\n    this\n}\n\n@Composable\nfun EhTheme(useDarkTheme: Boolean, content: @Composable () -> Unit) {\n    val amoled by Settings.blackDarkTheme.collectAsState()\n    val context = LocalContext.current\n    val colors = if (isAtLeastS) {\n        if (useDarkTheme) {\n            dynamicDarkColorScheme(context).amoled(amoled)\n        } else {\n            dynamicLightColorScheme(context)\n        }\n    } else {\n        val color = if (isAtLeastOMR1) extractWallPaperPalette() else null\n        if (color != null) {\n            dynamicColorScheme(\n                primary = color.first,\n                isDark = useDarkTheme,\n                isAmoled = amoled,\n                secondary = color.second,\n                tertiary = color.third,\n            )\n        } else {\n            if (useDarkTheme) {\n                darkColorScheme().amoled(amoled)\n            } else {\n                expressiveLightColorScheme()\n            }\n        }\n    }\n\n    MaterialTheme(colorScheme = colors, motionScheme = CustomMotionScheme) {\n        val scrollbarStyle = scrollbarStyle(color = MaterialTheme.colorScheme.primary)\n        CompositionLocalProvider(\n            LocalContentColor provides MaterialTheme.colorScheme.onBackground,\n            LocalScrollbarStyle provides scrollbarStyle,\n            content = content,\n        )\n    }\n}\n\n@Composable\nfun Color.scrim() = copy(alpha = if (isSystemInDarkTheme()) 0.5f else 0.9f)\n\ntypealias WallPaperPalette = Triple<Color, Color?, Color?>\n\n@Composable\n@RequiresApi(Build.VERSION_CODES.O_MR1)\nfun extractWallPaperPalette(): WallPaperPalette? {\n    val colors = WallpaperManager.getInstance(LocalContext.current)?.getWallpaperColors(WallpaperManager.FLAG_SYSTEM) ?: return null\n    val primary = colors.primaryColor.toArgb().let { Color(it) }\n    val secondary = colors.secondaryColor?.toArgb()?.let { Color(it) }\n    val tertiary = colors.tertiaryColor?.toArgb()?.let { Color(it) }\n    return WallPaperPalette(primary, secondary, tertiary)\n}\n\n// https://issuetracker.google.com/363892346\nobject CustomMotionScheme : MotionScheme by MotionScheme.expressive() {\n    override fun <T> defaultSpatialSpec() = defaultEffectsSpec<T>()\n}\n"
+    },
+    "sources": [
+      {
+        "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/theme/Theme.kt"
+      },
+      {
+        "path": "app/src/main/kotlin/com/hippo/ehviewer/ui/Theme.kt"
+      },
+      {
+        "anchor": "suspend fun updateWhenThemeChanges",
+        "line": 43,
+        "path": "app/src/main/kotlin/com/hippo/ehviewer/SettingsCollector.kt"
+      }
+    ],
+    "theme_setting_update": "delay(100); Android S+: map MODE_NIGHT_NO/YES to UiModeManager; else MODE_NIGHT_AUTO; AppCompatDelegate.setDefaultNightMode(theme)",
+    "typography": "Not explicitly passed to MaterialTheme; dependency defaults unresolved"
+  }
+}

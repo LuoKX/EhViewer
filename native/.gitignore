@@ -1,0 +1,8 @@
+# Build products and SDK-local configuration belong to this isolated target.
+/build/
+/target/
+/android/.gradle/
+/android/.kotlin/
+/android/build/
+/android/app/build/
+/android/local.properties

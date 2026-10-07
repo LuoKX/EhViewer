@@ -1,0 +1,57 @@
+[package]
+name = "eh_native"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "GPL-3.0-or-later"
+publish = false
+description = "Standalone Rust UI bootstrap for the full EhViewer application rewrite"
+
+# Minimal single-owner Android input hook; no registry or live core changes.
+[patch.crates-io]
+winit = { path = "vendor/winit" }
+
+# UI dependencies must not change the live JNI core's lockfile or feature set.
+[workspace]
+resolver = "3"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "eh_native"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "=0.36.2", default-features = false, features = ["default_fonts", "glow", "accesskit"] }
+eh_net = { path = "../app/src/main/rust/crates/net" }
+
+[target.'cfg(target_os = "android")'.dependencies]
+eframe = { version = "=0.36.2", default-features = false, features = ["android-game-activity"] }
+winit = { version = "=0.30.13", default-features = false, features = ["android-game-activity"] }
+# eframe enables accesskit_winit, but not its Android adapter. Unify explicitly;
+# without this feature the Android backend compiles successfully as a no-op.
+accesskit_winit = { version = "=0.32.2", default-features = false, features = ["accesskit_android"] }
+android_logger = { version = "0.15", default-features = false }
+log = "0.4"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+eframe = { version = "=0.36.2", default-features = false, features = ["x11", "wayland"] }
+
+[lints.rust]
+missing_docs = "deny"
+unsafe_code = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unused_lifetimes = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+
+[profile.dev]
+debug = 1
+
+[profile.release]
+panic = "unwind"
+strip = "debuginfo"
+lto = "thin"

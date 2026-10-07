@@ -1,0 +1,96 @@
+--- a/src/platform/android.rs
++++ b/src/platform/android.rs
+@@ -0,0 +1,3 @@
++//! EhViewer fork modification (2026-10-07): single-owner raw Android input hook.
++//! Upstream winit 0.30.13; original Apache-2.0 license retained.
++//!
+@@ -129,0 +133,23 @@
++    /// Installs a raw Android input handler before Winit's default input dispatch.
++    ///
++    /// The handler runs synchronously once per borrowed event on the `android_main()`
++    /// event-loop thread, from Winit's existing exclusive input queue iterator. Do not
++    /// create another input iterator or retain event borrows or borrowed views of their contents.
++    /// Capture any required [`AndroidApp`] or application context separately.
++    ///
++    /// Returning `None` delegates to Winit's normal dispatch. Returning `Some(status)`
++    /// skips that dispatch and returns the chosen status to `android-activity`; any
++    /// platform fallback remains subject to that crate's implementation. Text events
++    /// and editor actions delegated to Winit are unhandled, without logging their data.
++    ///
++    /// Winit does not log raw events through this hook. Handlers must avoid logging
++    /// private input, including text and editor state. This hook provides no IME or
++    /// secure-editing policy and has not been verified on a device.
++    #[cfg(android_platform)]
++    fn with_android_input_handler<F>(&mut self, handler: F) -> &mut Self
++    where
++        F: Fn(&activity::input::InputEvent<'_>) -> Option<activity::InputStatus>
++            + Send
++            + Sync
++            + 'static;
++
+@@ -138,0 +165,13 @@
++        self
++    }
++
++    #[cfg(android_platform)]
++    fn with_android_input_handler<F>(&mut self, handler: F) -> &mut Self
++    where
++        F: Fn(&activity::input::InputEvent<'_>) -> Option<activity::InputStatus>
++            + Send
++            + Sync
++            + 'static,
++    {
++        self.platform_specific.android_input_handler =
++            Some(crate::platform_impl::AndroidInputHandler(std::sync::Arc::new(handler)));
+--- a/src/platform_impl/android/mod.rs
++++ b/src/platform_impl/android/mod.rs
+@@ -0,0 +1,3 @@
++// EhViewer fork modification (2026-10-07): raw input hook and log-free text fallback.
++// Upstream winit 0.30.13; original Apache-2.0 license retained.
++
+@@ -144,0 +148 @@
++    android_input_handler: Option<AndroidInputHandler>,
+@@ -145,0 +150,17 @@
++}
++
++type AndroidInputHandlerFn = dyn Fn(&InputEvent<'_>) -> Option<InputStatus> + Send + Sync;
++
++#[derive(Clone)]
++pub(crate) struct AndroidInputHandler(pub(crate) Arc<AndroidInputHandlerFn>);
++
++impl std::fmt::Debug for AndroidInputHandler {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.write_str("AndroidInputHandler")
++    }
++}
++
++impl PartialEq for AndroidInputHandler {
++    fn eq(&self, other: &Self) -> bool {
++        Arc::ptr_eq(&self.0, &other.0)
++    }
+@@ -151,0 +173 @@
++    pub(crate) android_input_handler: Option<AndroidInputHandler>,
+@@ -156 +178,5 @@
+-        Self { android_app: Default::default(), ignore_volume_keys: true }
++        Self {
++            android_app: Default::default(),
++            ignore_volume_keys: true,
++            android_input_handler: None,
++        }
+@@ -193,0 +220 @@
++            android_input_handler: attributes.android_input_handler.clone(),
+@@ -373,0 +401,6 @@
++        if let Some(handler) = &self.android_input_handler {
++            if let Some(status) = (handler.0)(event) {
++                return status;
++            }
++        }
++
+@@ -475,0 +509,4 @@
++            // No built-in text/editor-action dispatch. Never format private input here.
++            InputEvent::TextEvent(_) | InputEvent::TextAction(_) => {
++                input_status = InputStatus::Unhandled;
++            },
+@@ -477 +514 @@
+-                warn!("Unknown android_activity input event {event:?}")
++                input_status = InputStatus::Unhandled;

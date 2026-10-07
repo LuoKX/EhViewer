@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "reference_head": "cd07574903bdf83e79f28975359c34ef98908ad6",
+  "date": "2026-10-07",
+  "scope": "Original Android debug runtime graph binding only; not density/widget/pixel/device acceptance",
+  "reports": [
+    {
+      "project": ":core:ui",
+      "configuration": "androidRuntimeClasspath",
+      "command": "./gradlew --offline --no-daemon --max-workers=2 --console=plain :core:ui:dependencies --configuration androidRuntimeClasspath",
+      "log": "native/build/logs/original-ui-dependencies.log",
+      "log_sha256": "a99913b083593fcffaa0fc3c62a88765339de7e8d850c2ed29092a0d418711c3",
+      "unresolved_dependencies": 0,
+      "selected": {
+        "foundation-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 62
+        },
+        "foundation-layout-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 525
+        },
+        "ui-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 116
+        },
+        "ui-unit-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 411
+        },
+        "material3-android": {
+          "version": "1.5.0-alpha19",
+          "log_line": 668
+        },
+        "window-core": {
+          "version": "1.5.0",
+          "log_line": 496
+        },
+        "material-icons-extended-android": {
+          "version": "1.7.8",
+          "log_line": 851
+        }
+      }
+    },
+    {
+      "project": ":app",
+      "configuration": "defaultDebugRuntimeClasspath",
+      "command": "./gradlew --offline --no-daemon --max-workers=2 --console=plain :app:dependencies --configuration defaultDebugRuntimeClasspath",
+      "log": "native/build/logs/original-app-dependencies.log",
+      "log_sha256": "e59ffa8ac116e2dfb8b0ec904b0bcd176f64afce71b4991fb570534c47020861",
+      "unresolved_dependencies": 0,
+      "selected": {
+        "foundation-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 580
+        },
+        "foundation-layout-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 553
+        },
+        "ui-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 315
+        },
+        "ui-unit-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 396
+        },
+        "material3-android": {
+          "version": "1.5.0-alpha19",
+          "log_line": 573
+        },
+        "window-core": {
+          "version": "1.5.0",
+          "log_line": 491
+        },
+        "material-icons-extended-android": {
+          "version": "1.7.8",
+          "log_line": 1189
+        }
+      }
+    },
+    {
+      "project": ":app",
+      "configuration": "marshmallowDebugRuntimeClasspath",
+      "command": "./gradlew --offline --no-daemon --max-workers=2 --console=plain :app:dependencies --configuration marshmallowDebugRuntimeClasspath",
+      "log": "native/build/logs/original-marshmallow-dependencies.log",
+      "log_sha256": "5702c62c2ec049d0662a41ed0f6cdedf91cd77c139c282419a57c611cfd1dde9",
+      "unresolved_dependencies": 0,
+      "selected": {
+        "foundation-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 580
+        },
+        "foundation-layout-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 553
+        },
+        "ui-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 315
+        },
+        "ui-unit-android": {
+          "version": "1.12.0-alpha02",
+          "log_line": 396
+        },
+        "material3-android": {
+          "version": "1.5.0-alpha19",
+          "log_line": 573
+        },
+        "window-core": {
+          "version": "1.5.0",
+          "log_line": 491
+        },
+        "material-icons-extended-android": {
+          "version": "1.7.8",
+          "log_line": 1189
+        }
+      }
+    }
+  ],
+  "source_inputs": [
+    {
+      "path": "gradle/libs.versions.toml",
+      "sha256": "76d4b3b2bcb6ab48b0bfb679213b747cbc26377b64ec82f0929ed7356e81d180"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "sha256": "05c8fb102fd7f1eedbd211738e8a395886c5a64b4b3e5dc707b06853d59932b1"
+    },
+    {
+      "path": "core/ui/build.gradle.kts",
+      "sha256": "bc8f44330ffbba33c59057bb015f438bf786b177d3486fd78a918af4a8700bb4"
+    },
+    {
+      "path": "build-logic/convention/src/main/kotlin/MultiplatformLibraryConventionPlugin.kt",
+      "sha256": "3b62a9d6521c6c770ea6828df84ccc3e014630b7daad4fb09d22a56959a99a74"
+    },
+    {
+      "path": "build-logic/convention/src/main/kotlin/MultiplatformLibraryComposeConventionPlugin.kt",
+      "sha256": "5f946f0018288e32d6c835d1ea149e91d54287fe56d9e1e450731c4663168a23"
+    }
+  ],
+  "notes": [
+    "Core/ui and default/marshmallow debug runtime graphs resolved offline with no FAILED dependencies. Release runtime not queried.",
+    "Initial :app:resolvableConfigurations failed with java.util.ConcurrentModificationException (no error message); direct configuration dependencies task succeeded.",
+    "Dependencies report resolves graph metadata, not original APK compilation or runtime."
+  ]
+}

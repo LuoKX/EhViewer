@@ -1,5 +1,11 @@
 # Rewrite Architecture
 
+This document describes the live Kotlin-shell/Rust-core application. The accepted
+full-stack Rust target, including UI and platform-effect orchestration, is tracked
+separately in [ADR 0008](adr/0008-full-rust-application.md) and
+[Full Rust migration](full-rust.md). That target has not replaced production yet;
+Kotlin ownership below describes current implementation, not the final boundary.
+
 ## System Shape
 
 ```text

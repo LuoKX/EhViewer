@@ -1,0 +1,15 @@
+{
+  "version": "0.30.13",
+  "upstream_archive_sha256": "a6755fa58a9f8350bd1e472d4c3fcc25f824ec358933bba33306d0b63df5978d",
+  "upstream_git_sha": "e9809ef54b18499bb4f2cac945719ecc2a61061b",
+  "only_changed_upstream_files": [
+    "src/platform/android.rs",
+    "src/platform_impl/android/mod.rs"
+  ],
+  "source_sha256": {
+    "src/platform/android.rs": "7d29ed2efdfb8be8912df3b7cccb718787ad510b339c1d9df683d9b9d32916b2",
+    "src/platform_impl/android/mod.rs": "5394c4fed5ab868be4eb139bd65837a7113ce4b333fd711905b677ef467a3273"
+  },
+  "patch_sha256": "677e5a2dda24e4029ef2d4721a9945c6e18fad3be516c6e801f28398d57dbe1e",
+  "validation": "Parent independently compared every archived upstream file; only two source files differ; original licensing retained and both carry modification notices. UI/device not accepted."
+}

@@ -1,0 +1,501 @@
+{
+  "schema_version": 1,
+  "reference_head": "cd07574903bdf83e79f28975359c34ef98908ad6",
+  "scope": "Source-token evidence bound to resolved original Android debug runtime graphs; not renderer acceptance",
+  "resolution": {
+    "material3": "1.5.0-alpha19 selected in core/UI and default/marshmallow debug Android runtime graphs; resolved-dependencies.json records evidence",
+    "window": "1.5.0 selected in same graphs; dependency source declares WIDTH_DP_EXPANDED_LOWER_BOUND=840; resource qualifiers remain separate",
+    "icons": "1.7.8 selected in same graphs; Info source extracted; Visibility/VisibilityOff geometry still unresolved"
+  },
+  "facts": [
+    {
+      "contract": "Field minimum 280x56dp, constrained by caller width; border 1/2dp",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        865,
+        885
+      ],
+      "source_sha256": "6f556a00f067aa3c84d0c6a5fc707a93fd79dceaea584bc26a31bb6eddc2b293",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/TextFieldDefaults.kt"
+    },
+    {
+      "contract": "Field padding defaults",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1178,
+        1184
+      ],
+      "source_sha256": "6f556a00f067aa3c84d0c6a5fc707a93fd79dceaea584bc26a31bb6eddc2b293",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/TextFieldDefaults.kt"
+    },
+    {
+      "contract": "16dp field padding; 4dp supporting gap; label/support minimum lines",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        513,
+        527
+      ],
+      "source_sha256": "f4d8098ff93c0112cdfb2c35c9c9906a3432fa1afdcf519aa07dc20ac2b50347",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/internal/TextFieldImpl.kt"
+    },
+    {
+      "contract": "Expressive overload uses labelLarge, DefaultEffects spring, enabled true",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        235,
+        278
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Button minimum width58dp; height40dp or precision-pointer36dp",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1044,
+        1060
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Button resting full, pressed small",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1176,
+        1186
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Filled actual colors",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1216,
+        1230
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Tonal actual colors",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1308,
+        1323
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Text button actual Primary override, not generated OnSurfaceVariant token",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1396,
+        1410
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Actual expressive content padding selection",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1537,
+        1600
+      ],
+      "source_sha256": "d4fcbb1fa3029cb29cb4305739a11b3d8dc3bed224dbb78d0c8068ec3974eb9b",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/Button.kt"
+    },
+    {
+      "contract": "Visibility expressive icon button sizing and interaction",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        222,
+        265
+      ],
+      "source_sha256": "b69769179a6dcf372f04730be0468fd1b18019b08140fa3fe7bb4c8d58b7dc9f",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/IconButton.kt"
+    },
+    {
+      "contract": "48dp local minimum interactive allocation",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        251,
+        267
+      ],
+      "source_sha256": "b7d88779301c3ad201845e111ddaa686e23812efb173bf43b0dff200a1a9507f",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/InteractiveComponentSize.kt"
+    },
+    {
+      "contract": "Actual outline colors; transparent container; no separate pressed color",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1337,
+        1426
+      ],
+      "source_sha256": "6f556a00f067aa3c84d0c6a5fc707a93fd79dceaea584bc26a31bb6eddc2b293",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/TextFieldDefaults.kt"
+    },
+    {
+      "contract": "Original no-progress overload: indeterminate wavy circle",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        349,
+        376
+      ],
+      "source_sha256": "bddc0da85e4573c495b8ac0647c0524d026c657abc5a0455eaf7d15c3c5f3433",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/WavyProgressIndicator.kt"
+    },
+    {
+      "contract": "Spinner defaults mapping",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        414,
+        482
+      ],
+      "source_sha256": "bddc0da85e4573c495b8ac0647c0524d026c657abc5a0455eaf7d15c3c5f3433",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/WavyProgressIndicator.kt"
+    },
+    {
+      "contract": "Spinner animation specs",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        931,
+        982
+      ],
+      "source_sha256": "8aa5368b2c714d055eeca6a9fef26760591e6d9b90e7baa1a0f692b581a3c2dc",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/ProgressIndicator.kt"
+    },
+    {
+      "contract": "6000ms cycle; 300ms extra rotations;1080/360 degrees",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        1070,
+        1080
+      ],
+      "source_sha256": "8aa5368b2c714d055eeca6a9fef26760591e6d9b90e7baa1a0f692b581a3c2dc",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/ProgressIndicator.kt"
+    },
+    {
+      "contract": "Motion scheme implementation; spring timing not fixed milliseconds",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        180,
+        280
+      ],
+      "source_sha256": "d94dc47239b65f4c31f59afce632b7a6a7f5411142a9e9d5224aeabaa6a432fe",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/MotionScheme.kt"
+    },
+    {
+      "contract": "OutlinedTextFieldTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        88
+      ],
+      "source_sha256": "3369cca54a8a13da3e9556d0540d8f689c7227633654150c122a2278be5c41f9",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/OutlinedTextFieldTokens.kt"
+    },
+    {
+      "contract": "ButtonSmallTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        35
+      ],
+      "source_sha256": "2a544da64de1e1ddbc728f71d5f1ab8ebdac1273ab6cabadffc12c7375ee878e",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/ButtonSmallTokens.kt"
+    },
+    {
+      "contract": "SmallIconButtonTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        38
+      ],
+      "source_sha256": "967d48980af99d376b6e58b938fb863e840232de81fd4cc0008c18d2b6f640bf",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/SmallIconButtonTokens.kt"
+    },
+    {
+      "contract": "FilledButtonTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        60
+      ],
+      "source_sha256": "8e345f9ef17e6691d60666443ee9e35ca20fb16b47e4b606fe204e31999f9dee",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/FilledButtonTokens.kt"
+    },
+    {
+      "contract": "FilledTonalButtonTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        48
+      ],
+      "source_sha256": "e4775f4bd66bd864b3b1c5bcb0ee652f4394f9a6b97b65b445a8fb16ef038540",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/FilledTonalButtonTokens.kt"
+    },
+    {
+      "contract": "TextButtonTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        34
+      ],
+      "source_sha256": "759f8c1279da8ec8caf65eab8ac9b75b38ecaebab98bb454e3e08063012be276",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/TextButtonTokens.kt"
+    },
+    {
+      "contract": "ShapeTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        82
+      ],
+      "source_sha256": "02178111f81c7f03135cc7157040fa903180e212fd52b8f686b4304080efb5a3",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/ShapeTokens.kt"
+    },
+    {
+      "contract": "ExpressiveMotionTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        34
+      ],
+      "source_sha256": "9af63309ed82f1a3c399276808e5c1bf126e2905aed5e1d5d74a14188fb8e33d",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/ExpressiveMotionTokens.kt"
+    },
+    {
+      "contract": "TypefaceTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        30
+      ],
+      "source_sha256": "977e73a5d2055a0ce728c6415eddfa9aadf5635c27be71bb3f2846b25f37b567",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/TypefaceTokens.kt"
+    },
+    {
+      "contract": "TypeScaleTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        95
+      ],
+      "source_sha256": "57278e2c2bf014c5364db99270b34d2c9d9ec9c5d2f830230c9390eb0eea2b6a",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/TypeScaleTokens.kt"
+    },
+    {
+      "contract": "CircularProgressIndicatorTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        31
+      ],
+      "source_sha256": "c0cdca0ff74bc5997dfc3b184c35d2b373230d48a17d7f50d47b2539ca170c67",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/CircularProgressIndicatorTokens.kt"
+    },
+    {
+      "contract": "StateTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        26
+      ],
+      "source_sha256": "f9bddb282a3ca50e0c05bda6b5aa713441f885e3fe16866bfb44cee42059552f",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/StateTokens.kt"
+    },
+    {
+      "contract": "TonalButtonTokens token references (actual default mappings above take precedence)",
+      "coordinate": "androidx.compose.material3:material3-android:1.5.0-alpha19",
+      "lines": [
+        19,
+        60
+      ],
+      "source_sha256": "42c897f33922e886a75e7ef75cccdb949a549c4045e3fd7f937089d4632f5357",
+      "source_file": "material3-source/commonMain/androidx/compose/material3/tokens/TonalButtonTokens.kt"
+    },
+    {
+      "contract": "Fields; error Info replaces password visibility; fields stay enabled during request",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        154,
+        206
+      ],
+      "source_sha256": "c295b63ed934e8b12c11314e757bad7eda42f96716f2a2965abe4199fbe7e689",
+      "source_file": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+    },
+    {
+      "contract": "Compact layout; weighted buttons; underline links",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        208,
+        294
+      ],
+      "source_sha256": "c295b63ed934e8b12c11314e757bad7eda42f96716f2a2965abe4199fbe7e689",
+      "source_file": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+    },
+    {
+      "contract": "Expanded layout;128dp buttons; centered spinner overlay",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        295,
+        400
+      ],
+      "source_sha256": "c295b63ed934e8b12c11314e757bad7eda42f96716f2a2965abe4199fbe7e689",
+      "source_file": "app/src/main/kotlin/com/hippo/ehviewer/ui/login/SignInScreen.kt"
+    },
+    {
+      "contract": "Runtime wallpaper/dark/AMOLED colors; no custom typography/shapes",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        39,
+        75
+      ],
+      "source_sha256": "5a51d2ecc055b1bf556e7bbed3aff9f4f6d4f3b630d967c6192314bc5d5f5e2b",
+      "source_file": "app/src/main/kotlin/com/hippo/ehviewer/ui/theme/Theme.kt"
+    },
+    {
+      "contract": "Custom defaultSpatialSpec delegates defaultEffectsSpec",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        93,
+        96
+      ],
+      "source_sha256": "5a51d2ecc055b1bf556e7bbed3aff9f4f6d4f3b630d967c6192314bc5d5f5e2b",
+      "source_file": "app/src/main/kotlin/com/hippo/ehviewer/ui/theme/Theme.kt"
+    },
+    {
+      "contract": "Expanded width breakpoint import, not resource qualifier",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        1,
+        10
+      ],
+      "source_sha256": "836482fba054507f85248def6415ef8f0960d09b223001fac76bee8d493b5bee",
+      "source_file": "core/ui/src/commonMain/kotlin/com/ehviewer/core/ui/util/WindowSizeClass.kt"
+    },
+    {
+      "contract": "KMP dependencies plus exported Android BOM",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        1,
+        28
+      ],
+      "source_sha256": "bc8f44330ffbba33c59057bb015f438bf786b177d3486fd78a918af4a8700bb4",
+      "source_file": "core/ui/build.gradle.kts"
+    },
+    {
+      "contract": "Declared coordinate versions",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        78,
+        85
+      ],
+      "source_sha256": "76d4b3b2bcb6ab48b0bfb679213b747cbc26377b64ec82f0929ed7356e81d180",
+      "source_file": "gradle/libs.versions.toml"
+    },
+    {
+      "contract": "Compose convention plugins; no own BOM override",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        9,
+        23
+      ],
+      "source_sha256": "5f946f0018288e32d6c835d1ea149e91d54287fe56d9e1e450731c4663168a23",
+      "source_file": "build-logic/convention/src/main/kotlin/MultiplatformLibraryComposeConventionPlugin.kt"
+    },
+    {
+      "contract": "Base field width260dp/keyline16dp/caption480dp",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        19,
+        23
+      ],
+      "source_sha256": "411de4c248310262e3c96e9b8dd7681da9d32cf0fc9d2b2e4adb2a2ce8db9521",
+      "source_file": "app/src/main/res/values/dimens.xml"
+    },
+    {
+      "contract": "sw600 field480dp/keyline24dp, not width-class threshold",
+      "coordinate": "repo@cd07574903bdf83e79f28975359c34ef98908ad6",
+      "lines": [
+        19,
+        20
+      ],
+      "source_sha256": "b3469e546c158817631efa3aa27a9c4091419383e5f861ed055dab0381b4de3f",
+      "source_file": "app/src/main/res/values-sw600dp/dimens.xml"
+    },
+    {
+      "contract": "WIDTH_DP_EXPANDED_LOWER_BOUND=840 from original Android dependency source",
+      "coordinate": "androidx.window:window-core:1.5.0",
+      "lines": [
+        133,
+        155
+      ],
+      "source_sha256": "ebdedafcf39459fa938cd2bf31dd1052020670f4650bc50aac59be0107e11e95",
+      "source_file": "window-source/commonMain/androidx/window/core/layout/WindowSizeClass.kt"
+    },
+    {
+      "contract": "Filled Info generated vector;24dp/24 viewport",
+      "coordinate": "androidx.compose.material:material-icons-core-android:1.7.8",
+      "lines": [
+        19,
+        90
+      ],
+      "source_sha256": "5ce88f845972a49f5d0ab48831f5afb19cb1d80b3dbdcc4ba027205f36a48674",
+      "source_file": "icons-core/commonMain/androidx/compose/material/icons/filled/Info.kt"
+    },
+    {
+      "contract": "BOM selects Material3 1.5.0-alpha19",
+      "coordinate": "androidx.compose:compose-bom-alpha:2026.05.00",
+      "lines": [
+        287,
+        329
+      ],
+      "source_sha256": "97baaa52ae913bbe9b41a06b22931c169896b3d4353c2e5236f203c498ac9914",
+      "source_file": "bom.pom"
+    },
+    {
+      "contract": "BOM adaptive selection",
+      "coordinate": "androidx.compose:compose-bom-alpha:2026.05.00",
+      "lines": [
+        392,
+        401
+      ],
+      "source_sha256": "97baaa52ae913bbe9b41a06b22931c169896b3d4353c2e5236f203c498ac9914",
+      "source_file": "bom.pom"
+    },
+    {
+      "contract": "Android KMP variant requires Android Material3 1.4.0; BOM higher version wins",
+      "coordinate": "org.jetbrains.compose.material3:material3:1.9.0",
+      "lines": [
+        164,
+        181
+      ],
+      "source_sha256": "fa7a745df9170591d98f3773303bcf53829313acfb43c72c1aa4f8fb99ba45a4",
+      "source_file": "material3.module"
+    },
+    {
+      "contract": "Adaptive requires window-core1.5.0",
+      "coordinate": "androidx.compose.material3.adaptive:adaptive:1.3.0-beta01",
+      "lines": [
+        69,
+        75
+      ],
+      "source_sha256": "acec61d0860c21567f7258d6dd759573d9d04e86dd36087e794119e1453d475e",
+      "source_file": "adaptive-1.3.0-beta01.pom"
+    }
+  ],
+  "unresolved": [
+    "Concrete Android sans-serif font files, fallback glyphs, font scale, density and platform text rasterization",
+    "Runtime wallpaper palette, dark/AMOLED state; concrete ARGB intentionally absent",
+    "Release runtime graph unqueried; precision-pointer component sizing runtime override unresolved",
+    "Visibility/VisibilityOff source paths unavailable within download bound; coordinate established, vector geometry unconfirmed",
+    "Pressed ripple actual compositing depends interaction and Material ripple; no unsupported flat pressed hex",
+    "Supporting text/label content changes field total layout; minimum56dp is not total labeled/error box height"
+  ],
+  "portable_provenance": "source_file uses repository-relative paths, Maven-source archive-relative paths or POM basename; SHA binds source content. Raw code/cache absolute paths not shipped."
+}

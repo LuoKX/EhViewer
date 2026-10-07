@@ -1,10 +1,16 @@
 # Rust Rewrite
 
 This directory is the maintainer guide for the Rust-first EhViewer rewrite.
-The rewrite keeps Android lifecycle and UI integration in Kotlin while moving
-business rules and CPU-intensive work into host-testable Rust crates.
+The live application keeps Android lifecycle and UI integration in Kotlin while
+business rules and CPU-intensive work run in Rust. The newly accepted full-stack
+target also migrates UI and effect execution; its isolated bootstrap is not yet
+a production replacement. See [Full Rust migration](full-rust.md) and
+[ADR 0008](adr/0008-full-rust-application.md).
 
 ## Documents
+
+- [Progress](progress.md): current full-application feature board, completed slices
+  and still-unrun product/device gates.
 
 - [Architecture](architecture.md): layers, dependency direction, and boundary
   ownership.
