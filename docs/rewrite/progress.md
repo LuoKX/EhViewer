@@ -32,8 +32,8 @@ TalkBack, secure text, autofill, typography, lifecycle, GPU or performance parit
 | --- | --- | --- | --- |
 | Existing Rust core and seven category rules | Already production-wired in original app; prior audit records retained | Original Android effect/device gates remain | Existing commits retained |
 | Isolated Rust foundation | Accepted bounded diagnostic slice, gates above | Not production screen or cutover | Committed `858529fe3` |
-| DataStore preference format and Rust file runtime | Next bounded F1 seam, copied synthetic fixtures only | No live preference access; settings UI/upgrade still pending | Commit after compatibility, failure and independent review gates |
-| Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Separate bounded policy commit; no product completion claim |
+| DataStore preference format and Rust file runtime | Accepted valid-UTF8 codec + synthetic host store: 38 actual JVM cases, 25 focused Rust tests, 9 checker tests; owner lines98.64%/functions98.08% | Android storage, malformed-UTF8 equivalence, settings defaults/UI/upgrade and device durability pending; no live paths | Separate bounded primitive commit after independent rechecks |
+| Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Committed `af7c40ea9`; no product completion claim |
 | SQLite data compatibility | Inventory historical schemas and copied fixture plan | No live DB or destructive migrations | Own feature commits only after implemented gates |
 | Full F1–F8 application responsibilities | Pending; reuse existing Rust owners | All original behavior/data/device/cutover obligations open | One finished bounded feature per commit |
 
@@ -44,6 +44,23 @@ Clippy, source/checker/owner gates and three-ABI APK/signature validation. APK
 not installed. Complete class proofs preserve original 13 class identities and
 add four helpers/mode classes from the same pinned artifact; no Cargo/source
 version substitution. Logs: ignored `native/build/logs/secure-final-*`.
+
+Preferences integration gate (2026-10-07): duplicate effective-unset P1 fixed
+and independently rechecked31faf9f9-4194-4d13-9dcd-e6c1dc4a0ca0; parent
+registration/checker/evidence delta approvedfd13ad1d-f97e-4200-ae4a-0286f8b34329,
+final formatted-zero checker fix approved536a57d7-1591-49d4-817c-500ec4359925.
+Parent reran 97 aggregate native Rust tests, strict host Clippy, Python suites
+42/30/6/24/9, exact JVM replay/owner coverage and three-ABI APK/signature checks.
+Root application never calls fixture storage. Logs: ignored
+`native/build/logs/preferences-final-*`. These checks do not accept Android
+persistence, full F1, minimum-toolchain execution or original UI/device behavior.
+
+Next isolated components: safe Rustix Android filesystem ownership, exact JVM
+UTF8 replacement helper and original23-schema/FTS contracts. Resource failures
+are not accepted work: temporary storage was exhausted, two workers paused or
+failed before validation. Parent preserved partial source and moved only owned
+generated caches to private disk storage; retained native runs recover and rerun
+all gates before review/integration. No execution-mode fallback or user-data use.
 
 Parent serializes integration and commits. Workers own disjoint isolated
 snapshots; no shared root writes, commits, installs, credential use or live data.

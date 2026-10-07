@@ -1,0 +1,323 @@
+Compiled from "MapEntryLite.java"
+public class androidx.datastore.preferences.protobuf.MapEntryLite<K, V> {
+  private static final int KEY_FIELD_NUMBER;
+
+  private static final int VALUE_FIELD_NUMBER;
+
+  private final androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V> metadata;
+
+  private final K key;
+
+  private final V value;
+
+  private androidx.datastore.preferences.protobuf.MapEntryLite(androidx.datastore.preferences.protobuf.WireFormat$FieldType, K, androidx.datastore.preferences.protobuf.WireFormat$FieldType, V);
+    Code:
+         0: aload_0
+         1: invokespecial #54                 // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: new           #10                 // class androidx/datastore/preferences/protobuf/MapEntryLite$Metadata
+         8: dup
+         9: aload_1
+        10: aload_2
+        11: aload_3
+        12: aload         4
+        14: invokespecial #56                 // Method androidx/datastore/preferences/protobuf/MapEntryLite$Metadata."<init>":(Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)V
+        17: putfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        20: aload_0
+        21: aload_2
+        22: putfield      #60                 // Field key:Ljava/lang/Object;
+        25: aload_0
+        26: aload         4
+        28: putfield      #62                 // Field value:Ljava/lang/Object;
+        31: return
+
+  private androidx.datastore.preferences.protobuf.MapEntryLite(androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V>, K, V);
+    Code:
+         0: aload_0
+         1: invokespecial #54                 // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+         9: aload_0
+        10: aload_2
+        11: putfield      #60                 // Field key:Ljava/lang/Object;
+        14: aload_0
+        15: aload_3
+        16: putfield      #62                 // Field value:Ljava/lang/Object;
+        19: return
+
+  public K getKey();
+    Code:
+         0: aload_0
+         1: getfield      #60                 // Field key:Ljava/lang/Object;
+         4: areturn
+
+  public V getValue();
+    Code:
+         0: aload_0
+         1: getfield      #62                 // Field value:Ljava/lang/Object;
+         4: areturn
+
+  public static <K, V> androidx.datastore.preferences.protobuf.MapEntryLite<K, V> newDefaultInstance(androidx.datastore.preferences.protobuf.WireFormat$FieldType, K, androidx.datastore.preferences.protobuf.WireFormat$FieldType, V);
+    Code:
+         0: new           #2                  // class androidx/datastore/preferences/protobuf/MapEntryLite
+         3: dup
+         4: aload_0
+         5: aload_1
+         6: aload_2
+         7: aload_3
+         8: invokespecial #77                 // Method "<init>":(Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)V
+        11: areturn
+
+  static <K, V> void writeTo(androidx.datastore.preferences.protobuf.CodedOutputStream, androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V>, K, V) throws java.io.IOException;
+    Code:
+         0: aload_0
+         1: aload_1
+         2: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+         5: iconst_1
+         6: aload_2
+         7: invokestatic  #91                 // Method androidx/datastore/preferences/protobuf/FieldSet.writeElement:(Landroidx/datastore/preferences/protobuf/CodedOutputStream;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;ILjava/lang/Object;)V
+        10: aload_0
+        11: aload_1
+        12: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        15: iconst_2
+        16: aload_3
+        17: invokestatic  #91                 // Method androidx/datastore/preferences/protobuf/FieldSet.writeElement:(Landroidx/datastore/preferences/protobuf/CodedOutputStream;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;ILjava/lang/Object;)V
+        20: return
+
+  static <K, V> int computeSerializedSize(androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V>, K, V);
+    Code:
+         0: aload_0
+         1: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+         4: iconst_1
+         5: aload_1
+         6: invokestatic  #101                // Method androidx/datastore/preferences/protobuf/FieldSet.computeElementSize:(Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;ILjava/lang/Object;)I
+         9: aload_0
+        10: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        13: iconst_2
+        14: aload_2
+        15: invokestatic  #101                // Method androidx/datastore/preferences/protobuf/FieldSet.computeElementSize:(Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;ILjava/lang/Object;)I
+        18: iadd
+        19: ireturn
+
+  static <T> T parseField(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite, androidx.datastore.preferences.protobuf.WireFormat$FieldType, T) throws java.io.IOException;
+    Code:
+         0: getstatic     #111                // Field androidx/datastore/preferences/protobuf/MapEntryLite$1.$SwitchMap$com$google$protobuf$WireFormat$FieldType:[I
+         3: aload_2
+         4: invokevirtual #115                // Method androidx/datastore/preferences/protobuf/WireFormat$FieldType.ordinal:()I
+         7: iaload
+         8: tableswitch   { // 1 to 3
+                       1: 36
+                       2: 62
+                       3: 70
+                 default: 80
+            }
+        36: aload_3
+        37: checkcast     #20                 // class androidx/datastore/preferences/protobuf/MessageLite
+        40: invokeinterface #119,  1          // InterfaceMethod androidx/datastore/preferences/protobuf/MessageLite.toBuilder:()Landroidx/datastore/preferences/protobuf/MessageLite$Builder;
+        45: astore        4
+        47: aload_0
+        48: aload         4
+        50: aload_1
+        51: invokevirtual #125                // Method androidx/datastore/preferences/protobuf/CodedInputStream.readMessage:(Landroidx/datastore/preferences/protobuf/MessageLite$Builder;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)V
+        54: aload         4
+        56: invokeinterface #129,  1          // InterfaceMethod androidx/datastore/preferences/protobuf/MessageLite$Builder.buildPartial:()Landroidx/datastore/preferences/protobuf/MessageLite;
+        61: areturn
+        62: aload_0
+        63: invokevirtual #132                // Method androidx/datastore/preferences/protobuf/CodedInputStream.readEnum:()I
+        66: invokestatic  #138                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+        69: areturn
+        70: new           #140                // class java/lang/RuntimeException
+        73: dup
+        74: ldc           #142                // String Groups are not allowed in maps.
+        76: invokespecial #145                // Method java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+        79: athrow
+        80: aload_0
+        81: aload_2
+        82: iconst_1
+        83: invokestatic  #149                // Method androidx/datastore/preferences/protobuf/FieldSet.readPrimitiveField:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Z)Ljava/lang/Object;
+        86: areturn
+
+  public void serializeTo(androidx.datastore.preferences.protobuf.CodedOutputStream, int, K, V) throws java.io.IOException;
+    Code:
+         0: aload_1
+         1: iload_2
+         2: iconst_2
+         3: invokevirtual #164                // Method androidx/datastore/preferences/protobuf/CodedOutputStream.writeTag:(II)V
+         6: aload_1
+         7: aload_0
+         8: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        11: aload_3
+        12: aload         4
+        14: invokestatic  #166                // Method computeSerializedSize:(Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;Ljava/lang/Object;Ljava/lang/Object;)I
+        17: invokevirtual #170                // Method androidx/datastore/preferences/protobuf/CodedOutputStream.writeUInt32NoTag:(I)V
+        20: aload_1
+        21: aload_0
+        22: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        25: aload_3
+        26: aload         4
+        28: invokestatic  #172                // Method writeTo:(Landroidx/datastore/preferences/protobuf/CodedOutputStream;Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;Ljava/lang/Object;Ljava/lang/Object;)V
+        31: return
+
+  public int computeMessageSize(int, K, V);
+    Code:
+         0: iload_1
+         1: invokestatic  #179                // Method androidx/datastore/preferences/protobuf/CodedOutputStream.computeTagSize:(I)I
+         4: aload_0
+         5: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+         8: aload_2
+         9: aload_3
+        10: invokestatic  #166                // Method computeSerializedSize:(Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;Ljava/lang/Object;Ljava/lang/Object;)I
+        13: invokestatic  #182                // Method androidx/datastore/preferences/protobuf/CodedOutputStream.computeLengthDelimitedFieldSize:(I)I
+        16: iadd
+        17: ireturn
+
+  public java.util.Map$Entry<K, V> parseEntry(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: aload_1
+         1: invokevirtual #192                // Method androidx/datastore/preferences/protobuf/ByteString.newCodedInput:()Landroidx/datastore/preferences/protobuf/CodedInputStream;
+         4: aload_0
+         5: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+         8: aload_2
+         9: invokestatic  #195                // Method parseEntry:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Ljava/util/Map$Entry;
+        12: areturn
+
+  static <K, V> java.util.Map$Entry<K, V> parseEntry(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V>, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: aload_1
+         1: getfield      #199                // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.defaultKey:Ljava/lang/Object;
+         4: astore_3
+         5: aload_1
+         6: getfield      #201                // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.defaultValue:Ljava/lang/Object;
+         9: astore        4
+        11: aload_0
+        12: invokevirtual #204                // Method androidx/datastore/preferences/protobuf/CodedInputStream.readTag:()I
+        15: istore        5
+        17: iload         5
+        19: ifne          25
+        22: goto          102
+        25: iload         5
+        27: iconst_1
+        28: aload_1
+        29: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        32: invokevirtual #207                // Method androidx/datastore/preferences/protobuf/WireFormat$FieldType.getWireType:()I
+        35: invokestatic  #211                // Method androidx/datastore/preferences/protobuf/WireFormat.makeTag:(II)I
+        38: if_icmpne     55
+        41: aload_0
+        42: aload_2
+        43: aload_1
+        44: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        47: aload_3
+        48: invokestatic  #213                // Method parseField:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)Ljava/lang/Object;
+        51: astore_3
+        52: goto          99
+        55: iload         5
+        57: iconst_2
+        58: aload_1
+        59: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        62: invokevirtual #207                // Method androidx/datastore/preferences/protobuf/WireFormat$FieldType.getWireType:()I
+        65: invokestatic  #211                // Method androidx/datastore/preferences/protobuf/WireFormat.makeTag:(II)I
+        68: if_icmpne     87
+        71: aload_0
+        72: aload_2
+        73: aload_1
+        74: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        77: aload         4
+        79: invokestatic  #213                // Method parseField:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)Ljava/lang/Object;
+        82: astore        4
+        84: goto          99
+        87: aload_0
+        88: iload         5
+        90: invokevirtual #217                // Method androidx/datastore/preferences/protobuf/CodedInputStream.skipField:(I)Z
+        93: ifne          99
+        96: goto          102
+        99: goto          11
+       102: new           #28                 // class java/util/AbstractMap$SimpleImmutableEntry
+       105: dup
+       106: aload_3
+       107: aload         4
+       109: invokespecial #220                // Method java/util/AbstractMap$SimpleImmutableEntry."<init>":(Ljava/lang/Object;Ljava/lang/Object;)V
+       112: areturn
+
+  public void parseInto(androidx.datastore.preferences.protobuf.MapFieldLite<K, V>, androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: aload_2
+         1: invokevirtual #228                // Method androidx/datastore/preferences/protobuf/CodedInputStream.readRawVarint32:()I
+         4: istore        4
+         6: aload_2
+         7: iload         4
+         9: invokevirtual #231                // Method androidx/datastore/preferences/protobuf/CodedInputStream.pushLimit:(I)I
+        12: istore        5
+        14: aload_0
+        15: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        18: getfield      #199                // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.defaultKey:Ljava/lang/Object;
+        21: astore        6
+        23: aload_0
+        24: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        27: getfield      #201                // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.defaultValue:Ljava/lang/Object;
+        30: astore        7
+        32: aload_2
+        33: invokevirtual #204                // Method androidx/datastore/preferences/protobuf/CodedInputStream.readTag:()I
+        36: istore        8
+        38: iload         8
+        40: ifne          46
+        43: goto          137
+        46: iload         8
+        48: iconst_1
+        49: aload_0
+        50: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        53: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        56: invokevirtual #207                // Method androidx/datastore/preferences/protobuf/WireFormat$FieldType.getWireType:()I
+        59: invokestatic  #211                // Method androidx/datastore/preferences/protobuf/WireFormat.makeTag:(II)I
+        62: if_icmpne     84
+        65: aload_2
+        66: aload_3
+        67: aload_0
+        68: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        71: getfield      #85                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.keyType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        74: aload         6
+        76: invokestatic  #213                // Method parseField:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)Ljava/lang/Object;
+        79: astore        6
+        81: goto          134
+        84: iload         8
+        86: iconst_2
+        87: aload_0
+        88: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+        91: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+        94: invokevirtual #207                // Method androidx/datastore/preferences/protobuf/WireFormat$FieldType.getWireType:()I
+        97: invokestatic  #211                // Method androidx/datastore/preferences/protobuf/WireFormat.makeTag:(II)I
+       100: if_icmpne     122
+       103: aload_2
+       104: aload_3
+       105: aload_0
+       106: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+       109: getfield      #93                 // Field androidx/datastore/preferences/protobuf/MapEntryLite$Metadata.valueType:Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;
+       112: aload         7
+       114: invokestatic  #213                // Method parseField:(Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;Landroidx/datastore/preferences/protobuf/WireFormat$FieldType;Ljava/lang/Object;)Ljava/lang/Object;
+       117: astore        7
+       119: goto          134
+       122: aload_2
+       123: iload         8
+       125: invokevirtual #217                // Method androidx/datastore/preferences/protobuf/CodedInputStream.skipField:(I)Z
+       128: ifne          134
+       131: goto          137
+       134: goto          32
+       137: aload_2
+       138: iconst_0
+       139: invokevirtual #238                // Method androidx/datastore/preferences/protobuf/CodedInputStream.checkLastTagWas:(I)V
+       142: aload_2
+       143: iload         5
+       145: invokevirtual #241                // Method androidx/datastore/preferences/protobuf/CodedInputStream.popLimit:(I)V
+       148: aload_1
+       149: aload         6
+       151: aload         7
+       153: invokevirtual #245                // Method androidx/datastore/preferences/protobuf/MapFieldLite.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       156: pop
+       157: return
+
+  androidx.datastore.preferences.protobuf.MapEntryLite$Metadata<K, V> getMetadata();
+    Code:
+         0: aload_0
+         1: getfield      #58                 // Field metadata:Landroidx/datastore/preferences/protobuf/MapEntryLite$Metadata;
+         4: areturn
+}

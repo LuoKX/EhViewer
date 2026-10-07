@@ -1,0 +1,4 @@
+Owner source functions/closures (deduplicated): 51/52 = 98.08%
+Owner executable lines: 434/440 = 98.64%
+Scope: native/src/preferences.rs lines 1..773; cfg(test) hooks remain, unit-test module excluded.
+Coverage observes synthetic host tests, not Android execution or power-loss durability.

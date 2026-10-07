@@ -1,0 +1,175 @@
+/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-proto/1.2.1/5d062b556fb45141138c3d86284bbdcbe07cc770/datastore-preferences-proto-1.2.1.jar: OK
+/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar: OK
+/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-core-android/1.2.1/1c6a56a2802d44f6d451101eed3420488a75ca85/datastore-preferences-core.aar: OK
+app/src/main/kotlin/com/hippo/ehviewer/Settings.kt: OK
+core/data/src/commonMain/kotlin/com/ehviewer/core/preferences/DataStorePreferences.kt: OK
+core/data/src/androidMain/kotlin/com/ehviewer/core/preferences/DataStorePreferences.android.kt: OK
+core/data/src/commonMain/kotlin/com/ehviewer/core/preferences/PrefDelegate.kt: OK
+core/data/src/commonMain/kotlin/com/ehviewer/core/preferences/Snapshot.kt: OK
+core/data/src/commonMain/kotlin/com/ehviewer/core/preferences/Edit.kt: OK
+gradle/libs.versions.toml: OK
+native/Cargo.toml: OK
+native/Cargo.lock: OK
+native/src/lib.rs: OK
+app/src/main/kotlin/com/hippo/ehviewer/gallery/ArchivePageLoader.kt: OK
+native/src/preferences.rs: OK
+native/tests/preferences.rs: OK
+native/parity/preferences/artifact-sha256.txt: OK
+native/parity/preferences/changed-files.txt: OK
+native/parity/preferences/changed-source-sha256.txt: OK
+native/parity/preferences/coverage-summary.py: OK
+native/parity/preferences/goldens/all-types.input.bin: OK
+native/parity/preferences/goldens/all-types.jvm.bin: OK
+native/parity/preferences/goldens/bad-varint.input.bin: OK
+native/parity/preferences/goldens/bool-noncanonical.input.bin: OK
+native/parity/preferences/goldens/bool-noncanonical.jvm.bin: OK
+native/parity/preferences/goldens/canonical-all-types.input.bin: OK
+native/parity/preferences/goldens/canonical-all-types.jvm.bin: OK
+native/parity/preferences/goldens/deduplicated-all-types.input.bin: OK
+native/parity/preferences/goldens/deduplicated-all-types.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-entry-key.input.bin: OK
+native/parity/preferences/goldens/duplicate-entry-key.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-entry-value.input.bin: OK
+native/parity/preferences/goldens/duplicate-entry-value.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-future-valid.input.bin: OK
+native/parity/preferences/goldens/duplicate-future-valid.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-map.input.bin: OK
+native/parity/preferences/goldens/duplicate-map.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-oneof.input.bin: OK
+native/parity/preferences/goldens/duplicate-oneof.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-unknown-unset-valid.input.bin: OK
+native/parity/preferences/goldens/duplicate-unknown-unset-valid.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-unset-valid.input.bin: OK
+native/parity/preferences/goldens/duplicate-unset-valid.jvm.bin: OK
+native/parity/preferences/goldens/duplicate-valid-unset.input.bin: OK
+native/parity/preferences/goldens/duplicate-valid-unset.jvm.bin: OK
+native/parity/preferences/goldens/empty.input.bin: OK
+native/parity/preferences/goldens/empty.jvm.bin: OK
+native/parity/preferences/goldens/extremes.input.bin: OK
+native/parity/preferences/goldens/extremes.jvm.bin: OK
+native/parity/preferences/goldens/future-only.input.bin: OK
+native/parity/preferences/goldens/future-only.jvm.bin: OK
+native/parity/preferences/goldens/int-truncation.input.bin: OK
+native/parity/preferences/goldens/int-truncation.jvm.bin: OK
+native/parity/preferences/goldens/invalid-key.input.bin: OK
+native/parity/preferences/goldens/invalid-set.input.bin: OK
+native/parity/preferences/goldens/invalid-set.jvm.bin: OK
+native/parity/preferences/goldens/invalid-tag.input.bin: OK
+native/parity/preferences/goldens/invalid-utf8.input.bin: OK
+native/parity/preferences/goldens/invalid-utf8.jvm.bin: OK
+native/parity/preferences/goldens/merge-set.input.bin: OK
+native/parity/preferences/goldens/merge-set.jvm.bin: OK
+native/parity/preferences/goldens/missing-key.input.bin: OK
+native/parity/preferences/goldens/missing-key.jvm.bin: OK
+native/parity/preferences/goldens/missing-value.input.bin: OK
+native/parity/preferences/goldens/missing-value.jvm.bin: OK
+native/parity/preferences/goldens/repeated-empty-entries-valid.input.bin: OK
+native/parity/preferences/goldens/repeated-empty-entries-valid.jvm.bin: OK
+native/parity/preferences/goldens/repeated-empty-values-valid.input.bin: OK
+native/parity/preferences/goldens/repeated-empty-values-valid.jvm.bin: OK
+native/parity/preferences/goldens/replace-set.input.bin: OK
+native/parity/preferences/goldens/replace-set.jvm.bin: OK
+native/parity/preferences/goldens/results.tsv: OK
+native/parity/preferences/goldens/truncated.input.bin: OK
+native/parity/preferences/goldens/unclosed-group.input.bin: OK
+native/parity/preferences/goldens/unknown-entry.input.bin: OK
+native/parity/preferences/goldens/unknown-entry.jvm.bin: OK
+native/parity/preferences/goldens/unknown-group.input.bin: OK
+native/parity/preferences/goldens/unknown-group.jvm.bin: OK
+native/parity/preferences/goldens/unknown-set.input.bin: OK
+native/parity/preferences/goldens/unknown-set.jvm.bin: OK
+native/parity/preferences/goldens/unknown-top.input.bin: OK
+native/parity/preferences/goldens/unknown-top.jvm.bin: OK
+native/parity/preferences/goldens/unknown-value.input.bin: OK
+native/parity/preferences/goldens/unknown-value.jvm.bin: OK
+native/parity/preferences/goldens/unset-other-key-valid.input.bin: OK
+native/parity/preferences/goldens/unset-other-key-valid.jvm.bin: OK
+native/parity/preferences/goldens/valid-repeated-empty-entries.input.bin: OK
+native/parity/preferences/goldens/valid-repeated-empty-entries.jvm.bin: OK
+native/parity/preferences/goldens/valid-repeated-empty-values.input.bin: OK
+native/parity/preferences/goldens/valid-repeated-empty-values.jvm.bin: OK
+native/parity/preferences/goldens/wrong-known-wire.input.bin: OK
+native/parity/preferences/goldens/wrong-known-wire.jvm.bin: OK
+native/parity/preferences/javap-map-entry.txt: OK
+native/parity/preferences/javap-serializer.txt: OK
+native/parity/preferences/javap.txt: OK
+native/parity/preferences/Oracle.java: OK
+native/parity/preferences/README.md: OK
+native/parity/preferences/source-sha256.txt: OK
+native/parity/preferences/stale-snapshot.rs.txt: OK
+native/parity/preferences/std-lock-evidence.txt: OK
+native/parity/preferences/verify.sh: OK
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by androidx.datastore.preferences.protobuf.UnsafeUtil$MemoryAccessor (file:/home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar)
+WARNING: Please consider reporting this to the maintainers of class androidx.datastore.preferences.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+JVM golden replay: exact match
+
+running 25 tests
+test cached_jvm_duplicate_map_oneof_and_message_semantics ... ok
+test cached_jvm_effective_unset_values_still_reject ... ok
+test cached_jvm_all_types_signed_bits_unicode_and_bytes ... ok
+test cached_jvm_unknown_wire_retained_and_all_mutation_refused ... ok
+test debug_and_errors_redact_keys_values_and_paths ... ok
+test cached_jvm_unset_map_entries_validate_only_effective_values ... ok
+test fixture_callback_and_real_temp_create_failure_preserve_reopened_bytes ... ok
+test fixture_missing_defaults_atomic_modify_reopen_and_ownership ... ok
+test fixture_second_drift_check_and_absent_vs_empty_are_distinct ... ok
+test lock_holder_helper_process ... ok
+test fixture_effective_unset_validation_read_modify_reopen ... ok
+test preferences::tests::committed_directory_sync_failure_updates_baseline_before_retry ... ok
+test preferences::tests::filesystem_missing_directory_data_permissions_and_read_error ... ok
+test new_encoder_matches_jvm_extremes_and_roundtrips_every_variant ... ok
+test preferences::tests::injected_write_sync_rename_errors_preserve_real_reopened_file ... ok
+test corruption_truncation_wire_types_and_extreme_lengths ... ok
+test preferences::tests::temporary_collision_retries_but_never_removes_existing_file ... ok
+test strict_utf8_is_documented_narrower_boundary_and_unset_fails ... ok
+test bounded_random_wire_never_panics_and_untouched_success_is_exact ... ok
+test fixture_corrupt_unknown_oversized_and_external_drift_never_overwrite ... ok
+test real_helper_process_contention_crash_releases_stable_lock_inode ... ok
+test unset_physical_entries_keep_entry_and_field_budgets ... ok
+test ordered_preference_set_constructor_insertion_redaction_and_bounds ... ok
+test preferences::tests::encoder_entry_field_bounds_and_private_validation_fail_closed ... ok
+test limits_enforced_on_decode_and_mutation_without_partial_change ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+Stale snapshot compile-fail: expected type rejection
+Android metadata compile: aarch64-linux-android passed (not device execution)
+Android metadata compile: armv7-linux-androideabi passed (not device execution)
+Android metadata compile: x86_64-linux-android passed (not device execution)
+
+running 25 tests
+test bounded_random_wire_never_panics_and_untouched_success_is_exact ... ok
+test cached_jvm_all_types_signed_bits_unicode_and_bytes ... ok
+test cached_jvm_duplicate_map_oneof_and_message_semantics ... ok
+test cached_jvm_effective_unset_values_still_reject ... ok
+test cached_jvm_unknown_wire_retained_and_all_mutation_refused ... ok
+test cached_jvm_unset_map_entries_validate_only_effective_values ... ok
+test corruption_truncation_wire_types_and_extreme_lengths ... ok
+test debug_and_errors_redact_keys_values_and_paths ... ok
+test fixture_callback_and_real_temp_create_failure_preserve_reopened_bytes ... ok
+test fixture_corrupt_unknown_oversized_and_external_drift_never_overwrite ... ok
+test fixture_effective_unset_validation_read_modify_reopen ... ok
+test fixture_missing_defaults_atomic_modify_reopen_and_ownership ... ok
+test fixture_second_drift_check_and_absent_vs_empty_are_distinct ... ok
+test limits_enforced_on_decode_and_mutation_without_partial_change ... ok
+test lock_holder_helper_process ... ok
+test new_encoder_matches_jvm_extremes_and_roundtrips_every_variant ... ok
+test ordered_preference_set_constructor_insertion_redaction_and_bounds ... ok
+test preferences::tests::committed_directory_sync_failure_updates_baseline_before_retry ... ok
+test preferences::tests::encoder_entry_field_bounds_and_private_validation_fail_closed ... ok
+test preferences::tests::filesystem_missing_directory_data_permissions_and_read_error ... ok
+test preferences::tests::injected_write_sync_rename_errors_preserve_real_reopened_file ... ok
+test preferences::tests::temporary_collision_retries_but_never_removes_existing_file ... ok
+test real_helper_process_contention_crash_releases_stable_lock_inode ... ok
+test strict_utf8_is_documented_narrower_boundary_and_unset_fails ... ok
+test unset_physical_entries_keep_entry_and_field_budgets ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+Owner source functions/closures (deduplicated): 51/52 = 98.08%
+Owner executable lines: 434/440 = 98.64%
+Scope: native/src/preferences.rs lines 1..773; cfg(test) hooks remain, unit-test module excluded.
+Coverage observes synthetic host tests, not Android execution or power-loss durability.
+Focused preferences validation passed; full Cargo/Android runtime gates remain open.

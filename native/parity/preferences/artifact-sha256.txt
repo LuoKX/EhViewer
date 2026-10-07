@@ -1,0 +1,3 @@
+d9bbd94f78e9a6c93308eed26b8a7ed46b1f128a19c282fe36f96804e9d7c184  /home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-proto/1.2.1/5d062b556fb45141138c3d86284bbdcbe07cc770/datastore-preferences-proto-1.2.1.jar
+4f09ba7fca2a073a5c5527a9b637582b93e262c2b6a89977c584d28cea838ebc  /home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-external-protobuf/1.2.1/200a891fd29602b4bcff8e197d243a372fb026d5/datastore-preferences-external-protobuf-1.2.1.jar
+48c2235e576fb015f861726e79ee9474948e37da31d2c887c16ebeb46817059f  /home/ngnl/.gradle/caches/modules-2/files-2.1/androidx.datastore/datastore-preferences-core-android/1.2.1/1c6a56a2802d44f6d451101eed3420488a75ca85/datastore-preferences-core.aar

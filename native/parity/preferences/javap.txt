@@ -1,0 +1,1795 @@
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$PreferenceMap extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$PreferenceMap, androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder> implements androidx.datastore.preferences.PreferencesProto$PreferenceMapOrBuilder {
+  public static final int PREFERENCES_FIELD_NUMBER = 1;
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> preferences_;
+  private static final androidx.datastore.preferences.PreferencesProto$PreferenceMap DEFAULT_INSTANCE;
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$PreferenceMap> PARSER;
+  private androidx.datastore.preferences.PreferencesProto$PreferenceMap();
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> internalGetPreferences();
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> internalGetMutablePreferences();
+  public int getPreferencesCount();
+  public boolean containsPreferences(java.lang.String);
+  public java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getPreferences();
+  public java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getPreferencesMap();
+  public androidx.datastore.preferences.PreferencesProto$Value getPreferencesOrDefault(java.lang.String, androidx.datastore.preferences.PreferencesProto$Value);
+  public androidx.datastore.preferences.PreferencesProto$Value getPreferencesOrThrow(java.lang.String);
+  private java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getMutablePreferencesMap();
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder newBuilder();
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$PreferenceMap);
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap getDefaultInstance();
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$PreferenceMap> parser();
+  static androidx.datastore.preferences.PreferencesProto$PreferenceMap access$000();
+  static java.util.Map access$100(androidx.datastore.preferences.PreferencesProto$PreferenceMap);
+  static {};
+}
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$PreferenceMap extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$PreferenceMap, androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder> implements androidx.datastore.preferences.PreferencesProto$PreferenceMapOrBuilder {
+  public static final int PREFERENCES_FIELD_NUMBER;
+
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> preferences_;
+
+  private static final androidx.datastore.preferences.PreferencesProto$PreferenceMap DEFAULT_INSTANCE;
+
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$PreferenceMap> PARSER;
+
+  private androidx.datastore.preferences.PreferencesProto$PreferenceMap();
+    Code:
+         0: aload_0
+         1: invokespecial #46                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite."<init>":()V
+         4: aload_0
+         5: invokestatic  #52                 // Method androidx/datastore/preferences/protobuf/MapFieldLite.emptyMapField:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         8: putfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+        11: return
+
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> internalGetPreferences();
+    Code:
+         0: aload_0
+         1: getfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         4: areturn
+
+  private androidx.datastore.preferences.protobuf.MapFieldLite<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> internalGetMutablePreferences();
+    Code:
+         0: aload_0
+         1: getfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         4: invokevirtual #62                 // Method androidx/datastore/preferences/protobuf/MapFieldLite.isMutable:()Z
+         7: ifne          21
+        10: aload_0
+        11: aload_0
+        12: getfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+        15: invokevirtual #65                 // Method androidx/datastore/preferences/protobuf/MapFieldLite.mutableCopy:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+        18: putfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+        21: aload_0
+        22: getfield      #54                 // Field preferences_:Landroidx/datastore/preferences/protobuf/MapFieldLite;
+        25: areturn
+
+  public int getPreferencesCount();
+    Code:
+         0: aload_0
+         1: invokespecial #69                 // Method internalGetPreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         4: invokevirtual #72                 // Method androidx/datastore/preferences/protobuf/MapFieldLite.size:()I
+         7: ireturn
+
+  public boolean containsPreferences(java.lang.String);
+    Code:
+         0: aload_1
+         1: invokevirtual #80                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_2
+         5: aload_0
+         6: invokespecial #69                 // Method internalGetPreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         9: aload_1
+        10: invokevirtual #84                 // Method androidx/datastore/preferences/protobuf/MapFieldLite.containsKey:(Ljava/lang/Object;)Z
+        13: ireturn
+
+  public java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getPreferences();
+    Code:
+         0: aload_0
+         1: invokevirtual #96                 // Method getPreferencesMap:()Ljava/util/Map;
+         4: areturn
+
+  public java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getPreferencesMap();
+    Code:
+         0: aload_0
+         1: invokespecial #69                 // Method internalGetPreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         4: invokestatic  #102                // Method java/util/Collections.unmodifiableMap:(Ljava/util/Map;)Ljava/util/Map;
+         7: areturn
+
+  public androidx.datastore.preferences.PreferencesProto$Value getPreferencesOrDefault(java.lang.String, androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_1
+         1: invokevirtual #80                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_3
+         5: aload_0
+         6: invokespecial #69                 // Method internalGetPreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         9: astore        4
+        11: aload         4
+        13: aload_1
+        14: invokeinterface #107,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+        19: ifeq          36
+        22: aload         4
+        24: aload_1
+        25: invokeinterface #111,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+        30: checkcast     #13                 // class androidx/datastore/preferences/PreferencesProto$Value
+        33: goto          37
+        36: aload_2
+        37: areturn
+
+  public androidx.datastore.preferences.PreferencesProto$Value getPreferencesOrThrow(java.lang.String);
+    Code:
+         0: aload_1
+         1: invokevirtual #80                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_2
+         5: aload_0
+         6: invokespecial #69                 // Method internalGetPreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         9: astore_3
+        10: aload_3
+        11: aload_1
+        12: invokeinterface #107,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+        17: ifne          28
+        20: new           #122                // class java/lang/IllegalArgumentException
+        23: dup
+        24: invokespecial #123                // Method java/lang/IllegalArgumentException."<init>":()V
+        27: athrow
+        28: aload_3
+        29: aload_1
+        30: invokeinterface #111,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+        35: checkcast     #13                 // class androidx/datastore/preferences/PreferencesProto$Value
+        38: areturn
+
+  private java.util.Map<java.lang.String, androidx.datastore.preferences.PreferencesProto$Value> getMutablePreferencesMap();
+    Code:
+         0: aload_0
+         1: invokespecial #126                // Method internalGetMutablePreferences:()Landroidx/datastore/preferences/protobuf/MapFieldLite;
+         4: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #135                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #141                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #147                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #152                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #156                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[B)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #161                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[BLandroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #167                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #173                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #176                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #178                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokestatic  #182                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #187                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder newBuilder();
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: invokevirtual #193                // Method createBuilder:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         6: checkcast     #19                 // class androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder
+         9: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$PreferenceMap);
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: aload_0
+         4: invokevirtual #197                // Method createBuilder:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         7: checkcast     #19                 // class androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder
+        10: areturn
+
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+    Code:
+         0: getstatic     #204                // Field androidx/datastore/preferences/PreferencesProto$1.$SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke:[I
+         3: aload_1
+         4: invokevirtual #207                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$MethodToInvoke.ordinal:()I
+         7: iaload
+         8: tableswitch   { // 1 to 7
+                       1: 52
+                       2: 60
+                       3: 69
+                       4: 101
+                       5: 105
+                       6: 165
+                       7: 170
+                 default: 172
+            }
+        52: new           #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        55: dup
+        56: invokespecial #208                // Method "<init>":()V
+        59: areturn
+        60: new           #19                 // class androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder
+        63: dup
+        64: aconst_null
+        65: invokespecial #211                // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder."<init>":(Landroidx/datastore/preferences/PreferencesProto$1;)V
+        68: areturn
+        69: iconst_2
+        70: anewarray     #76                 // class java/lang/Object
+        73: dup
+        74: iconst_0
+        75: ldc           #212                // String preferences_
+        77: aastore
+        78: dup
+        79: iconst_1
+        80: getstatic     #216                // Field androidx/datastore/preferences/PreferencesProto$PreferenceMap$PreferencesDefaultEntryHolder.defaultEntry:Landroidx/datastore/preferences/protobuf/MapEntryLite;
+        83: aastore
+        84: astore        4
+        86: ldc           #218                // String \u0001\u0001\u0000\u0000\u0001\u0001\u0001\u0001\u0000\u0000\u00012
+        88: astore        5
+        90: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+        93: aload         5
+        95: aload         4
+        97: invokestatic  #222                // Method newMessageInfo:(Landroidx/datastore/preferences/protobuf/MessageLite;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+       100: areturn
+       101: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+       104: areturn
+       105: getstatic     #224                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       108: astore        4
+       110: aload         4
+       112: ifnonnull     162
+       115: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+       117: dup
+       118: astore        5
+       120: monitorenter
+       121: getstatic     #224                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       124: astore        4
+       126: aload         4
+       128: ifnonnull     148
+       131: new           #29                 // class androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser
+       134: dup
+       135: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+       138: invokespecial #227                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser."<init>":(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+       141: astore        4
+       143: aload         4
+       145: putstatic     #224                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       148: aload         5
+       150: monitorexit
+       151: goto          162
+       154: astore        6
+       156: aload         5
+       158: monitorexit
+       159: aload         6
+       161: athrow
+       162: aload         4
+       164: areturn
+       165: iconst_1
+       166: invokestatic  #237                // Method java/lang/Byte.valueOf:(B)Ljava/lang/Byte;
+       169: areturn
+       170: aconst_null
+       171: areturn
+       172: new           #239                // class java/lang/UnsupportedOperationException
+       175: dup
+       176: invokespecial #240                // Method java/lang/UnsupportedOperationException."<init>":()V
+       179: athrow
+      Exception table:
+         from    to  target type
+           121   151   154   any
+           154   159   154   any
+
+  public static androidx.datastore.preferences.PreferencesProto$PreferenceMap getDefaultInstance();
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: areturn
+
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$PreferenceMap> parser();
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: invokevirtual #256                // Method getParserForType:()Landroidx/datastore/preferences/protobuf/Parser;
+         6: areturn
+
+  static androidx.datastore.preferences.PreferencesProto$PreferenceMap access$000();
+    Code:
+         0: getstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+         3: areturn
+
+  static java.util.Map access$100(androidx.datastore.preferences.PreferencesProto$PreferenceMap);
+    Code:
+         0: aload_0
+         1: invokespecial #261                // Method getMutablePreferencesMap:()Ljava/util/Map;
+         4: areturn
+
+  static {};
+    Code:
+         0: new           #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+         3: dup
+         4: invokespecial #208                // Method "<init>":()V
+         7: astore_0
+         8: aload_0
+         9: putstatic     #132                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+        12: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        14: aload_0
+        15: invokestatic  #267                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.registerDefaultInstance:(Ljava/lang/Class;Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+        18: return
+}
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$Value extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$Value$Builder> implements androidx.datastore.preferences.PreferencesProto$ValueOrBuilder {
+  private int valueCase_;
+  private java.lang.Object value_;
+  public static final int BOOLEAN_FIELD_NUMBER = 1;
+  public static final int FLOAT_FIELD_NUMBER = 2;
+  public static final int INTEGER_FIELD_NUMBER = 3;
+  public static final int LONG_FIELD_NUMBER = 4;
+  public static final int STRING_FIELD_NUMBER = 5;
+  public static final int STRING_SET_FIELD_NUMBER = 6;
+  public static final int DOUBLE_FIELD_NUMBER = 7;
+  public static final int BYTES_FIELD_NUMBER = 8;
+  private static final androidx.datastore.preferences.PreferencesProto$Value DEFAULT_INSTANCE;
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$Value> PARSER;
+  private androidx.datastore.preferences.PreferencesProto$Value();
+  public androidx.datastore.preferences.PreferencesProto$Value$ValueCase getValueCase();
+  private void clearValue();
+  public boolean hasBoolean();
+  public boolean getBoolean();
+  private void setBoolean(boolean);
+  private void clearBoolean();
+  public boolean hasFloat();
+  public float getFloat();
+  private void setFloat(float);
+  private void clearFloat();
+  public boolean hasInteger();
+  public int getInteger();
+  private void setInteger(int);
+  private void clearInteger();
+  public boolean hasLong();
+  public long getLong();
+  private void setLong(long);
+  private void clearLong();
+  public boolean hasString();
+  public java.lang.String getString();
+  public androidx.datastore.preferences.protobuf.ByteString getStringBytes();
+  private void setString(java.lang.String);
+  private void clearString();
+  private void setStringBytes(androidx.datastore.preferences.protobuf.ByteString);
+  public boolean hasStringSet();
+  public androidx.datastore.preferences.PreferencesProto$StringSet getStringSet();
+  private void setStringSet(androidx.datastore.preferences.PreferencesProto$StringSet);
+  private void mergeStringSet(androidx.datastore.preferences.PreferencesProto$StringSet);
+  private void clearStringSet();
+  public boolean hasDouble();
+  public double getDouble();
+  private void setDouble(double);
+  private void clearDouble();
+  public boolean hasBytes();
+  public androidx.datastore.preferences.protobuf.ByteString getBytes();
+  private void setBytes(androidx.datastore.preferences.protobuf.ByteString);
+  private void clearBytes();
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$Value$Builder newBuilder();
+  public static androidx.datastore.preferences.PreferencesProto$Value$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$Value);
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+  public static androidx.datastore.preferences.PreferencesProto$Value getDefaultInstance();
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$Value> parser();
+  static androidx.datastore.preferences.PreferencesProto$Value access$300();
+  static void access$400(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$500(androidx.datastore.preferences.PreferencesProto$Value, boolean);
+  static void access$600(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$700(androidx.datastore.preferences.PreferencesProto$Value, float);
+  static void access$800(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$900(androidx.datastore.preferences.PreferencesProto$Value, int);
+  static void access$1000(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$1100(androidx.datastore.preferences.PreferencesProto$Value, long);
+  static void access$1200(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$1300(androidx.datastore.preferences.PreferencesProto$Value, java.lang.String);
+  static void access$1400(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$1500(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.protobuf.ByteString);
+  static void access$1600(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$StringSet);
+  static void access$1700(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$StringSet);
+  static void access$1800(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$1900(androidx.datastore.preferences.PreferencesProto$Value, double);
+  static void access$2000(androidx.datastore.preferences.PreferencesProto$Value);
+  static void access$2100(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.protobuf.ByteString);
+  static void access$2200(androidx.datastore.preferences.PreferencesProto$Value);
+  static {};
+}
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$Value extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$Value$Builder> implements androidx.datastore.preferences.PreferencesProto$ValueOrBuilder {
+  private int valueCase_;
+
+  private java.lang.Object value_;
+
+  public static final int BOOLEAN_FIELD_NUMBER;
+
+  public static final int FLOAT_FIELD_NUMBER;
+
+  public static final int INTEGER_FIELD_NUMBER;
+
+  public static final int LONG_FIELD_NUMBER;
+
+  public static final int STRING_FIELD_NUMBER;
+
+  public static final int STRING_SET_FIELD_NUMBER;
+
+  public static final int DOUBLE_FIELD_NUMBER;
+
+  public static final int BYTES_FIELD_NUMBER;
+
+  private static final androidx.datastore.preferences.PreferencesProto$Value DEFAULT_INSTANCE;
+
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$Value> PARSER;
+
+  private androidx.datastore.preferences.PreferencesProto$Value();
+    Code:
+         0: aload_0
+         1: invokespecial #62                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite."<init>":()V
+         4: aload_0
+         5: iconst_0
+         6: putfield      #64                 // Field valueCase_:I
+         9: return
+
+  public androidx.datastore.preferences.PreferencesProto$Value$ValueCase getValueCase();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: invokestatic  #71                 // Method androidx/datastore/preferences/PreferencesProto$Value$ValueCase.forNumber:(I)Landroidx/datastore/preferences/PreferencesProto$Value$ValueCase;
+         7: areturn
+
+  private void clearValue();
+    Code:
+         0: aload_0
+         1: iconst_0
+         2: putfield      #64                 // Field valueCase_:I
+         5: aload_0
+         6: aconst_null
+         7: putfield      #74                 // Field value_:Ljava/lang/Object;
+        10: return
+
+  public boolean hasBoolean();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_1
+         5: if_icmpne     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
+
+  public boolean getBoolean();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_1
+         5: if_icmpne     19
+         8: aload_0
+         9: getfield      #74                 // Field value_:Ljava/lang/Object;
+        12: checkcast     #79                 // class java/lang/Boolean
+        15: invokevirtual #82                 // Method java/lang/Boolean.booleanValue:()Z
+        18: ireturn
+        19: iconst_0
+        20: ireturn
+
+  private void setBoolean(boolean);
+    Code:
+         0: aload_0
+         1: iconst_1
+         2: putfield      #64                 // Field valueCase_:I
+         5: aload_0
+         6: iload_1
+         7: invokestatic  #88                 // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+        10: putfield      #74                 // Field value_:Ljava/lang/Object;
+        13: return
+
+  private void clearBoolean();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_1
+         5: if_icmpne     18
+         8: aload_0
+         9: iconst_0
+        10: putfield      #64                 // Field valueCase_:I
+        13: aload_0
+        14: aconst_null
+        15: putfield      #74                 // Field value_:Ljava/lang/Object;
+        18: return
+
+  public boolean hasFloat();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_2
+         5: if_icmpne     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
+
+  public float getFloat();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_2
+         5: if_icmpne     19
+         8: aload_0
+         9: getfield      #74                 // Field value_:Ljava/lang/Object;
+        12: checkcast     #96                 // class java/lang/Float
+        15: invokevirtual #99                 // Method java/lang/Float.floatValue:()F
+        18: freturn
+        19: fconst_0
+        20: freturn
+
+  private void setFloat(float);
+    Code:
+         0: aload_0
+         1: iconst_2
+         2: putfield      #64                 // Field valueCase_:I
+         5: aload_0
+         6: fload_1
+         7: invokestatic  #104                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;
+        10: putfield      #74                 // Field value_:Ljava/lang/Object;
+        13: return
+
+  private void clearFloat();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_2
+         5: if_icmpne     18
+         8: aload_0
+         9: iconst_0
+        10: putfield      #64                 // Field valueCase_:I
+        13: aload_0
+        14: aconst_null
+        15: putfield      #74                 // Field value_:Ljava/lang/Object;
+        18: return
+
+  public boolean hasInteger();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_3
+         5: if_icmpne     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
+
+  public int getInteger();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_3
+         5: if_icmpne     19
+         8: aload_0
+         9: getfield      #74                 // Field value_:Ljava/lang/Object;
+        12: checkcast     #111                // class java/lang/Integer
+        15: invokevirtual #114                // Method java/lang/Integer.intValue:()I
+        18: ireturn
+        19: iconst_0
+        20: ireturn
+
+  private void setInteger(int);
+    Code:
+         0: aload_0
+         1: iconst_3
+         2: putfield      #64                 // Field valueCase_:I
+         5: aload_0
+         6: iload_1
+         7: invokestatic  #119                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+        10: putfield      #74                 // Field value_:Ljava/lang/Object;
+        13: return
+
+  private void clearInteger();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_3
+         5: if_icmpne     18
+         8: aload_0
+         9: iconst_0
+        10: putfield      #64                 // Field valueCase_:I
+        13: aload_0
+        14: aconst_null
+        15: putfield      #74                 // Field value_:Ljava/lang/Object;
+        18: return
+
+  public boolean hasLong();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_4
+         5: if_icmpne     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
+
+  public long getLong();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_4
+         5: if_icmpne     19
+         8: aload_0
+         9: getfield      #74                 // Field value_:Ljava/lang/Object;
+        12: checkcast     #125                // class java/lang/Long
+        15: invokevirtual #128                // Method java/lang/Long.longValue:()J
+        18: lreturn
+        19: lconst_0
+        20: lreturn
+
+  private void setLong(long);
+    Code:
+         0: aload_0
+         1: iconst_4
+         2: putfield      #64                 // Field valueCase_:I
+         5: aload_0
+         6: lload_1
+         7: invokestatic  #133                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+        10: putfield      #74                 // Field value_:Ljava/lang/Object;
+        13: return
+
+  private void clearLong();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_4
+         5: if_icmpne     18
+         8: aload_0
+         9: iconst_0
+        10: putfield      #64                 // Field valueCase_:I
+        13: aload_0
+        14: aconst_null
+        15: putfield      #74                 // Field value_:Ljava/lang/Object;
+        18: return
+
+  public boolean hasString();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_5
+         5: if_icmpne     12
+         8: iconst_1
+         9: goto          13
+        12: iconst_0
+        13: ireturn
+
+  public java.lang.String getString();
+    Code:
+         0: ldc           #140                // String
+         2: astore_1
+         3: aload_0
+         4: getfield      #64                 // Field valueCase_:I
+         7: iconst_5
+         8: if_icmpne     19
+        11: aload_0
+        12: getfield      #74                 // Field value_:Ljava/lang/Object;
+        15: checkcast     #142                // class java/lang/String
+        18: astore_1
+        19: aload_1
+        20: areturn
+
+  public androidx.datastore.preferences.protobuf.ByteString getStringBytes();
+    Code:
+         0: ldc           #140                // String
+         2: astore_1
+         3: aload_0
+         4: getfield      #64                 // Field valueCase_:I
+         7: iconst_5
+         8: if_icmpne     19
+        11: aload_0
+        12: getfield      #74                 // Field value_:Ljava/lang/Object;
+        15: checkcast     #142                // class java/lang/String
+        18: astore_1
+        19: aload_1
+        20: invokestatic  #152                // Method androidx/datastore/preferences/protobuf/ByteString.copyFromUtf8:(Ljava/lang/String;)Landroidx/datastore/preferences/protobuf/ByteString;
+        23: areturn
+
+  private void setString(java.lang.String);
+    Code:
+         0: aload_1
+         1: invokevirtual #160                // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_2
+         5: aload_0
+         6: iconst_5
+         7: putfield      #64                 // Field valueCase_:I
+        10: aload_0
+        11: aload_1
+        12: putfield      #74                 // Field value_:Ljava/lang/Object;
+        15: return
+
+  private void clearString();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: iconst_5
+         5: if_icmpne     18
+         8: aload_0
+         9: iconst_0
+        10: putfield      #64                 // Field valueCase_:I
+        13: aload_0
+        14: aconst_null
+        15: putfield      #74                 // Field value_:Ljava/lang/Object;
+        18: return
+
+  private void setStringBytes(androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokevirtual #169                // Method androidx/datastore/preferences/protobuf/ByteString.toStringUtf8:()Ljava/lang/String;
+         5: putfield      #74                 // Field value_:Ljava/lang/Object;
+         8: aload_0
+         9: iconst_5
+        10: putfield      #64                 // Field valueCase_:I
+        13: return
+
+  public boolean hasStringSet();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        6
+         6: if_icmpne     13
+         9: iconst_1
+        10: goto          14
+        13: iconst_0
+        14: ireturn
+
+  public androidx.datastore.preferences.PreferencesProto$StringSet getStringSet();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        6
+         6: if_icmpne     17
+         9: aload_0
+        10: getfield      #74                 // Field value_:Ljava/lang/Object;
+        13: checkcast     #13                 // class androidx/datastore/preferences/PreferencesProto$StringSet
+        16: areturn
+        17: invokestatic  #176                // Method androidx/datastore/preferences/PreferencesProto$StringSet.getDefaultInstance:()Landroidx/datastore/preferences/PreferencesProto$StringSet;
+        20: areturn
+
+  private void setStringSet(androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: aload_1
+         1: invokevirtual #160                // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: pop
+         5: aload_0
+         6: aload_1
+         7: putfield      #74                 // Field value_:Ljava/lang/Object;
+        10: aload_0
+        11: bipush        6
+        13: putfield      #64                 // Field valueCase_:I
+        16: return
+
+  private void mergeStringSet(androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: aload_1
+         1: invokevirtual #160                // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: pop
+         5: aload_0
+         6: getfield      #64                 // Field valueCase_:I
+         9: bipush        6
+        11: if_icmpne     51
+        14: aload_0
+        15: getfield      #74                 // Field value_:Ljava/lang/Object;
+        18: invokestatic  #176                // Method androidx/datastore/preferences/PreferencesProto$StringSet.getDefaultInstance:()Landroidx/datastore/preferences/PreferencesProto$StringSet;
+        21: if_acmpeq     51
+        24: aload_0
+        25: aload_0
+        26: getfield      #74                 // Field value_:Ljava/lang/Object;
+        29: checkcast     #13                 // class androidx/datastore/preferences/PreferencesProto$StringSet
+        32: invokestatic  #184                // Method androidx/datastore/preferences/PreferencesProto$StringSet.newBuilder:(Landroidx/datastore/preferences/PreferencesProto$StringSet;)Landroidx/datastore/preferences/PreferencesProto$StringSet$Builder;
+        35: aload_1
+        36: invokevirtual #188                // Method androidx/datastore/preferences/PreferencesProto$StringSet$Builder.mergeFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+        39: checkcast     #19                 // class androidx/datastore/preferences/PreferencesProto$StringSet$Builder
+        42: invokevirtual #192                // Method androidx/datastore/preferences/PreferencesProto$StringSet$Builder.buildPartial:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+        45: putfield      #74                 // Field value_:Ljava/lang/Object;
+        48: goto          56
+        51: aload_0
+        52: aload_1
+        53: putfield      #74                 // Field value_:Ljava/lang/Object;
+        56: aload_0
+        57: bipush        6
+        59: putfield      #64                 // Field valueCase_:I
+        62: return
+
+  private void clearStringSet();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        6
+         6: if_icmpne     19
+         9: aload_0
+        10: iconst_0
+        11: putfield      #64                 // Field valueCase_:I
+        14: aload_0
+        15: aconst_null
+        16: putfield      #74                 // Field value_:Ljava/lang/Object;
+        19: return
+
+  public boolean hasDouble();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        7
+         6: if_icmpne     13
+         9: iconst_1
+        10: goto          14
+        13: iconst_0
+        14: ireturn
+
+  public double getDouble();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        7
+         6: if_icmpne     20
+         9: aload_0
+        10: getfield      #74                 // Field value_:Ljava/lang/Object;
+        13: checkcast     #198                // class java/lang/Double
+        16: invokevirtual #201                // Method java/lang/Double.doubleValue:()D
+        19: dreturn
+        20: dconst_0
+        21: dreturn
+
+  private void setDouble(double);
+    Code:
+         0: aload_0
+         1: bipush        7
+         3: putfield      #64                 // Field valueCase_:I
+         6: aload_0
+         7: dload_1
+         8: invokestatic  #206                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+        11: putfield      #74                 // Field value_:Ljava/lang/Object;
+        14: return
+
+  private void clearDouble();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        7
+         6: if_icmpne     19
+         9: aload_0
+        10: iconst_0
+        11: putfield      #64                 // Field valueCase_:I
+        14: aload_0
+        15: aconst_null
+        16: putfield      #74                 // Field value_:Ljava/lang/Object;
+        19: return
+
+  public boolean hasBytes();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        8
+         6: if_icmpne     13
+         9: iconst_1
+        10: goto          14
+        13: iconst_0
+        14: ireturn
+
+  public androidx.datastore.preferences.protobuf.ByteString getBytes();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        8
+         6: if_icmpne     17
+         9: aload_0
+        10: getfield      #74                 // Field value_:Ljava/lang/Object;
+        13: checkcast     #148                // class androidx/datastore/preferences/protobuf/ByteString
+        16: areturn
+        17: getstatic     #213                // Field androidx/datastore/preferences/protobuf/ByteString.EMPTY:Landroidx/datastore/preferences/protobuf/ByteString;
+        20: areturn
+
+  private void setBytes(androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_1
+         1: invokevirtual #160                // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_2
+         5: aload_0
+         6: bipush        8
+         8: putfield      #64                 // Field valueCase_:I
+        11: aload_0
+        12: aload_1
+        13: putfield      #74                 // Field value_:Ljava/lang/Object;
+        16: return
+
+  private void clearBytes();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field valueCase_:I
+         4: bipush        8
+         6: if_icmpne     19
+         9: aload_0
+        10: iconst_0
+        11: putfield      #64                 // Field valueCase_:I
+        14: aload_0
+        15: aconst_null
+        16: putfield      #74                 // Field value_:Ljava/lang/Object;
+        19: return
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #224                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #230                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #236                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #240                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #244                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[B)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #249                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[BLandroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #255                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #261                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #264                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #266                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokestatic  #270                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #275                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value$Builder newBuilder();
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: invokevirtual #280                // Method createBuilder:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         6: checkcast     #24                 // class androidx/datastore/preferences/PreferencesProto$Value$Builder
+         9: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$Value$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: aload_0
+         4: invokevirtual #283                // Method createBuilder:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         7: checkcast     #24                 // class androidx/datastore/preferences/PreferencesProto$Value$Builder
+        10: areturn
+
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+    Code:
+         0: getstatic     #290                // Field androidx/datastore/preferences/PreferencesProto$1.$SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke:[I
+         3: aload_1
+         4: invokevirtual #293                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$MethodToInvoke.ordinal:()I
+         7: iaload
+         8: tableswitch   { // 1 to 7
+                       1: 52
+                       2: 60
+                       3: 69
+                       4: 108
+                       5: 112
+                       6: 172
+                       7: 177
+                 default: 179
+            }
+        52: new           #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        55: dup
+        56: invokespecial #294                // Method "<init>":()V
+        59: areturn
+        60: new           #24                 // class androidx/datastore/preferences/PreferencesProto$Value$Builder
+        63: dup
+        64: aconst_null
+        65: invokespecial #297                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder."<init>":(Landroidx/datastore/preferences/PreferencesProto$1;)V
+        68: areturn
+        69: iconst_3
+        70: anewarray     #156                // class java/lang/Object
+        73: dup
+        74: iconst_0
+        75: ldc_w         #298                // String value_
+        78: aastore
+        79: dup
+        80: iconst_1
+        81: ldc_w         #299                // String valueCase_
+        84: aastore
+        85: dup
+        86: iconst_2
+        87: ldc           #13                 // class androidx/datastore/preferences/PreferencesProto$StringSet
+        89: aastore
+        90: astore        4
+        92: ldc_w         #301                // String \u0001\b\u0001\u0000\u0001\b\b\u0000\u0000\u0000\u0001:\u0000\u00024\u0000\u00037\u0000\u00045\u0000\u0005;\u0000\u0006<\u0000\u00073\u0000\b=\u0000
+        95: astore        5
+        97: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+       100: aload         5
+       102: aload         4
+       104: invokestatic  #305                // Method newMessageInfo:(Landroidx/datastore/preferences/protobuf/MessageLite;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+       107: areturn
+       108: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+       111: areturn
+       112: getstatic     #307                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       115: astore        4
+       117: aload         4
+       119: ifnonnull     169
+       122: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+       124: dup
+       125: astore        5
+       127: monitorenter
+       128: getstatic     #307                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       131: astore        4
+       133: aload         4
+       135: ifnonnull     155
+       138: new           #31                 // class androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser
+       141: dup
+       142: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+       145: invokespecial #310                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser."<init>":(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+       148: astore        4
+       150: aload         4
+       152: putstatic     #307                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       155: aload         5
+       157: monitorexit
+       158: goto          169
+       161: astore        6
+       163: aload         5
+       165: monitorexit
+       166: aload         6
+       168: athrow
+       169: aload         4
+       171: areturn
+       172: iconst_1
+       173: invokestatic  #319                // Method java/lang/Byte.valueOf:(B)Ljava/lang/Byte;
+       176: areturn
+       177: aconst_null
+       178: areturn
+       179: new           #321                // class java/lang/UnsupportedOperationException
+       182: dup
+       183: invokespecial #322                // Method java/lang/UnsupportedOperationException."<init>":()V
+       186: athrow
+      Exception table:
+         from    to  target type
+           128   158   161   any
+           161   166   161   any
+
+  public static androidx.datastore.preferences.PreferencesProto$Value getDefaultInstance();
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: areturn
+
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$Value> parser();
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: invokevirtual #336                // Method getParserForType:()Landroidx/datastore/preferences/protobuf/Parser;
+         6: areturn
+
+  static androidx.datastore.preferences.PreferencesProto$Value access$300();
+    Code:
+         0: getstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+         3: areturn
+
+  static void access$400(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #341                // Method clearValue:()V
+         4: return
+
+  static void access$500(androidx.datastore.preferences.PreferencesProto$Value, boolean);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokespecial #346                // Method setBoolean:(Z)V
+         5: return
+
+  static void access$600(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #350                // Method clearBoolean:()V
+         4: return
+
+  static void access$700(androidx.datastore.preferences.PreferencesProto$Value, float);
+    Code:
+         0: aload_0
+         1: fload_1
+         2: invokespecial #354                // Method setFloat:(F)V
+         5: return
+
+  static void access$800(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #357                // Method clearFloat:()V
+         4: return
+
+  static void access$900(androidx.datastore.preferences.PreferencesProto$Value, int);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: invokespecial #361                // Method setInteger:(I)V
+         5: return
+
+  static void access$1000(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #364                // Method clearInteger:()V
+         4: return
+
+  static void access$1100(androidx.datastore.preferences.PreferencesProto$Value, long);
+    Code:
+         0: aload_0
+         1: lload_1
+         2: invokespecial #368                // Method setLong:(J)V
+         5: return
+
+  static void access$1200(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #371                // Method clearLong:()V
+         4: return
+
+  static void access$1300(androidx.datastore.preferences.PreferencesProto$Value, java.lang.String);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #375                // Method setString:(Ljava/lang/String;)V
+         5: return
+
+  static void access$1400(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #378                // Method clearString:()V
+         4: return
+
+  static void access$1500(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #382                // Method setStringBytes:(Landroidx/datastore/preferences/protobuf/ByteString;)V
+         5: return
+
+  static void access$1600(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #386                // Method setStringSet:(Landroidx/datastore/preferences/PreferencesProto$StringSet;)V
+         5: return
+
+  static void access$1700(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #389                // Method mergeStringSet:(Landroidx/datastore/preferences/PreferencesProto$StringSet;)V
+         5: return
+
+  static void access$1800(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #392                // Method clearStringSet:()V
+         4: return
+
+  static void access$1900(androidx.datastore.preferences.PreferencesProto$Value, double);
+    Code:
+         0: aload_0
+         1: dload_1
+         2: invokespecial #396                // Method setDouble:(D)V
+         5: return
+
+  static void access$2000(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #399                // Method clearDouble:()V
+         4: return
+
+  static void access$2100(androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #402                // Method setBytes:(Landroidx/datastore/preferences/protobuf/ByteString;)V
+         5: return
+
+  static void access$2200(androidx.datastore.preferences.PreferencesProto$Value);
+    Code:
+         0: aload_0
+         1: invokespecial #405                // Method clearBytes:()V
+         4: return
+
+  static {};
+    Code:
+         0: new           #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+         3: dup
+         4: invokespecial #294                // Method "<init>":()V
+         7: astore_0
+         8: aload_0
+         9: putstatic     #221                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$Value;
+        12: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$Value
+        14: aload_0
+        15: invokestatic  #410                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.registerDefaultInstance:(Ljava/lang/Class;Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+        18: return
+}
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$StringSet extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$StringSet, androidx.datastore.preferences.PreferencesProto$StringSet$Builder> implements androidx.datastore.preferences.PreferencesProto$StringSetOrBuilder {
+  public static final int STRINGS_FIELD_NUMBER = 1;
+  private androidx.datastore.preferences.protobuf.Internal$ProtobufList<java.lang.String> strings_;
+  private static final androidx.datastore.preferences.PreferencesProto$StringSet DEFAULT_INSTANCE;
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$StringSet> PARSER;
+  private androidx.datastore.preferences.PreferencesProto$StringSet();
+  public java.util.List<java.lang.String> getStringsList();
+  public int getStringsCount();
+  public java.lang.String getStrings(int);
+  public androidx.datastore.preferences.protobuf.ByteString getStringsBytes(int);
+  private void ensureStringsIsMutable();
+  private void setStrings(int, java.lang.String);
+  private void addStrings(java.lang.String);
+  private void addAllStrings(java.lang.Iterable<java.lang.String>);
+  private void clearStrings();
+  private void addStringsBytes(androidx.datastore.preferences.protobuf.ByteString);
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+  public static androidx.datastore.preferences.PreferencesProto$StringSet$Builder newBuilder();
+  public static androidx.datastore.preferences.PreferencesProto$StringSet$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$StringSet);
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+  public static androidx.datastore.preferences.PreferencesProto$StringSet getDefaultInstance();
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$StringSet> parser();
+  static androidx.datastore.preferences.PreferencesProto$StringSet access$2400();
+  static void access$2500(androidx.datastore.preferences.PreferencesProto$StringSet, int, java.lang.String);
+  static void access$2600(androidx.datastore.preferences.PreferencesProto$StringSet, java.lang.String);
+  static void access$2700(androidx.datastore.preferences.PreferencesProto$StringSet, java.lang.Iterable);
+  static void access$2800(androidx.datastore.preferences.PreferencesProto$StringSet);
+  static void access$2900(androidx.datastore.preferences.PreferencesProto$StringSet, androidx.datastore.preferences.protobuf.ByteString);
+  static {};
+}
+Compiled from "PreferencesProto.java"
+public final class androidx.datastore.preferences.PreferencesProto$StringSet extends androidx.datastore.preferences.protobuf.GeneratedMessageLite<androidx.datastore.preferences.PreferencesProto$StringSet, androidx.datastore.preferences.PreferencesProto$StringSet$Builder> implements androidx.datastore.preferences.PreferencesProto$StringSetOrBuilder {
+  public static final int STRINGS_FIELD_NUMBER;
+
+  private androidx.datastore.preferences.protobuf.Internal$ProtobufList<java.lang.String> strings_;
+
+  private static final androidx.datastore.preferences.PreferencesProto$StringSet DEFAULT_INSTANCE;
+
+  private static volatile androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$StringSet> PARSER;
+
+  private androidx.datastore.preferences.PreferencesProto$StringSet();
+    Code:
+         0: aload_0
+         1: invokespecial #45                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite."<init>":()V
+         4: aload_0
+         5: invokestatic  #49                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.emptyProtobufList:()Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         8: putfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+        11: return
+
+  public java.util.List<java.lang.String> getStringsList();
+    Code:
+         0: aload_0
+         1: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: areturn
+
+  public int getStringsCount();
+    Code:
+         0: aload_0
+         1: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: invokeinterface #60,  1           // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.size:()I
+         9: ireturn
+
+  public java.lang.String getStrings(int);
+    Code:
+         0: aload_0
+         1: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: iload_1
+         5: invokeinterface #66,  2           // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.get:(I)Ljava/lang/Object;
+        10: checkcast     #68                 // class java/lang/String
+        13: areturn
+
+  public androidx.datastore.preferences.protobuf.ByteString getStringsBytes(int);
+    Code:
+         0: aload_0
+         1: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: iload_1
+         5: invokeinterface #66,  2           // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.get:(I)Ljava/lang/Object;
+        10: checkcast     #68                 // class java/lang/String
+        13: invokestatic  #77                 // Method androidx/datastore/preferences/protobuf/ByteString.copyFromUtf8:(Ljava/lang/String;)Landroidx/datastore/preferences/protobuf/ByteString;
+        16: areturn
+
+  private void ensureStringsIsMutable();
+    Code:
+         0: aload_0
+         1: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: astore_1
+         5: aload_1
+         6: invokeinterface #82,  1           // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.isModifiable:()Z
+        11: ifne          22
+        14: aload_0
+        15: aload_1
+        16: invokestatic  #86                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.mutableCopy:(Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;)Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+        19: putfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+        22: return
+
+  private void setStrings(int, java.lang.String);
+    Code:
+         0: aload_2
+         1: invokevirtual #95                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_3
+         5: aload_0
+         6: invokespecial #97                 // Method ensureStringsIsMutable:()V
+         9: aload_0
+        10: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+        13: iload_1
+        14: aload_2
+        15: invokeinterface #101,  3          // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.set:(ILjava/lang/Object;)Ljava/lang/Object;
+        20: pop
+        21: return
+
+  private void addStrings(java.lang.String);
+    Code:
+         0: aload_1
+         1: invokevirtual #95                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+         4: astore_2
+         5: aload_0
+         6: invokespecial #97                 // Method ensureStringsIsMutable:()V
+         9: aload_0
+        10: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+        13: aload_1
+        14: invokeinterface #112,  2          // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.add:(Ljava/lang/Object;)Z
+        19: pop
+        20: return
+
+  private void addAllStrings(java.lang.Iterable<java.lang.String>);
+    Code:
+         0: aload_0
+         1: invokespecial #97                 // Method ensureStringsIsMutable:()V
+         4: aload_1
+         5: aload_0
+         6: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         9: invokestatic  #121                // Method androidx/datastore/preferences/protobuf/AbstractMessageLite.addAll:(Ljava/lang/Iterable;Ljava/util/List;)V
+        12: return
+
+  private void clearStrings();
+    Code:
+         0: aload_0
+         1: invokestatic  #49                 // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.emptyProtobufList:()Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         4: putfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         7: return
+
+  private void addStringsBytes(androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_0
+         1: invokespecial #97                 // Method ensureStringsIsMutable:()V
+         4: aload_0
+         5: getfield      #51                 // Field strings_:Landroidx/datastore/preferences/protobuf/Internal$ProtobufList;
+         8: aload_1
+         9: invokevirtual #131                // Method androidx/datastore/preferences/protobuf/ByteString.toStringUtf8:()Ljava/lang/String;
+        12: invokeinterface #112,  2          // InterfaceMethod androidx/datastore/preferences/protobuf/Internal$ProtobufList.add:(Ljava/lang/Object;)Z
+        17: pop
+        18: return
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.nio.ByteBuffer) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #141                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.nio.ByteBuffer, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #147                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/nio/ByteBuffer;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.ByteString) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #153                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.ByteString, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #157                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/ByteString;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(byte[]) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #161                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[B)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(byte[], androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws androidx.datastore.preferences.protobuf.InvalidProtocolBufferException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #166                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;[BLandroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #172                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #178                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseDelimitedFrom(java.io.InputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #181                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseDelimitedFrom(java.io.InputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #183                // Method parseDelimitedFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Ljava/io/InputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokestatic  #187                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         7: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        10: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet parseFrom(androidx.datastore.preferences.protobuf.CodedInputStream, androidx.datastore.preferences.protobuf.ExtensionRegistryLite) throws java.io.IOException;
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: aload_1
+         5: invokestatic  #192                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.parseFrom:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;Landroidx/datastore/preferences/protobuf/CodedInputStream;Landroidx/datastore/preferences/protobuf/ExtensionRegistryLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+         8: checkcast     #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        11: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet$Builder newBuilder();
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: invokevirtual #198                // Method createBuilder:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         6: checkcast     #21                 // class androidx/datastore/preferences/PreferencesProto$StringSet$Builder
+         9: areturn
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet$Builder newBuilder(androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: aload_0
+         4: invokevirtual #202                // Method createBuilder:(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)Landroidx/datastore/preferences/protobuf/GeneratedMessageLite$Builder;
+         7: checkcast     #21                 // class androidx/datastore/preferences/PreferencesProto$StringSet$Builder
+        10: areturn
+
+  protected final java.lang.Object dynamicMethod(androidx.datastore.preferences.protobuf.GeneratedMessageLite$MethodToInvoke, java.lang.Object, java.lang.Object);
+    Code:
+         0: getstatic     #209                // Field androidx/datastore/preferences/PreferencesProto$1.$SwitchMap$com$google$protobuf$GeneratedMessageLite$MethodToInvoke:[I
+         3: aload_1
+         4: invokevirtual #212                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$MethodToInvoke.ordinal:()I
+         7: iaload
+         8: tableswitch   { // 1 to 7
+                       1: 52
+                       2: 60
+                       3: 69
+                       4: 95
+                       5: 99
+                       6: 159
+                       7: 164
+                 default: 166
+            }
+        52: new           #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        55: dup
+        56: invokespecial #213                // Method "<init>":()V
+        59: areturn
+        60: new           #21                 // class androidx/datastore/preferences/PreferencesProto$StringSet$Builder
+        63: dup
+        64: aconst_null
+        65: invokespecial #216                // Method androidx/datastore/preferences/PreferencesProto$StringSet$Builder."<init>":(Landroidx/datastore/preferences/PreferencesProto$1;)V
+        68: areturn
+        69: iconst_1
+        70: anewarray     #91                 // class java/lang/Object
+        73: dup
+        74: iconst_0
+        75: ldc           #217                // String strings_
+        77: aastore
+        78: astore        4
+        80: ldc           #219                // String \u0001\u0001\u0000\u0000\u0001\u0001\u0001\u0000\u0001\u0000\u0001\u001a
+        82: astore        5
+        84: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+        87: aload         5
+        89: aload         4
+        91: invokestatic  #223                // Method newMessageInfo:(Landroidx/datastore/preferences/protobuf/MessageLite;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+        94: areturn
+        95: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+        98: areturn
+        99: getstatic     #225                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       102: astore        4
+       104: aload         4
+       106: ifnonnull     156
+       109: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+       111: dup
+       112: astore        5
+       114: monitorenter
+       115: getstatic     #225                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       118: astore        4
+       120: aload         4
+       122: ifnonnull     142
+       125: new           #28                 // class androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser
+       128: dup
+       129: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+       132: invokespecial #228                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite$DefaultInstanceBasedParser."<init>":(Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+       135: astore        4
+       137: aload         4
+       139: putstatic     #225                // Field PARSER:Landroidx/datastore/preferences/protobuf/Parser;
+       142: aload         5
+       144: monitorexit
+       145: goto          156
+       148: astore        6
+       150: aload         5
+       152: monitorexit
+       153: aload         6
+       155: athrow
+       156: aload         4
+       158: areturn
+       159: iconst_1
+       160: invokestatic  #238                // Method java/lang/Byte.valueOf:(B)Ljava/lang/Byte;
+       163: areturn
+       164: aconst_null
+       165: areturn
+       166: new           #240                // class java/lang/UnsupportedOperationException
+       169: dup
+       170: invokespecial #241                // Method java/lang/UnsupportedOperationException."<init>":()V
+       173: athrow
+      Exception table:
+         from    to  target type
+           115   145   148   any
+           148   153   148   any
+
+  public static androidx.datastore.preferences.PreferencesProto$StringSet getDefaultInstance();
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: areturn
+
+  public static androidx.datastore.preferences.protobuf.Parser<androidx.datastore.preferences.PreferencesProto$StringSet> parser();
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: invokevirtual #257                // Method getParserForType:()Landroidx/datastore/preferences/protobuf/Parser;
+         6: areturn
+
+  static androidx.datastore.preferences.PreferencesProto$StringSet access$2400();
+    Code:
+         0: getstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+         3: areturn
+
+  static void access$2500(androidx.datastore.preferences.PreferencesProto$StringSet, int, java.lang.String);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: invokespecial #262                // Method setStrings:(ILjava/lang/String;)V
+         6: return
+
+  static void access$2600(androidx.datastore.preferences.PreferencesProto$StringSet, java.lang.String);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #269                // Method addStrings:(Ljava/lang/String;)V
+         5: return
+
+  static void access$2700(androidx.datastore.preferences.PreferencesProto$StringSet, java.lang.Iterable);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #273                // Method addAllStrings:(Ljava/lang/Iterable;)V
+         5: return
+
+  static void access$2800(androidx.datastore.preferences.PreferencesProto$StringSet);
+    Code:
+         0: aload_0
+         1: invokespecial #277                // Method clearStrings:()V
+         4: return
+
+  static void access$2900(androidx.datastore.preferences.PreferencesProto$StringSet, androidx.datastore.preferences.protobuf.ByteString);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #281                // Method addStringsBytes:(Landroidx/datastore/preferences/protobuf/ByteString;)V
+         5: return
+
+  static {};
+    Code:
+         0: new           #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+         3: dup
+         4: invokespecial #213                // Method "<init>":()V
+         7: astore_0
+         8: aload_0
+         9: putstatic     #138                // Field DEFAULT_INSTANCE:Landroidx/datastore/preferences/PreferencesProto$StringSet;
+        12: ldc           #2                  // class androidx/datastore/preferences/PreferencesProto$StringSet
+        14: aload_0
+        15: invokestatic  #286                // Method androidx/datastore/preferences/protobuf/GeneratedMessageLite.registerDefaultInstance:(Ljava/lang/Class;Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;)V
+        18: return
+}

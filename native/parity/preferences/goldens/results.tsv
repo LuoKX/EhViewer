@@ -1,0 +1,38 @@
+all-types	OK	a_bool:BOOLEAN:false	b_int:INTEGER:-2147483648	c_long:LONG:-9223372036854775808	d_float:FLOAT:7fc01234	e_string:STRING:e99baa00f09f9880	f_set:STRING_SET:[雪, x, 雪]	g_double:DOUBLE:fff8000000001234	h_bytes:BYTES:00ff80
+deduplicated-all-types	OK	a_bool:BOOLEAN:false	b_int:INTEGER:-2147483648	c_long:LONG:-9223372036854775808	d_float:FLOAT:7fc01234	e_string:STRING:e99baa00f09f9880	f_set:STRING_SET:[雪, x]	g_double:DOUBLE:fff8000000001234	h_bytes:BYTES:00ff80
+canonical-all-types	OK	a_bool:BOOLEAN:false	b_int:INTEGER:-2147483648	c_long:LONG:-9223372036854775808	d_float:FLOAT:7fc01234	e_string:STRING:e99baa00f09f9880	f_set:STRING_SET:[x, 雪]	g_double:DOUBLE:fff8000000001234	h_bytes:BYTES:00ff80
+extremes	OK	a_int:INTEGER:2147483647	b_long:LONG:9223372036854775807	c_minus:INTEGER:-1	d_float:FLOAT:80000000	e_double:DOUBLE:7ff0000000000000
+duplicate-map	OK	x:INTEGER:2
+duplicate-oneof	OK	x:BOOLEAN:true
+merge-set	OK	x:STRING_SET:[a, b]
+replace-set	OK	x:STRING_SET:[b]
+duplicate-entry-value	OK	x:STRING_SET:[b]
+duplicate-entry-key	OK	b:INTEGER:1
+missing-key	OK	:INTEGER:1
+missing-value	OK	x:VALUE_NOT_SET
+empty	OK
+unknown-top	OK	x:INTEGER:1
+unknown-value	OK	x:INTEGER:1
+future-only	OK	x:VALUE_NOT_SET
+unknown-set	OK	x:STRING_SET:[a]
+unknown-entry	OK	x:INTEGER:1
+unknown-group	OK	x:INTEGER:1
+wrong-known-wire	OK	x:INTEGER:1
+bool-noncanonical	OK	x:BOOLEAN:true
+int-truncation	OK	x:INTEGER:-1
+invalid-utf8	OK	x:STRING:efbfbd
+invalid-key	REJECT
+invalid-set	OK	x:STRING_SET:[�]
+truncated	REJECT
+invalid-tag	REJECT
+bad-varint	REJECT
+unclosed-group	REJECT
+duplicate-unset-valid	OK	x:INTEGER:1
+duplicate-valid-unset	OK	x:VALUE_NOT_SET
+duplicate-future-valid	OK	x:INTEGER:1
+duplicate-unknown-unset-valid	OK	x:INTEGER:1
+repeated-empty-values-valid	OK	x:INTEGER:1
+valid-repeated-empty-values	OK	x:VALUE_NOT_SET
+repeated-empty-entries-valid	OK	:INTEGER:1
+valid-repeated-empty-entries	OK	:VALUE_NOT_SET
+unset-other-key-valid	OK	x:VALUE_NOT_SET	y:INTEGER:1

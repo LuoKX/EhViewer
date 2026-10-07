@@ -1,0 +1,11 @@
+//! Expected compile failure: runtime editor must reject whole-snapshot replacement.
+#[path = "../../src/preferences.rs"]
+mod preferences;
+
+fn stale_snapshot(store: &mut preferences::FixtureStore, old: preferences::Preferences) {
+    let _ = store.update(|current| {
+        *current = old;
+        Ok(())
+    });
+}
+fn main() {}

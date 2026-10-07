@@ -1,0 +1,399 @@
+Compiled from "PreferencesSerializer.jvmAndroid.kt"
+public final class androidx.datastore.preferences.core.PreferencesSerializer implements androidx.datastore.core.okio.OkioSerializer<androidx.datastore.preferences.core.Preferences> {
+  public static final androidx.datastore.preferences.core.PreferencesSerializer INSTANCE;
+
+  public static final java.lang.String fileExtension;
+
+  private androidx.datastore.preferences.core.PreferencesSerializer();
+    Code:
+         0: aload_0
+         1: invokespecial #11                 // Method java/lang/Object."<init>":()V
+         4: return
+
+  public androidx.datastore.preferences.core.Preferences getDefaultValue();
+    Code:
+         0: invokestatic  #21                 // Method androidx/datastore/preferences/core/PreferencesFactory.createEmpty:()Landroidx/datastore/preferences/core/Preferences;
+         3: areturn
+
+  public java.lang.Object readFrom(okio.BufferedSource, kotlin.coroutines.Continuation<? super androidx.datastore.preferences.core.Preferences>) throws java.io.IOException, androidx.datastore.core.CorruptionException;
+    Code:
+         0: getstatic     #35                 // Field androidx/datastore/preferences/PreferencesMapCompat.Companion:Landroidx/datastore/preferences/PreferencesMapCompat$Companion;
+         3: aload_1
+         4: invokeinterface #41,  1           // InterfaceMethod okio/BufferedSource.inputStream:()Ljava/io/InputStream;
+         9: invokevirtual #46                 // Method androidx/datastore/preferences/PreferencesMapCompat$Companion.readFrom:(Ljava/io/InputStream;)Landroidx/datastore/preferences/PreferencesProto$PreferenceMap;
+        12: astore_3
+        13: iconst_0
+        14: anewarray     #48                 // class androidx/datastore/preferences/core/Preferences$Pair
+        17: invokestatic  #52                 // Method androidx/datastore/preferences/core/PreferencesFactory.createMutable:([Landroidx/datastore/preferences/core/Preferences$Pair;)Landroidx/datastore/preferences/core/MutablePreferences;
+        20: astore        4
+        22: aload_3
+        23: invokevirtual #58                 // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap.getPreferencesMap:()Ljava/util/Map;
+        26: dup
+        27: ldc           #60                 // String getPreferencesMap(...)
+        29: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+        32: astore        5
+        34: iconst_0
+        35: istore        6
+        37: aload         5
+        39: invokeinterface #72,  1           // InterfaceMethod java/util/Map.entrySet:()Ljava/util/Set;
+        44: invokeinterface #78,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        49: astore        7
+        51: aload         7
+        53: invokeinterface #84,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        58: ifeq          130
+        61: aload         7
+        63: invokeinterface #88,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        68: checkcast     #90                 // class java/util/Map$Entry
+        71: astore        8
+        73: aload         8
+        75: astore        9
+        77: iconst_0
+        78: istore        10
+        80: aload         9
+        82: invokeinterface #93,  1           // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+        87: checkcast     #95                 // class java/lang/String
+        90: astore        11
+        92: aload         9
+        94: invokeinterface #98,  1           // InterfaceMethod java/util/Map$Entry.getValue:()Ljava/lang/Object;
+        99: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       102: astore        12
+       104: getstatic     #103                // Field INSTANCE:Landroidx/datastore/preferences/core/PreferencesSerializer;
+       107: aload         11
+       109: invokestatic  #107                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;)V
+       112: aload         11
+       114: aload         12
+       116: invokestatic  #107                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;)V
+       119: aload         12
+       121: aload         4
+       123: invokespecial #111                // Method addProtoEntryToPreferences:(Ljava/lang/String;Landroidx/datastore/preferences/PreferencesProto$Value;Landroidx/datastore/preferences/core/MutablePreferences;)V
+       126: nop
+       127: goto          51
+       130: nop
+       131: aload         4
+       133: invokevirtual #116                // Method androidx/datastore/preferences/core/MutablePreferences.toPreferences:()Landroidx/datastore/preferences/core/Preferences;
+       136: areturn
+
+  public java.lang.Object writeTo(androidx.datastore.preferences.core.Preferences, okio.BufferedSink, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws java.io.IOException, androidx.datastore.core.CorruptionException;
+    Code:
+         0: aload_1
+         1: invokevirtual #145                // Method androidx/datastore/preferences/core/Preferences.asMap:()Ljava/util/Map;
+         4: astore        4
+         6: invokestatic  #149                // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder;
+         9: astore        5
+        11: aload         4
+        13: invokeinterface #72,  1           // InterfaceMethod java/util/Map.entrySet:()Ljava/util/Set;
+        18: invokeinterface #78,  1           // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        23: astore        6
+        25: aload         6
+        27: invokeinterface #84,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        32: ifeq          88
+        35: aload         6
+        37: invokeinterface #88,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        42: checkcast     #90                 // class java/util/Map$Entry
+        45: astore        7
+        47: aload         7
+        49: invokeinterface #93,  1           // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+        54: checkcast     #151                // class androidx/datastore/preferences/core/Preferences$Key
+        57: astore        8
+        59: aload         7
+        61: invokeinterface #98,  1           // InterfaceMethod java/util/Map$Entry.getValue:()Ljava/lang/Object;
+        66: astore        9
+        68: aload         5
+        70: aload         8
+        72: invokevirtual #155                // Method androidx/datastore/preferences/core/Preferences$Key.getName:()Ljava/lang/String;
+        75: aload_0
+        76: aload         9
+        78: invokespecial #159                // Method getValueProto:(Ljava/lang/Object;)Landroidx/datastore/preferences/PreferencesProto$Value;
+        81: invokevirtual #165                // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder.putPreferences:(Ljava/lang/String;Landroidx/datastore/preferences/PreferencesProto$Value;)Landroidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder;
+        84: pop
+        85: goto          25
+        88: aload         5
+        90: invokevirtual #169                // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+        93: checkcast     #54                 // class androidx/datastore/preferences/PreferencesProto$PreferenceMap
+        96: aload_2
+        97: invokeinterface #175,  1          // InterfaceMethod okio/BufferedSink.outputStream:()Ljava/io/OutputStream;
+       102: invokevirtual #178                // Method androidx/datastore/preferences/PreferencesProto$PreferenceMap.writeTo:(Ljava/io/OutputStream;)V
+       105: aload_2
+       106: invokeinterface #181,  1          // InterfaceMethod okio/BufferedSink.flush:()V
+       111: getstatic     #186                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+       114: areturn
+
+  private final androidx.datastore.preferences.PreferencesProto$Value getValueProto(java.lang.Object);
+    Code:
+         0: aload_1
+         1: astore_2
+         2: aload_2
+         3: instanceof    #198                // class java/lang/Boolean
+         6: ifeq          37
+         9: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        12: aload_1
+        13: checkcast     #198                // class java/lang/Boolean
+        16: invokevirtual #204                // Method java/lang/Boolean.booleanValue:()Z
+        19: invokevirtual #210                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setBoolean:(Z)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        22: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+        25: dup
+        26: ldc           #213                // String build(...)
+        28: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+        31: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+        34: goto          328
+        37: aload_2
+        38: instanceof    #215                // class java/lang/Float
+        41: ifeq          72
+        44: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        47: aload_1
+        48: checkcast     #217                // class java/lang/Number
+        51: invokevirtual #221                // Method java/lang/Number.floatValue:()F
+        54: invokevirtual #225                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setFloat:(F)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        57: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+        60: dup
+        61: ldc           #213                // String build(...)
+        63: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+        66: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+        69: goto          328
+        72: aload_2
+        73: instanceof    #227                // class java/lang/Double
+        76: ifeq          107
+        79: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        82: aload_1
+        83: checkcast     #217                // class java/lang/Number
+        86: invokevirtual #231                // Method java/lang/Number.doubleValue:()D
+        89: invokevirtual #235                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setDouble:(D)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+        92: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+        95: dup
+        96: ldc           #213                // String build(...)
+        98: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       101: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       104: goto          328
+       107: aload_2
+       108: instanceof    #237                // class java/lang/Integer
+       111: ifeq          142
+       114: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       117: aload_1
+       118: checkcast     #217                // class java/lang/Number
+       121: invokevirtual #241                // Method java/lang/Number.intValue:()I
+       124: invokevirtual #245                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setInteger:(I)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       127: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+       130: dup
+       131: ldc           #213                // String build(...)
+       133: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       136: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       139: goto          328
+       142: aload_2
+       143: instanceof    #247                // class java/lang/Long
+       146: ifeq          177
+       149: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       152: aload_1
+       153: checkcast     #217                // class java/lang/Number
+       156: invokevirtual #251                // Method java/lang/Number.longValue:()J
+       159: invokevirtual #255                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setLong:(J)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       162: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+       165: dup
+       166: ldc           #213                // String build(...)
+       168: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       171: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       174: goto          328
+       177: aload_2
+       178: instanceof    #95                 // class java/lang/String
+       181: ifeq          209
+       184: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       187: aload_1
+       188: checkcast     #95                 // class java/lang/String
+       191: invokevirtual #259                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setString:(Ljava/lang/String;)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       194: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+       197: dup
+       198: ldc           #213                // String build(...)
+       200: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       203: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       206: goto          328
+       209: aload_2
+       210: instanceof    #74                 // class java/util/Set
+       213: ifeq          259
+       216: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       219: invokestatic  #264                // Method androidx/datastore/preferences/PreferencesProto$StringSet.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$StringSet$Builder;
+       222: aload_1
+       223: dup
+       224: ldc_w         #266                // String null cannot be cast to non-null type kotlin.collections.Set<kotlin.String>
+       227: invokestatic  #268                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;Ljava/lang/String;)V
+       230: checkcast     #74                 // class java/util/Set
+       233: checkcast     #270                // class java/lang/Iterable
+       236: invokevirtual #276                // Method androidx/datastore/preferences/PreferencesProto$StringSet$Builder.addAllStrings:(Ljava/lang/Iterable;)Landroidx/datastore/preferences/PreferencesProto$StringSet$Builder;
+       239: invokevirtual #280                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setStringSet:(Landroidx/datastore/preferences/PreferencesProto$StringSet$Builder;)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       242: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+       245: astore_3
+       246: aload_3
+       247: ldc           #213                // String build(...)
+       249: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       252: aload_3
+       253: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       256: goto          328
+       259: aload_2
+       260: instanceof    #282                // class "[B"
+       263: ifeq          294
+       266: invokestatic  #201                // Method androidx/datastore/preferences/PreferencesProto$Value.newBuilder:()Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       269: aload_1
+       270: checkcast     #282                // class "[B"
+       273: invokestatic  #288                // Method androidx/datastore/preferences/protobuf/ByteString.copyFrom:([B)Landroidx/datastore/preferences/protobuf/ByteString;
+       276: invokevirtual #292                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.setBytes:(Landroidx/datastore/preferences/protobuf/ByteString;)Landroidx/datastore/preferences/PreferencesProto$Value$Builder;
+       279: invokevirtual #211                // Method androidx/datastore/preferences/PreferencesProto$Value$Builder.build:()Landroidx/datastore/preferences/protobuf/GeneratedMessageLite;
+       282: dup
+       283: ldc           #213                // String build(...)
+       285: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       288: checkcast     #100                // class androidx/datastore/preferences/PreferencesProto$Value
+       291: goto          328
+       294: new           #294                // class java/lang/IllegalStateException
+       297: dup
+       298: new           #296                // class java/lang/StringBuilder
+       301: dup
+       302: invokespecial #297                // Method java/lang/StringBuilder."<init>":()V
+       305: ldc_w         #299                // String PreferencesSerializer does not support type:
+       308: invokevirtual #303                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       311: aload_1
+       312: invokevirtual #307                // Method java/lang/Object.getClass:()Ljava/lang/Class;
+       315: invokevirtual #310                // Method java/lang/Class.getName:()Ljava/lang/String;
+       318: invokevirtual #303                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       321: invokevirtual #313                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       324: invokespecial #316                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+       327: athrow
+       328: areturn
+
+  private final void addProtoEntryToPreferences(java.lang.String, androidx.datastore.preferences.PreferencesProto$Value, androidx.datastore.preferences.core.MutablePreferences);
+    Code:
+         0: aload_2
+         1: invokevirtual #320                // Method androidx/datastore/preferences/PreferencesProto$Value.getValueCase:()Landroidx/datastore/preferences/PreferencesProto$Value$ValueCase;
+         4: dup
+         5: ifnonnull     13
+         8: pop
+         9: iconst_m1
+        10: goto          21
+        13: getstatic     #326                // Field androidx/datastore/preferences/core/PreferencesSerializer$WhenMappings.$EnumSwitchMapping$0:[I
+        16: swap
+        17: invokevirtual #331                // Method androidx/datastore/preferences/PreferencesProto$Value$ValueCase.ordinal:()I
+        20: iaload
+        21: tableswitch   { // -1 to 9
+                      -1: 248
+                       0: 262
+                       1: 80
+                       2: 98
+                       3: 116
+                       4: 134
+                       5: 152
+                       6: 170
+                       7: 185
+                       8: 216
+                       9: 234
+                 default: 262
+            }
+        80: aload_3
+        81: aload_1
+        82: invokestatic  #337                // Method androidx/datastore/preferences/core/PreferencesKeys.booleanKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+        85: aload_2
+        86: invokevirtual #340                // Method androidx/datastore/preferences/PreferencesProto$Value.getBoolean:()Z
+        89: invokestatic  #344                // Method java/lang/Boolean.valueOf:(Z)Ljava/lang/Boolean;
+        92: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+        95: goto          270
+        98: aload_3
+        99: aload_1
+       100: invokestatic  #351                // Method androidx/datastore/preferences/core/PreferencesKeys.floatKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       103: aload_2
+       104: invokevirtual #354                // Method androidx/datastore/preferences/PreferencesProto$Value.getFloat:()F
+       107: invokestatic  #357                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;
+       110: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       113: goto          270
+       116: aload_3
+       117: aload_1
+       118: invokestatic  #360                // Method androidx/datastore/preferences/core/PreferencesKeys.doubleKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       121: aload_2
+       122: invokevirtual #363                // Method androidx/datastore/preferences/PreferencesProto$Value.getDouble:()D
+       125: invokestatic  #366                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+       128: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       131: goto          270
+       134: aload_3
+       135: aload_1
+       136: invokestatic  #369                // Method androidx/datastore/preferences/core/PreferencesKeys.intKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       139: aload_2
+       140: invokevirtual #372                // Method androidx/datastore/preferences/PreferencesProto$Value.getInteger:()I
+       143: invokestatic  #375                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       146: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       149: goto          270
+       152: aload_3
+       153: aload_1
+       154: invokestatic  #378                // Method androidx/datastore/preferences/core/PreferencesKeys.longKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       157: aload_2
+       158: invokevirtual #381                // Method androidx/datastore/preferences/PreferencesProto$Value.getLong:()J
+       161: invokestatic  #384                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;
+       164: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       167: goto          270
+       170: aload_3
+       171: aload_1
+       172: invokestatic  #387                // Method androidx/datastore/preferences/core/PreferencesKeys.stringKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       175: aload_2
+       176: invokevirtual #390                // Method androidx/datastore/preferences/PreferencesProto$Value.getString:()Ljava/lang/String;
+       179: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       182: goto          270
+       185: aload_3
+       186: aload_1
+       187: invokestatic  #393                // Method androidx/datastore/preferences/core/PreferencesKeys.stringSetKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       190: aload_2
+       191: invokevirtual #397                // Method androidx/datastore/preferences/PreferencesProto$Value.getStringSet:()Landroidx/datastore/preferences/PreferencesProto$StringSet;
+       194: invokevirtual #401                // Method androidx/datastore/preferences/PreferencesProto$StringSet.getStringsList:()Ljava/util/List;
+       197: dup
+       198: ldc_w         #403                // String getStringsList(...)
+       201: invokestatic  #66                 // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+       204: checkcast     #270                // class java/lang/Iterable
+       207: invokestatic  #409                // Method kotlin/collections/CollectionsKt.toSet:(Ljava/lang/Iterable;)Ljava/util/Set;
+       210: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       213: goto          270
+       216: aload_3
+       217: aload_1
+       218: invokestatic  #412                // Method androidx/datastore/preferences/core/PreferencesKeys.byteArrayKey:(Ljava/lang/String;)Landroidx/datastore/preferences/core/Preferences$Key;
+       221: aload_2
+       222: invokevirtual #416                // Method androidx/datastore/preferences/PreferencesProto$Value.getBytes:()Landroidx/datastore/preferences/protobuf/ByteString;
+       225: invokevirtual #420                // Method androidx/datastore/preferences/protobuf/ByteString.toByteArray:()[B
+       228: invokevirtual #348                // Method androidx/datastore/preferences/core/MutablePreferences.set:(Landroidx/datastore/preferences/core/Preferences$Key;Ljava/lang/Object;)V
+       231: goto          270
+       234: new           #28                 // class androidx/datastore/core/CorruptionException
+       237: dup
+       238: ldc_w         #422                // String Value not set.
+       241: aconst_null
+       242: iconst_2
+       243: aconst_null
+       244: invokespecial #425                // Method androidx/datastore/core/CorruptionException."<init>":(Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+       247: athrow
+       248: new           #28                 // class androidx/datastore/core/CorruptionException
+       251: dup
+       252: ldc_w         #427                // String Value case is null.
+       255: aconst_null
+       256: iconst_2
+       257: aconst_null
+       258: invokespecial #425                // Method androidx/datastore/core/CorruptionException."<init>":(Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+       261: athrow
+       262: new           #429                // class kotlin/NoWhenBranchMatchedException
+       265: dup
+       266: invokespecial #430                // Method kotlin/NoWhenBranchMatchedException."<init>":()V
+       269: athrow
+       270: return
+
+  public java.lang.Object getDefaultValue();
+    Code:
+         0: aload_0
+         1: invokevirtual #432                // Method getDefaultValue:()Landroidx/datastore/preferences/core/Preferences;
+         4: areturn
+
+  public java.lang.Object writeTo(java.lang.Object, okio.BufferedSink, kotlin.coroutines.Continuation);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: checkcast     #142                // class androidx/datastore/preferences/core/Preferences
+         5: aload_2
+         6: aload_3
+         7: invokevirtual #435                // Method writeTo:(Landroidx/datastore/preferences/core/Preferences;Lokio/BufferedSink;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+        10: areturn
+
+  static {};
+    Code:
+         0: new           #2                  // class androidx/datastore/preferences/core/PreferencesSerializer
+         3: dup
+         4: invokespecial #437                // Method "<init>":()V
+         7: putstatic     #103                // Field INSTANCE:Landroidx/datastore/preferences/core/PreferencesSerializer;
+        10: return
+}

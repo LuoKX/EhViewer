@@ -23,6 +23,7 @@ Stock egui controls are not accepted as equivalent Material3 widgets.
 - Original-vector Rust renderer and source-drift/code-generation check. Diagnostic asset view only, not the product sign-in page or pixel equivalence.
 - Pure Rust source-anchored logical-dp placement, 19 regressions, measured-widget boundary and one shared expanded scroll. Density rounding and real Material measurements remain unaccepted.
 - Pinned Compose secure-text metadata policy, 12 Rust regressions and 17 complete class proofs with 24 drift/checker tests. Preserves 1500ms reveal, UTF-16/codepoint quirks, mode/platform/focus rules and redacted state. Not wired into product renderer or IME; clipboard, undo, autofill and timer-delivery acceptance remain open. See `parity/secure-text/README.md`.
+- Rust DataStore Preferences1.2.1 valid-UTF8 format and synthetic host file runtime, 38 real JVM cases and 25 focused Rust regressions. Retains untouched wire/unknown fields, ordered sets and signed/float bits; failed precommit operations preserve old bytes, committed directory-sync failures remain explicit. No application storage call/path discovery. Android locking, malformed-value UTF8 parity, settings migration/UI and device durability remain pending. See `parity/preferences/README.md`.
 - Original core/UI + default/marshmallow debug runtime dependency graphs bound offline; selected versions/source hashes under `parity/fixtures/signin/`.
 - Minimal vendored winit0.30.13 raw Android input hook; one existing queue owner, borrowed callback before normal dispatch. Original source/license retained, bounded patch/provenance under `vendor/winit/docs/`. Global Cargo registry is unchanged.
 - Rust full-buffer/UTF-16 selection/composition transport and local tagged callback leases with ordered local action snapshots, redacted Debug and fail-closed bounded queue. No native-session provenance or zeroization guarantee.
@@ -35,7 +36,7 @@ No Compose, Room, Ktor or old application/JNI business facade is built into this
 target. Third-party AndroidX, Kotlin runtime, GameActivity and AccessKit framework
 internals remain dependencies, not hidden project-owned Kotlin business logic.
 
-Not implemented: actual authentication, HTTP, persistence, catalog/product UI,
+Not implemented: actual authentication, HTTP, application persistence, catalog/product UI,
 reader, downloads, background services and complete localization/platform effects.
 Diagnostic UI still uses English/default fonts. URL inspection never opens a gallery.
 
@@ -58,9 +59,10 @@ python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json 
 python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json --owner native/src/ime_session.rs
 python3 -B native/vendor/winit/tests/android_input_handler.py -v
 bash native/parity/secure-text/check_host.sh --coverage
+bash native/parity/preferences/verify.sh
 ```
 
-Login, layout, artwork, pure IME-session and secure-text policy owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
+Login, layout, artwork, pure IME-session, secure-text policy and preference codec/host-runtime owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
 test counts nor source fixtures prove branch/effect/device/pixel equivalence.
 
 Desktop execution needs working X11/Wayland and OpenGL/EGL. X11 needs distribution-

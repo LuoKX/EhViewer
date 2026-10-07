@@ -1,0 +1,2 @@
+# Protocol Buffer fixtures retain exact bytes, including CR/LF and tabs.
+goldens/*.bin binary

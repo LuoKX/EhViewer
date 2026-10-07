@@ -1,0 +1,137 @@
+rustc 1.97.0-nightly (7c3c88f42 2026-05-14)
+binary: rustc
+commit-hash: 7c3c88f42ad444f4688b865591d84660be4ece2f
+commit-date: 2026-05-14
+host: x86_64-unknown-linux-gnu
+release: 1.97.0-nightly
+LLVM version: 22.1.4
+f135148ff36cc083700225a703ef949b983e2e00e395861342f45e9c312eeb00  /home/ngnl/.rustup/toolchains/nightly-2026-05-15-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/fs.rs
+96e2a285f04ad8f3e40b55dae8a3de54c2db98cf79b1819e1379bc28cfb5fe73  /home/ngnl/.rustup/toolchains/nightly-2026-05-15-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/sys/fs/unix.rs
+    }
+
+    /// Try to acquire an exclusive lock on the file.
+    ///
+    /// Returns `Err(TryLockError::WouldBlock)` if a different lock is already held on this file
+    /// (via another handle/descriptor).
+    ///
+    /// This acquires an exclusive lock; no other file handle to this file, in this or any other
+    /// process, may acquire another lock.
+    ///
+    /// This lock may be advisory or mandatory. This lock is meant to interact with [`lock`],
+    /// [`try_lock`], [`lock_shared`], [`try_lock_shared`], and [`unlock`]. Its interactions with
+    /// other methods, such as [`read`] and [`write`] are platform specific, and it may or may not
+    /// cause non-lockholders to block.
+    ///
+    /// If this file handle/descriptor, or a clone of it, already holds a lock, the exact behavior
+    /// is unspecified and platform dependent, including the possibility that it will deadlock.
+    /// However, if this method returns `Ok(())`, then it has acquired an exclusive lock.
+    ///
+    /// If the file is not open for writing, it is unspecified whether this function returns an error.
+    ///
+    /// The lock will be released when this file (along with any other file descriptors/handles
+    /// duplicated or inherited from it) is closed, or if the [`unlock`] method is called.
+    ///
+    /// # Platform-specific behavior
+    ///
+    /// This function currently corresponds to the `flock` function on Unix with the `LOCK_EX` and
+    /// `LOCK_NB` flags, and the `LockFileEx` function on Windows with the `LOCKFILE_EXCLUSIVE_LOCK`
+    /// and `LOCKFILE_FAIL_IMMEDIATELY` flags. Note that, this
+    /// [may change in the future][changes].
+    ///
+    /// On Windows, locking a file will fail if the file is opened only for append. To lock a file,
+    /// open it with one of `.read(true)`, `.read(true).append(true)`, or `.write(true)`.
+    ///
+    /// [changes]: io#platform-specific-behavior
+    ///
+    /// [`lock`]: File::lock
+    /// [`lock_shared`]: File::lock_shared
+    /// [`try_lock`]: File::try_lock
+    /// [`try_lock_shared`]: File::try_lock_shared
+    /// [`unlock`]: File::unlock
+    /// [`read`]: Read::read
+    /// [`write`]: Write::write
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use std::fs::{File, TryLockError};
+    ///
+    /// fn main() -> std::io::Result<()> {
+    ///     let f = File::create("foo.txt")?;
+    ///     // Explicit handling of the WouldBlock error
+    ///     match f.try_lock() {
+    ///         Ok(_) => (),
+    ///         Err(TryLockError::WouldBlock) => (), // Lock not acquired
+    ///         Err(TryLockError::Error(err)) => return Err(err),
+    ///     }
+    ///     // Alternately, propagate the error as an io::Error
+    ///     f.try_lock()?;
+    ///     Ok(())
+    /// }
+    /// ```
+    #[stable(feature = "file_lock", since = "1.89.0")]
+    pub fn try_lock(&self) -> Result<(), TryLockError> {
+        self.inner.try_lock()
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "fuchsia",
+        target_os = "hurd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "cygwin",
+        target_os = "illumos",
+        target_os = "aix",
+        target_vendor = "apple",
+    ))]
+    pub fn try_lock(&self) -> Result<(), TryLockError> {
+        let result = cvt(unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) });
+        if let Err(err) = result {
+            if err.kind() == io::ErrorKind::WouldBlock {
+                Err(TryLockError::WouldBlock)
+            } else {
+                Err(TryLockError::Error(err))
+            }
+        } else {
+            Ok(())
+        }
+    }
+
+    #[cfg(target_os = "solaris")]
+    pub fn try_lock(&self) -> Result<(), TryLockError> {
+        let mut flock: libc::flock = unsafe { mem::zeroed() };
+        flock.l_type = libc::F_WRLCK as libc::c_short;
+        flock.l_whence = libc::SEEK_SET as libc::c_short;
+        let result = cvt(unsafe { libc::fcntl(self.as_raw_fd(), libc::F_SETLK, &flock) });
+        if let Err(err) = result {
+            if err.kind() == io::ErrorKind::WouldBlock {
+                Err(TryLockError::WouldBlock)
+            } else {
+                Err(TryLockError::Error(err))
+            }
+        } else {
+            Ok(())
+        }
+    }
+
+    #[cfg(not(any(
+        target_os = "freebsd",
+        target_os = "fuchsia",
+        target_os = "hurd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "cygwin",
+        target_os = "solaris",
+        target_os = "illumos",
+        target_os = "aix",
+        target_vendor = "apple",
+    )))]
+    pub fn try_lock(&self) -> Result<(), TryLockError> {
+        Err(TryLockError::Error(io::const_error!(
+            io::ErrorKind::Unsupported,
+            "try_lock() not supported"
+        )))
+    }
