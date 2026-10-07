@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "count": 5,
+    "covered": 5,
+    "percent": 100
+  },
+  "gate": 95,
+  "generated_data": "fixed static declarations; no executable functions; full descriptor/source/fixture/hash gates",
+  "lines": {
+    "count": 18,
+    "covered": 18,
+    "percent": 100
+  },
+  "measurement": "rustc instrument-coverage; actual focused tests; sysroot llvm-profdata/llvm-cov",
+  "owner": "native/src/database_schema.rs",
+  "owner_sha256": "ff0e02e2b5960bb514e32d7d8eb0e414fc80e866cdd6efb11c6bff03b25a511d"
+}

@@ -25,6 +25,7 @@ Stock egui controls are not accepted as equivalent Material3 widgets.
 - Pinned Compose secure-text metadata policy, 12 Rust regressions and 17 complete class proofs with 24 drift/checker tests. Preserves 1500ms reveal, UTF-16/codepoint quirks, mode/platform/focus rules and redacted state. Not wired into product renderer or IME; clipboard, undo, autofill and timer-delivery acceptance remain open. See `parity/secure-text/README.md`.
 - Rust DataStore Preferences1.2.1 valid-UTF8 format and synthetic host file runtime, 38 real JVM cases and 25 focused Rust regressions. Retains untouched wire/unknown fields, ordered sets and signed/float bits; failed precommit operations preserve old bytes, committed directory-sync failures remain explicit. No application storage call/path discovery. Android locking, malformed-value UTF8 parity, settings migration/UI and device durability remain pending. See `parity/preferences/README.md`.
 - Bounded std-only pinned-JVM UTF8 replacement decoder, 258,862 real generated PreferenceMap value/set cases, 5 Rust regressions and 14 proof/runtime tests. One-MiB input/output bounds and redacted errors; original strict key/value codec remains unchanged. Host JDK proof is not Android libcore/device parity. See `parity/jvm-utf8/README.md`.
+- Source-bound original Room schemas/FTS contracts: EhDatabase4–24 and SearchDatabase1–2, 23 exact immutable descriptors, 5 Rust tests, 40 Python negatives and actual compiled-Rust-to-SQLite differential. Preserves identities, LONG/type/nullability, indices/FKs/triggers/ordering and redacted diagnostics. No SQLite Rust engine, migration, application DB path or Room/device parity. See `parity/database-schema/README.md`.
 - Original core/UI + default/marshmallow debug runtime dependency graphs bound offline; selected versions/source hashes under `parity/fixtures/signin/`.
 - Minimal vendored winit0.30.13 raw Android input hook; one existing queue owner, borrowed callback before normal dispatch. Original source/license retained, bounded patch/provenance under `vendor/winit/docs/`. Global Cargo registry is unchanged.
 - Rust full-buffer/UTF-16 selection/composition transport and local tagged callback leases with ordered local action snapshots, redacted Debug and fail-closed bounded queue. No native-session provenance or zeroization guarantee.
@@ -64,11 +65,12 @@ python3 -B scripts/check_native_coverage.py native/build/coverage/coverage.json 
 python3 -B native/vendor/winit/tests/android_input_handler.py -v
 bash native/parity/secure-text/check_host.sh --coverage
 bash native/parity/preferences/verify.sh
+bash native/parity/database-schema/verify.sh
 ```
 
-Latest host integration: 102 native Rust tests, strict all-target Clippy and three-ABI debug APK/v1-v2 signature checks pass; nothing installed. JVM decoder owner coverage is 61/62 executable lines and 6/6 functions. Original UI/device and preferences integration gates remain open.
+Latest host integration: 107 native Rust tests, strict all-target Clippy and three-ABI debug APK/v1-v2 signature checks pass; nothing installed. JVM decoder owner coverage is 61/62 executable lines and 6/6 functions; schema owner is 18/18 lines and 5/5 functions. Original UI/device and preferences integration gates remain open.
 
-Login, layout, artwork, pure IME-session, secure-text policy, preference codec/host-runtime and JVM decoder owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
+Login, layout, artwork, pure IME-session, secure-text policy, preference codec/host-runtime, JVM decoder and schema lookup owners each have an independent 95% line/function gate. Android callback/SDK effect execution remains separate and is not covered by host percentages. Neither merged averages,
 test counts nor source fixtures prove branch/effect/device/pixel equivalence.
 
 Desktop execution needs working X11/Wayland and OpenGL/EGL. X11 needs distribution-

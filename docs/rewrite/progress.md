@@ -34,8 +34,8 @@ TalkBack, secure text, autofill, typography, lifecycle, GPU or performance parit
 | Isolated Rust foundation | Accepted bounded diagnostic slice, gates above | Not production screen or cutover | Committed `858529fe3` |
 | DataStore preference format and Rust file runtime | Accepted valid-UTF8 codec + synthetic host store: 38 actual JVM cases, 25 focused Rust tests, 9 checker tests; owner lines98.64%/functions98.08% | Android storage, malformed-UTF8 equivalence, settings defaults/UI/upgrade and device durability pending; no live paths | Committed `1931379ed`; no product completion claim |
 | Original secure-text behavior | Accepted source-bound policy: 12 Rust tests, 17 whole-class pinned proofs, 24 drift/checker tests; owner lines98.50%/functions100% | Actual IME/edit/render/autofill and timer delivery still pending; helper is not password widget | Committed `af7c40ea9`; no product completion claim |
-| Pinned JVM UTF8 replacement helper | Accepted standalone host foundation: 258,862 generated PreferenceMap value/set cases, 5 Rust tests, 14 proof/runtime tests; owner lines98.39%/functions100% | Original preference codec unchanged; Android libcore/device proof and production consumer integration open | Own bounded helper commit after parent recheck; no product completion claim |
-| SQLite data compatibility | Reviewed original23-schema/FTS foundation; parent integration pending | No persistent engine, migrations, live DB or destructive operations | Own feature commits only after implemented gates |
+| Pinned JVM UTF8 replacement helper | Accepted standalone host foundation: 258,862 generated PreferenceMap value/set cases, 5 Rust tests, 14 proof/runtime tests; owner lines98.39%/functions100% | Original preference codec unchanged; Android libcore/device proof and production consumer integration open | Committed `f665e62eb`; no product completion claim |
+| SQLite data compatibility | Accepted original23-schema/FTS host foundation: 5 Rust tests, 40 Python negatives, actual SQLite differential; owner lines/functions100%; independent parent recheck passed | No persistent engine, migrations, live DB, Room/device or destructive operations | Own source-bound foundation commit; no engine/product completion claim |
 | Full F1–F8 application responsibilities | Pending; reuse existing Rust owners | All original behavior/data/device/cutover obligations open | One finished bounded feature per commit |
 
 Secure-text integration gate (2026-10-07): prior P1 proof gaps and P2 toolbar
@@ -70,11 +70,29 @@ replay and three-ABI APK/v1-v2 validation. Logs: ignored
 `native/build/logs/jvm-utf8-parent-*`. Original value/key decoding and all UI/
 Android behavior remain unswitched; host JDK proof is not Android libcore proof.
 
-Next isolated components: safe Rustix Android filesystem ownership and original
-23-schema/FTS contracts. Filesystem review found two proof packaging/binding P1s
-and a test-only coverage denominator P2; retained worker fixes those before merge.
-Schema verifier whitespace drift restored to original pinned bytes, independently
-rechecked; parent current-root replay/registration binding remains pending.
+Schema parent gate (2026-10-07): exact original Rust module/generated descriptors/
+tests/SQL/source inventory/frozen fixtures copied; restored verifier retains
+original SHA `af2ef2c6…`. Library registration and owned checker/docs manifests
+explicitly rebound, not source/golden identity. Parent normalizes parser failures
+and executes user_version from retained constant statement table after existing
+integer/namespace validation; one direct negative added. Actual23-version compiled
+Rust-to-SQLite differential,5Rust/40Python,100% owner gate,107aggregateRust,
+strict all-target Clippy and three-ABI APK/v1-v2 pass. Earlier preferences38/
+JVM UTF8258,862 replays remain exact. Logs: ignored
+`native/build/logs/schema-parent-*`. Independent current-root integration review
+ee53fc4a-2998-412d-889d-83b596a12fb6 found no issues and accepts host foundation
+only. Missing Eh1–3, migrations/persistent engine and Android/Room/UI gates open.
+
+Next component: safe Rustix Android filesystem ownership. Its two proof
+packaging/binding P1s and test-only coverage denominator P2 are fixed and
+independently closed by b0653c8c-34ca-4885-b4b5-ba6b3b20926c. Current-root
+Cargo/secure-text/library reconciliation and full integration gates remain pending.
+Source-only Python-B replay needs no generated cache; real new-owner hash
+mismatch/omission negatives reject, production lock coverage124/125lines14/14
+functions. Original runtime/source/Cargo/fixture identities preserved.
+Parallel source scout prepares exact original settings/default/array/locale policy
+contract; no implementation or product cutover implied.
+
 Resource failures
 are not accepted work: temporary storage was exhausted, two workers paused or
 failed before validation. Parent preserved partial source and moved only owned
