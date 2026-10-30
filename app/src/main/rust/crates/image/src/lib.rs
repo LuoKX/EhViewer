@@ -22,6 +22,7 @@
 //! ```
 
 pub mod border;
+pub mod crop_policy;
 pub mod gif;
 pub mod pixel;
 pub mod qr;

@@ -107,6 +107,7 @@ interface DownloadRecoveryDao {
     relativePath: String,
     incomingArtists: List<String>,
     promotedAt: Long,
+    policy: RecoveryMergePolicy,
   ): DownloadInfo {
     val candidate = requireNotNull(load(candidateId)) { "Recovery candidate no longer exists" }
     require(candidate.sourceKey == expectedSourceKey) {
@@ -160,7 +161,7 @@ interface DownloadRecoveryDao {
       "The formal gallery page count conflicts with the recovery candidate"
     }
 
-    upsertGallery(mergeGallery(existingGallery, incomingGallery))
+    upsertGallery(policy.mergeGallery(existingGallery, incomingGallery))
     upsertDownload(
       existingDownload?.apply { state = DownloadInfo.STATE_FINISH }
         ?: DownloadEntity(
@@ -173,10 +174,7 @@ interface DownloadRecoveryDao {
     upsertDirname(DownloadDirname(gid, relativePath))
 
     val mergedArtists =
-      (loadArtists(gid).map(DownloadArtist::artist) + incomingArtists)
-        .map(String::trim)
-        .filter(String::isNotEmpty)
-        .distinct()
+      policy.mergeArtists(loadArtists(gid).map(DownloadArtist::artist), incomingArtists)
     if (mergedArtists.isNotEmpty()) {
       deleteArtists(gid)
       insertArtists(DownloadArtist.from(gid, mergedArtists))
@@ -184,25 +182,5 @@ interface DownloadRecoveryDao {
 
     deleteById(candidateId)
     return requireNotNull(loadJoinedDownload(gid)) { "Promoted download could not be reloaded" }
-  }
-
-  private fun mergeGallery(existing: GalleryEntity?, incoming: GalleryEntity): GalleryEntity {
-    if (existing == null) return incoming
-    return GalleryEntity(
-      gid = existing.gid,
-      token = existing.token,
-      title = existing.title.takeUnless(String?::isNullOrBlank) ?: incoming.title,
-      titleJpn = existing.titleJpn.takeUnless(String?::isNullOrBlank) ?: incoming.titleJpn,
-      thumbKey = existing.thumbKey.takeUnless(String?::isNullOrBlank) ?: incoming.thumbKey,
-      category = existing.category.takeUnless { it == 0 } ?: incoming.category,
-      posted = existing.posted.takeUnless(String?::isNullOrBlank) ?: incoming.posted,
-      uploader = existing.uploader.takeUnless(String?::isNullOrBlank) ?: incoming.uploader,
-      rating = existing.rating.takeUnless { it == 0f } ?: incoming.rating,
-      simpleTags = existing.simpleTags?.takeIf(List<String>::isNotEmpty) ?: incoming.simpleTags,
-      pages = existing.pages.takeUnless { it <= 0 } ?: incoming.pages,
-      simpleLanguage =
-        existing.simpleLanguage.takeUnless(String?::isNullOrBlank) ?: incoming.simpleLanguage,
-      favoriteSlot = existing.favoriteSlot,
-    )
   }
 }

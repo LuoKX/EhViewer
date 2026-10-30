@@ -52,15 +52,18 @@ import com.hippo.ehviewer.bridge.download.DownloadQueueCommand
 import com.hippo.ehviewer.bridge.download.DownloadQueuePlan
 import com.hippo.ehviewer.bridge.download.DownloadSortRequest
 import com.hippo.ehviewer.bridge.download.DownloadState
+import com.hippo.ehviewer.bridge.download.LabelAction
 import com.hippo.ehviewer.bridge.download.MAX_DOWNLOAD_METADATA_ROWS
 import com.hippo.ehviewer.bridge.download.PinnedDownloadMetadata
 import com.hippo.ehviewer.bridge.download.applyDownloadMetadata
 import com.hippo.ehviewer.bridge.download.buildDownloadQueueRecoveryEntries
 import com.hippo.ehviewer.bridge.download.buildDownloadQueueSnapshot
 import com.hippo.ehviewer.bridge.download.isExpectedDownloadProgressTask
+import com.hippo.ehviewer.bridge.download.labelIndex
 import com.hippo.ehviewer.bridge.download.observeDownloadMetadata
 import com.hippo.ehviewer.bridge.download.planDownloadMetadata
 import com.hippo.ehviewer.bridge.download.planDownloadProgress
+import com.hippo.ehviewer.bridge.download.planLabelRules
 import com.hippo.ehviewer.bridge.download.recoverDownloadQueue
 import com.hippo.ehviewer.bridge.download.reduceDownloadQueue
 import com.hippo.ehviewer.bridge.download.sortDownloadCatalog
@@ -141,12 +144,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     }
   }
 
-  fun containLabel(label: String?): Boolean {
-    if (label == null) {
-      return false
-    }
-    return labelList.any { it.label == label }
-  }
+  fun containLabel(label: String?): Boolean = labelIndex(labelList.map { it.label }, label) >= 0
 
   fun containDownloadInfo(gid: Long) = mAllInfoMap.containsKey(gid)
 
@@ -606,7 +604,7 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
     list: Collection<DownloadInfo>,
     label: String?,
   ) {
-    if (null != label && !containLabel(label)) {
+    if (planLabelRules(LabelAction.ASSIGN, labelList.map { it.label }, label).value == 0) {
       logcat(TAG, LogPriority.ERROR) { "Not exits label: $label" }
       return
     }
@@ -617,48 +615,41 @@ object DownloadManager : OnSpiderListener, CoroutineScope {
   }
 
   suspend fun addLabel(label: String?) {
-    if (label == null || containLabel(label)) {
-      return
-    }
-    labelList.add(EhDB.addDownloadLabel(DownloadLabel(label, labelList.size)))
+    val position = planLabelRules(LabelAction.ADD, labelList.map { it.label }, label).value
+    if (position == -1) return
+    labelList.add(EhDB.addDownloadLabel(DownloadLabel(checkNotNull(label), position)))
   }
 
   suspend fun renameLabel(
     from: String,
     to: String,
   ) {
-    val index = labelList.indexOfFirst { it.label == from }
+    val index = labelIndex(labelList.map { it.label }, from)
     if (index != -1) {
       val exist = labelList.removeAt(index)
       val new = exist.copy(label = to)
       labelList.add(index, new)
       EhDB.updateDownloadLabel(new)
       sortMutex.withLock {
-        allInfoList.forEach {
-          if (it.label == from) {
-            it.label = to
-          }
-        }
+        val plan = planLabelRules(LabelAction.MATCHING, allInfoList.map { it.label }, from)
+        plan.indices.forEach { allInfoList[it].label = to }
       }
     }
   }
 
   suspend fun deleteLabel(label: String) {
     with(labelList) {
-      val index = indexOfFirst { it.label == label }
+      val index = labelIndex(map { it.label }, label)
       val item = get(index)
       EhDB.removeDownloadLabel(item)
-      subList(index + 1, size).forEach {
-        it.position--
-      }
+      val plan =
+        planLabelRules(LabelAction.DELETE_POSITIONS, positions = map { it.position }, index = index)
+      plan.indices.forEachIndexed { offset, slot -> get(slot).position = plan.positions[offset] }
       removeAt(index)
     }
     sortMutex.withLock {
-      allInfoList.forEach {
-        if (it.label == label) {
-          it.label = null
-        }
-      }
+      val plan = planLabelRules(LabelAction.MATCHING, allInfoList.map { it.label }, label)
+      plan.indices.forEach { allInfoList[it].label = null }
     }
   }
 

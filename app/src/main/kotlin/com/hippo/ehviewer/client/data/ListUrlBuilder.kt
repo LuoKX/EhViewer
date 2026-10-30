@@ -21,12 +21,18 @@ import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.bridge.LIBRARY_RULE_API_VERSION
 import com.hippo.ehviewer.bridge.QuickSearchMatchRequest
 import com.hippo.ehviewer.bridge.QuickSearchSnapshot
+import com.hippo.ehviewer.bridge.gallery.CatalogNavigation
+import com.hippo.ehviewer.bridge.gallery.CatalogNumbers
+import com.hippo.ehviewer.bridge.gallery.CatalogTransition
 import com.hippo.ehviewer.bridge.gallery.GALLERY_LIST_URL_API_VERSION
 import com.hippo.ehviewer.bridge.gallery.GalleryListMode
 import com.hippo.ehviewer.bridge.gallery.GalleryListUrlRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryListUrlState
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
 import com.hippo.ehviewer.bridge.gallery.buildGalleryListUrl
+import com.hippo.ehviewer.bridge.gallery.catalogText
+import com.hippo.ehviewer.bridge.gallery.savedSearchProgress
+import com.hippo.ehviewer.bridge.gallery.transitionCatalog
 import com.hippo.ehviewer.bridge.resolveQuickSearchMatch
 import com.hippo.ehviewer.client.EhUrl
 import com.hippo.ehviewer.client.EhUtils
@@ -49,30 +55,38 @@ data class ListUrlBuilder(
   var pageTo: Int = -1,
 ) {
 
-  fun setIndex(index: String, isNext: Boolean = true) {
-    next = index.takeIf { isNext }
-    prev = index.takeUnless { isNext }
-    range = 0
-    jumpTo = null
+  private fun navigate(
+    action: CatalogTransition,
+    text: String? = null,
+    value: Int = 0,
+    forward: Boolean = false,
+  ) {
+    val plan =
+      transitionCatalog(
+        CatalogNavigation.from(prev, next, jumpTo, range),
+        action,
+        text,
+        value,
+        forward,
+      )
+    prev = plan.previous?.catalogText()
+    next = plan.next?.catalogText()
+    jumpTo = plan.seek?.catalogText()
+    range = plan.range
   }
+
+  fun setIndex(index: String, isNext: Boolean = true) =
+    navigate(CatalogTransition.INDEX, text = index, forward = isNext)
 
   var page: Int
-    get() = (jumpTo?.toInt() ?: 0) + 1
+    get() = CatalogNumbers.displayPage(jumpTo?.toInt() ?: 0)
     set(value) {
-      jumpTo = (value - 1).takeUnless { it == 0 }?.toString()
+      navigate(CatalogTransition.PAGE, value = value)
     }
 
-  fun setRange(to: Int) {
-    range = to
-    prev = null
-    next = null
-    jumpTo = null
-  }
+  fun setRange(to: Int) = navigate(CatalogTransition.RANGE, value = to)
 
-  fun setSeek(date: String) {
-    setIndex("2", true)
-    jumpTo = date
-  }
+  fun setSeek(date: String) = navigate(CatalogTransition.SEEK, text = date)
 
   constructor(
     q: QuickSearch
@@ -84,7 +98,7 @@ data class ListUrlBuilder(
     minRating = q.minRating,
     pageFrom = q.pageFrom,
     pageTo = q.pageTo,
-    next = q.name.substringAfterLast('@', "").ifEmpty { null },
+    next = savedSearchProgress(q.name),
   )
 
   fun toQuickSearch(name: String) =
@@ -103,20 +117,14 @@ data class ListUrlBuilder(
     val request =
       QuickSearchMatchRequest(
         version = LIBRARY_RULE_API_VERSION,
-        current =
-          QuickSearchSnapshot(
-            mode,
-            category,
-            keyword,
-            advanceSearch,
-            minRating,
-            pageFrom,
-            pageTo,
-          ),
+        current = quickSearchSnapshot(),
         saved = q?.let(QuickSearchSnapshot::from),
       )
     return resolveQuickSearchMatch(request)
   }
+
+  internal fun quickSearchSnapshot() =
+    QuickSearchSnapshot(mode, category, keyword, advanceSearch, minRating, pageFrom, pageTo)
 
   /** Returns the complete platform-neutral state compared by the URL parser rollout adapter. */
   internal fun toGalleryListUrlState() =

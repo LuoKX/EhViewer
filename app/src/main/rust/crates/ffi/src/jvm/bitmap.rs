@@ -7,6 +7,7 @@ use std::slice::from_raw_parts;
 
 use anyhow::{Context as _, Result, anyhow, ensure};
 use eh_image::border::DetectBorder;
+use eh_image::crop_policy::plan_crop;
 use eh_image::pixel::{CustomPixel, ImageConsumer, Rgb565, Rgba8888, RgbaF16};
 use eh_image::qr::DetectQrCode;
 use image::ImageBuffer;
@@ -30,6 +31,40 @@ pub fn detectBorder(mut env: JNIEnv<'_>, _class: JClass<'_>, object: jobject) ->
         let slice = use_bitmap_content(env, object, DetectBorder)?;
         let array = env.new_int_array(4)?;
         env.set_int_array_region(&array, 0, &slice)?;
+        Ok(array.into_raw())
+    })
+}
+
+/// Applies the original crop policy and pixel detector in one Android call.
+/// Returns null to keep the original image; exceptions are never a fallback signal.
+#[jni_fn("com.hippo.ehviewer.image.ImageKt")]
+pub fn detectCropV1(
+    mut env: JNIEnv<'_>,
+    _: JClass<'_>,
+    object: jobject,
+    has_qr_code: jboolean,
+) -> jintArray {
+    jni_throwing(&mut env, |env| {
+        let rect = plan_crop(
+            has_qr_code != 0,
+            || {
+                ensure!(!object.is_null(), "Crop bitmap is null");
+                // SAFETY: the synchronous call borrows a live Java Bitmap; it never escapes.
+                #[allow(
+                    unsafe_code,
+                    reason = "NDK metadata requires a live borrowed JNI Bitmap"
+                )]
+                let bitmap = unsafe { Bitmap::from_jni(env.get_raw(), object) };
+                let info = bitmap.info()?;
+                Ok((i32::try_from(info.width())?, i32::try_from(info.height())?))
+            },
+            || use_bitmap_content(env, object, DetectBorder),
+        )?;
+        let Some(rect) = rect else {
+            return Ok(std::ptr::null_mut());
+        };
+        let array = env.new_int_array(4)?;
+        env.set_int_array_region(&array, 0, &rect)?;
         Ok(array.into_raw())
     })
 }
@@ -226,7 +261,7 @@ impl Drop for LockedBitmapPixels<'_> {
 }
 
 fn use_bitmap_content<R, F: ImageConsumer<R>>(
-    env: &mut JNIEnv<'_>,
+    env: &JNIEnv<'_>,
     bitmap: jobject,
     consumer: F,
 ) -> Result<R> {

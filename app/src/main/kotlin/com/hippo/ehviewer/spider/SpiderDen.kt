@@ -39,6 +39,9 @@ import com.hippo.ehviewer.bridge.archive.ComicInfoPolicyRequest
 import com.hippo.ehviewer.bridge.archive.planComicInfoPolicy
 import com.hippo.ehviewer.bridge.archive.validateDownloadedCbzV1
 import com.hippo.ehviewer.bridge.archive.writeGeneratedCbzDescriptorV1
+import com.hippo.ehviewer.bridge.files.expectedImageHash
+import com.hippo.ehviewer.bridge.files.planPostArchivePages
+import com.hippo.ehviewer.bridge.files.rustPageFilename
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUtils.getSuitableTitle
 import com.hippo.ehviewer.client.ehRequest
@@ -227,8 +230,7 @@ class SpiderDen(val info: GalleryInfo) {
     val extension = MimeTypeMap.getFileExtensionFromUrl(url).ifEmpty { "jpg" }
     return saveResponseMeta(index, extension) { outFile ->
       response.bodyAsChannel().copyTo(outFile)
-      FileHashRegex.find(url)?.let {
-        val expected = it.groupValues[1]
+      expectedImageHash(url)?.let { expected ->
         val actual = outFile.sha1()
         check(expected == actual) {
           "File hash mismatch: expected $expected, but got $actual\nURL: $url"
@@ -327,11 +329,11 @@ class SpiderDen(val info: GalleryInfo) {
     val dir = downloadDir
     val archived = saveAsCbz && dir?.find(archiveName) != null
     if (archived) {
-      dir.list().parMap(concurrency = 10) {
-        if (it.name.matches(FileNameRegex)) {
-          it.delete()
-        }
-      }
+      val files = dir.list()
+      require(files.size <= 100_000) { "Download cleanup exceeds limit" }
+      val matches = BooleanArray(files.size) { files[it].name.matches(FileNameRegex) }
+      val indices = planPostArchivePages(matches)
+      indices.toList().parMap(concurrency = 10) { files[it].delete() }
       (dir / SpiderQueen.SPIDER_INFO_FILENAME).delete()
       tempDownloadDir?.delete()
     }
@@ -453,9 +455,8 @@ private val sCache by lazy {
 }
 private const val TEMP_SUFFIX = ".tmp"
 private val FileNameRegex = Regex("^\\d{8}\\.\\w{3,4}")
-private val FileHashRegex = Regex("/h/([0-9a-f]{40})")
 
-fun perFilename(index: Int, extension: String = ""): String = "%08d.%s".format(index + 1, extension)
+fun perFilename(index: Int, extension: String = ""): String = rustPageFilename(index, extension)
 
 suspend fun GalleryInfo.downloadDirname(): String {
   var dirname = EhDB.getDownloadDirname(gid)

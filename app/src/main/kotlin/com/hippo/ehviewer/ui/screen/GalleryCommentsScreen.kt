@@ -96,6 +96,7 @@ import com.ehviewer.core.util.launch
 import com.ehviewer.core.util.launchIO
 import com.ehviewer.core.util.withUIContext
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.gallery.commentLinks
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhFilter.remember
 import com.hippo.ehviewer.client.EhUrl
@@ -124,11 +125,6 @@ import moe.tarsin.coroutines.runSuspendCatching
 import moe.tarsin.navigate
 import moe.tarsin.snackbar
 
-private val URL_PATTERN =
-  Regex(
-    "(http|https)://[a-z0-9A-Z%-]+(\\.[a-z0-9A-Z%-]+)+(:\\d{1,5})?(/[a-zA-Z0-9-_~:#@!&',;=%/*.?+$\\[\\]()]+)?/?"
-  )
-
 private inline fun SpannableStringBuilder.withSpans(
   @ColorInt color: Int,
   builderAction: SpannableStringBuilder.() -> Unit,
@@ -148,11 +144,14 @@ fun processComment(
   comment.comment.parseAsHtml(imageGetter = imageGetter).let { text ->
     buildSpannedString {
       append(text)
-      URL_PATTERN.findAll(text).forEach { result ->
-        val start = result.range.first
-        val end = result.range.last + 1
+      commentLinks(text.toString()).forEach { (start, end) ->
         if (getSpans<URLSpan>(start, end).isEmpty()) {
-          setSpan(URLSpan(result.groupValues[0]), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+          setSpan(
+            URLSpan(text.subSequence(start, end).toString()),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
+          )
         }
       }
       val color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()

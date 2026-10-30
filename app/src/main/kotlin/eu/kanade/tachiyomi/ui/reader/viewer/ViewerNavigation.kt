@@ -4,46 +4,88 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import com.ehviewer.core.i18n.R
+import com.hippo.ehviewer.bridge.reader.readerFact
+import com.hippo.ehviewer.bridge.reader.readerNavigation
 import eu.kanade.tachiyomi.ui.reader.setting.TappingInvertMode
-import eu.kanade.tachiyomi.ui.reader.viewer.navigation.DisabledNavigation
-import eu.kanade.tachiyomi.ui.reader.viewer.navigation.EdgeNavigation
-import eu.kanade.tachiyomi.ui.reader.viewer.navigation.KindlishNavigation
-import eu.kanade.tachiyomi.ui.reader.viewer.navigation.LNavigation
-import eu.kanade.tachiyomi.ui.reader.viewer.navigation.RightAndLeftNavigation
-import eu.kanade.tachiyomi.util.lang.invert
 
-abstract class ViewerNavigation {
-    sealed class NavigationRegion(@StringRes val nameRes: Int, val colorRes: Int) {
-        data object MENU : NavigationRegion(R.string.action_menu, com.hippo.ehviewer.R.color.navigation_menu)
-        data object PREV : NavigationRegion(R.string.nav_zone_prev, com.hippo.ehviewer.R.color.navigation_prev)
-        data object NEXT : NavigationRegion(R.string.nav_zone_next, com.hippo.ehviewer.R.color.navigation_next)
-        data object LEFT : NavigationRegion(R.string.nav_zone_left, com.hippo.ehviewer.R.color.navigation_left)
-        data object RIGHT : NavigationRegion(R.string.nav_zone_right, com.hippo.ehviewer.R.color.navigation_right)
+class ViewerNavigation private constructor(private val value: Int) {
+  sealed class NavigationRegion(val code: Int, @StringRes val nameRes: Int, val colorRes: Int) {
+    data object MENU :
+      NavigationRegion(0, R.string.action_menu, com.hippo.ehviewer.R.color.navigation_menu)
+
+    data object PREV :
+      NavigationRegion(1, R.string.nav_zone_prev, com.hippo.ehviewer.R.color.navigation_prev)
+
+    data object NEXT :
+      NavigationRegion(2, R.string.nav_zone_next, com.hippo.ehviewer.R.color.navigation_next)
+
+    data object LEFT :
+      NavigationRegion(3, R.string.nav_zone_left, com.hippo.ehviewer.R.color.navigation_left)
+
+    data object RIGHT :
+      NavigationRegion(4, R.string.nav_zone_right, com.hippo.ehviewer.R.color.navigation_right)
+  }
+
+  data class Region(val rect: Rect, val type: NavigationRegion)
+
+  fun regions(invertMode: TappingInvertMode = TappingInvertMode.NONE): NavigationRegions {
+    val result =
+      readerNavigation(
+        2,
+        intArrayOf(
+          value,
+          0,
+          invertMode.shouldInvertHorizontal.readerFact(),
+          invertMode.shouldInvertVertical.readerFact(),
+        ),
+      )
+    return result.toList().chunked(5).map { (kind, left, top, right, bottom) ->
+      Region(
+        Rect(
+          Float.fromBits(left),
+          Float.fromBits(top),
+          Float.fromBits(right),
+          Float.fromBits(bottom),
+        ),
+        TYPES[kind],
+      )
     }
+  }
 
-    data class Region(val rect: Rect, val type: NavigationRegion) {
-        fun invert(invertMode: TappingInvertMode): Region {
-            if (invertMode == TappingInvertMode.NONE) return this
-            return copy(rect = rect.invert(invertMode))
-        }
+  companion object {
+    private val TYPES =
+      listOf(
+        NavigationRegion.MENU,
+        NavigationRegion.PREV,
+        NavigationRegion.NEXT,
+        NavigationRegion.LEFT,
+        NavigationRegion.RIGHT,
+      )
+
+    private val MODES = (1..5).map { ViewerNavigation(it) }
+
+    fun fromPreference(value: Int, isVertical: Boolean): ViewerNavigation {
+      val mode = readerNavigation(10, intArrayOf(value, isVertical.readerFact()))[0]
+      return MODES[mode - 1]
     }
-
-    protected abstract val originalRegions: List<Region>
-
-    fun regions(invertMode: TappingInvertMode = TappingInvertMode.NONE) = originalRegions.map { it.invert(invertMode) }
-
-    companion object {
-        fun fromPreference(value: Int, isVertical: Boolean) = when (value) {
-            1 -> LNavigation
-            2 -> KindlishNavigation
-            3 -> EdgeNavigation
-            4 -> RightAndLeftNavigation
-            5 -> DisabledNavigation
-            else -> if (isVertical) LNavigation else RightAndLeftNavigation
-        }
-    }
+  }
 }
 
 typealias NavigationRegions = List<ViewerNavigation.Region>
 
-fun NavigationRegions.getAction(offset: Offset) = find { offset in it.rect }?.type ?: ViewerNavigation.NavigationRegion.MENU
+internal fun NavigationRegions.tapIntent(offset: Offset, rtl: Boolean, webtoon: Boolean): IntArray {
+  val facts = IntArray(4 + size * 5)
+  facts[0] = offset.x.toRawBits()
+  facts[1] = offset.y.toRawBits()
+  facts[2] = rtl.readerFact()
+  facts[3] = webtoon.readerFact()
+  forEachIndexed { index, region ->
+    val offset = 4 + index * 5
+    facts[offset] = region.type.code
+    facts[offset + 1] = region.rect.left.toRawBits()
+    facts[offset + 2] = region.rect.top.toRawBits()
+    facts[offset + 3] = region.rect.right.toRawBits()
+    facts[offset + 4] = region.rect.bottom.toRawBits()
+  }
+  return readerNavigation(3, facts)
+}

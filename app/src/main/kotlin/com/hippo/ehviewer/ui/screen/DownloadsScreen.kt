@@ -114,7 +114,12 @@ import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
 import com.hippo.ehviewer.asMutableState
 import com.hippo.ehviewer.bridge.download.DownloadFilterRequest
+import com.hippo.ehviewer.bridge.download.chooseDefaultLabel
+import com.hippo.ehviewer.bridge.download.defaultLabelSelection
 import com.hippo.ehviewer.bridge.download.filterDownloadCatalog
+import com.hippo.ehviewer.bridge.download.validateLabelName
+import com.hippo.ehviewer.bridge.library.finishOrderedList
+import com.hippo.ehviewer.bridge.library.moveOrderedList
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.collectAsState
 import com.hippo.ehviewer.download.DownloadManager
@@ -276,10 +281,16 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
                 launch {
                   val text =
                     awaitInputText(title = newLabel, hint = labelsStr) { text ->
-                      when {
-                        text.isBlank() -> raise(labelEmpty)
-                        text == defaultName -> raise(defaultInvalid)
-                        DownloadManager.containLabel(text) -> raise(labelExists)
+                      when (
+                        validateLabelName(
+                          text,
+                          defaultName,
+                          DownloadManager.labelList.map { it.label },
+                        )
+                      ) {
+                        1 -> raise(labelEmpty)
+                        2 -> raise(defaultInvalid)
+                        3 -> raise(labelExists)
                       }
                     }
                   DownloadManager.addLabel(text)
@@ -293,27 +304,24 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
             IconButton(
               onClick = {
                 launch {
+                  val hasDefault = Settings.hasDefaultDownloadLabel
                   val selected =
-                    if (!Settings.hasDefaultDownloadLabel) {
-                      0
-                    } else {
-                      DownloadManager.labelList.indexOfFirst {
-                        it.label == Settings.defaultDownloadLabel
-                      } + 2
-                    }
+                    defaultLabelSelection(
+                      hasDefault,
+                      if (hasDefault) Settings.defaultDownloadLabel else null,
+                      DownloadManager.labelList.map { it.label },
+                    )
                   awaitSelectAction(R.string.default_download_label, selected) {
-                    onSelect(letMeSelect) {
-                      Settings.hasDefaultDownloadLabel = false
+                    val names = DownloadManager.labelList.map { it.label }
+                    fun applyChoice(index: Int) {
+                      val choice = chooseDefaultLabel(index, names)
+                      Settings.hasDefaultDownloadLabel = choice.hasDefault
+                      if (choice.hasDefault) Settings.defaultDownloadLabel = choice.label
                     }
-                    onSelect(defaultName) {
-                      Settings.hasDefaultDownloadLabel = true
-                      Settings.defaultDownloadLabel = null
-                    }
-                    DownloadManager.labelList.forEach { (label) ->
-                      onSelect(label) {
-                        Settings.hasDefaultDownloadLabel = true
-                        Settings.defaultDownloadLabel = label
-                      }
+                    onSelect(letMeSelect) { applyChoice(0) }
+                    onSelect(defaultName) { applyChoice(1) }
+                    names.forEachIndexed { index, label ->
+                      onSelect(label) { applyChoice(index + 2) }
                     }
                   }()
                 }
@@ -352,9 +360,7 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
       val hapticFeedback = rememberHapticFeedback()
       val reorderableLabelState =
         rememberReorderableLazyListState(labelsListState) { from, to ->
-          val fromPosition = from.index - 2
-          val toPosition = to.index - 2
-          DownloadManager.labelList.apply { add(toPosition, removeAt(fromPosition)) }
+          moveOrderedList(DownloadManager.labelList, from.index, to.index, headers = 2)
           hapticFeedback.performHapticFeedback(HapticFeedbackType.MOVE)
         }
       var fromIndex by remember { mutableIntStateOf(-1) }
@@ -463,10 +469,16 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
                                 title = renameLabel,
                                 hint = labelsStr,
                               ) { text ->
-                                when {
-                                  text.isBlank() -> raise(labelEmpty)
-                                  text == defaultName -> raise(defaultInvalid)
-                                  DownloadManager.containLabel(text) -> raise(labelExists)
+                                when (
+                                  validateLabelName(
+                                    text,
+                                    defaultName,
+                                    DownloadManager.labelList.map { it.label },
+                                  )
+                                ) {
+                                  1 -> raise(labelEmpty)
+                                  2 -> raise(defaultInvalid)
+                                  3 -> raise(labelExists)
                                 }
                               }
                             DownloadManager.renameLabel(item, new)
@@ -490,16 +502,15 @@ fun AnimatedVisibilityScope.DownloadsScreen(navigator: DestinationsNavigator) =
                             },
                             onDragStopped = {
                               hapticFeedback.performHapticFeedback(HapticFeedbackType.END)
-                              if (fromIndex != -1) {
-                                if (fromIndex != index) {
-                                  val range =
-                                    if (fromIndex < index) fromIndex..index else index..fromIndex
-                                  val toUpdate = DownloadManager.labelList.slice(range)
-                                  toUpdate.zip(range).forEach { it.first.position = it.second }
-                                  launchIO { EhDB.updateDownloadLabel(toUpdate) }
+                              val toUpdate =
+                                finishOrderedList(DownloadManager.labelList, fromIndex, index) {
+                                  row,
+                                  position ->
+                                  row.position = position
                                 }
-                                fromIndex = -1
-                              }
+                              if (toUpdate.isNotEmpty())
+                                launchIO { EhDB.updateDownloadLabel(toUpdate) }
+                              fromIndex = -1
                             },
                           ),
                       ) {

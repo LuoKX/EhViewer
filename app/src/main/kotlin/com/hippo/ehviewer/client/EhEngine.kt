@@ -50,6 +50,7 @@ import com.hippo.ehviewer.bridge.gallery.GalleryRequestIdentity
 import com.hippo.ehviewer.bridge.gallery.GalleryRequestKind
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
 import com.hippo.ehviewer.bridge.gallery.applyGalleryRequestPlan
+import com.hippo.ehviewer.bridge.gallery.applyLocalFavoriteOverlay
 import com.hippo.ehviewer.bridge.gallery.inferGalleryLanguage
 import com.hippo.ehviewer.bridge.gallery.needsGalleryMetadata
 import com.hippo.ehviewer.bridge.gallery.planFavoriteMutation
@@ -726,9 +727,7 @@ object EhEngine {
     if (needApi) fillGalleryListByApi(this, url)
     if (filter) EhFilter.filterPostEnrichment(this)
     forEach {
-      if (it.favoriteSlot == GalleryInfo.NOT_FAVORITED && EhDB.containLocalFavorites(it.gid)) {
-        it.favoriteSlot = GalleryInfo.LOCAL_FAVORITED
-      }
+      applyLocalFavoriteOverlay(it) { gid -> EhDB.containLocalFavorites(gid) }
       if (!needApi) it.generateSLang(::inferGalleryLanguage)
     }
   }

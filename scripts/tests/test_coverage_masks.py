@@ -5,10 +5,14 @@ from pathlib import Path
 
 CI = Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
 OWNERS = (
+    "recovery_persistence", "reader_navigation", "thumbnail_flow",
+    "quick_search", "list_order", "favorite_batch",
+    "download_startup", "catalog_state", "label_rules", "entry_actions",
     "reader_policy", "transfer_speed", "recovery_search", "spider_info",
     "local_pages", "cache_keys", "file_rules", "text_spans", "bbcode",
     "comic_info_policy", "recovery_scan", "storage_rules", "production_zip",
     "production_tar", "archive_filters", "webp", "recovery_batch",
+    "recovery_mapping", "download_files", "comment_display", "crop_policy", "update_package",
     "recovery_directory", "backup_import", "download_metadata", "update_policy", "updater",
 )
 MASK_ARGUMENT = re.compile(

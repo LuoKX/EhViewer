@@ -22,14 +22,23 @@ import com.hippo.ehviewer.bridge.download.RecoveryConflictRequest
 import com.hippo.ehviewer.bridge.download.RecoveryEntryInput
 import com.hippo.ehviewer.bridge.download.RecoveryFingerprintInput
 import com.hippo.ehviewer.bridge.download.RecoveryIssue
+import com.hippo.ehviewer.bridge.download.RecoveryMappingCandidate
+import com.hippo.ehviewer.bridge.download.RecoveryMappingDownload
+import com.hippo.ehviewer.bridge.download.RecoveryMappingRequest
 import com.hippo.ehviewer.bridge.download.RecoveryPageTokenEvidence
 import com.hippo.ehviewer.bridge.download.RecoveryPersistenceAction
+import com.hippo.ehviewer.bridge.download.RecoveryPersistenceKind
+import com.hippo.ehviewer.bridge.download.RecoveryPersistenceRequest
 import com.hippo.ehviewer.bridge.download.RecoverySourceKeyInput
 import com.hippo.ehviewer.bridge.download.RecoverySourceKind
 import com.hippo.ehviewer.bridge.download.RecoveryStatus
+import com.hippo.ehviewer.bridge.download.applyRecoveryStage
 import com.hippo.ehviewer.bridge.download.extractDownloadRecoveryPageToken
 import com.hippo.ehviewer.bridge.download.inspectDownloadRecoveryCandidate
 import com.hippo.ehviewer.bridge.download.planDownloadRecoveryConflicts
+import com.hippo.ehviewer.bridge.download.planRecoveryMappings
+import com.hippo.ehviewer.bridge.download.planRecoveryPersistence
+import com.hippo.ehviewer.bridge.download.recoveryPromotionFailure
 import com.hippo.ehviewer.bridge.files.RecoveryFileKind
 import com.hippo.ehviewer.bridge.files.RecoveryFileObservation
 import com.hippo.ehviewer.bridge.files.StorageCandidateInput
@@ -41,7 +50,6 @@ import com.hippo.ehviewer.download.DownloadManager
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
-import java.security.MessageDigest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -172,17 +180,25 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     val promotionPaths =
       inspected.indices.associate { inspected[it].plan.sourceKey to inspectedPaths[it] }
     val existingDownloads = EhDB.getAllDownloadInfo()
-    val mappings = existingDownloads.map { download ->
-      val matched = inspected.firstOrNull { candidate ->
-        candidate.plan.status == RecoveryStatus.READY &&
-          candidate.plan.gid == download.gid &&
-          promotionPaths[candidate.plan.sourceKey] == download.dirname
-      }
+    val associations =
+      planRecoveryMappings(
+        RecoveryMappingRequest(
+          1,
+          inspected.map { candidate ->
+            RecoveryMappingCandidate(
+              candidate.plan.gid,
+              candidate.plan.status,
+              candidate.plan.sourceKey,
+              promotionPaths[candidate.plan.sourceKey]?.toUtf16LeBytes(),
+            )
+          },
+          existingDownloads.map { RecoveryMappingDownload(it.gid, it.dirname?.toUtf16LeBytes()) },
+        )
+      )
+    val mappings = existingDownloads.mapIndexed { index, download ->
       ExistingRecoveryMapping(
         gid = download.gid,
-        sourceKey =
-          matched?.plan?.sourceKey
-            ?: sha256("database:${download.gid}:${download.dirname.orEmpty()}"),
+        sourceKey = associations.mappings[index].sourceKey,
         complete = download.state == DownloadInfo.STATE_FINISH,
       )
     }
@@ -202,52 +218,54 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     for (candidate in inspected) {
       currentCoroutineContext().ensureActive()
       val decision = requireNotNull(decisions[candidate.plan.sourceKey])
-      if (decision.action == RecoveryPersistenceAction.KEEP_EXISTING) {
-        oldRows[candidate.plan.sourceKey]?.let { old ->
-          EhDB.removeDownloadRecoveryCandidate(old.candidateId)
-        }
+      val plan = candidate.plan
+      val old = oldRows[plan.sourceKey]
+      val persistence =
+        planRecoveryPersistence(
+          RecoveryPersistenceRequest(
+            kind = RecoveryPersistenceKind.STAGE,
+            action = decision.action,
+            status = decision.status,
+            issues = (plan.issues + listOfNotNull(decision.issue)).map { it.name },
+            pathAvailable = promotionPaths[plan.sourceKey] != null,
+            present =
+              listOf(
+                plan.gid != null,
+                plan.token != null,
+                candidate.pageToken?.pageToken != null,
+                candidate.pageToken?.pageIndex != null,
+                plan.title != null,
+                plan.declaredPages != null,
+              ),
+          )
+        )
+      if (persistence.flags[0]) {
+        old?.let { EhDB.removeDownloadRecoveryCandidate(it.candidateId) }
         continue
       }
-      val plan =
-        candidate.plan.copy(
-          status = decision.status,
-          action = decision.action,
-          issues = (candidate.plan.issues + listOfNotNull(decision.issue)).distinct(),
-        )
-      val old = oldRows[plan.sourceKey]
-      val promotionPath = promotionPaths[candidate.plan.sourceKey]
-      val pathBlocked =
-        plan.action == RecoveryPersistenceAction.PROMOTE_FINISHED && promotionPath == null
       val row =
         DownloadRecoveryCandidate(
-          candidateId = old?.candidateId ?: 0,
           sourceKey = plan.sourceKey,
           rootKey = tree.rootKey,
           sourceLocator = candidate.node.uri.toString(),
           relativePath = candidate.node.relativePath,
           displayName = candidate.node.displayName,
           sourceKind = candidate.roomKind,
-          gid = plan.gid ?: old?.gid,
-          token = plan.token ?: old?.token,
-          pageToken = candidate.pageToken?.pageToken ?: old?.pageToken,
-          pageIndex = candidate.pageToken?.pageIndex ?: old?.pageIndex,
-          title = plan.title ?: old?.title,
-          titleJpn = old?.titleJpn,
-          declaredPages = plan.declaredPages ?: old?.declaredPages,
+          gid = plan.gid,
+          token = plan.token,
+          pageToken = candidate.pageToken?.pageToken,
+          pageIndex = candidate.pageToken?.pageIndex,
+          title = plan.title,
+          declaredPages = plan.declaredPages,
           localPageCount = plan.localPageCount,
           evidence = plan.evidence.joinToString(",") { it.kind.name },
-          issues =
-            (plan.issues.map { it.name } +
-                if (pathBlocked) listOf("ANDROID_PATH_CONFLICT") else emptyList())
-              .distinct()
-              .joinToString(","),
-          status = if (pathBlocked) DownloadRecoveryStatus.PATH_CONFLICT else plan.toRoomStatus(),
+          status = DownloadRecoveryStatus.valueOf(checkNotNull(persistence.status)),
           fingerprint = plan.fingerprint,
           lastSeenRunId = runId,
-          createdAt = old?.createdAt ?: now,
+          createdAt = now,
           updatedAt = now,
         )
-      EhDB.putDownloadRecoveryCandidate(row)
+      EhDB.putDownloadRecoveryCandidate(applyRecoveryStage(row, old, persistence))
     }
 
     val staged = EhDB.getDownloadRecoveryCandidates().associateBy { it.sourceKey }
@@ -297,26 +315,34 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
         throw cancelled
       } catch (_: Throwable) {
         EhDB.putDownloadRecoveryCandidate(
-          row.copy(
-            status = DownloadRecoveryStatus.PATH_CONFLICT,
-            issues =
-              (row.issues.split(',').filter(String::isNotBlank) + "PROMOTION_CONFLICT")
-                .distinct()
-                .joinToString(","),
-            updatedAt = System.currentTimeMillis(),
-          )
+          recoveryPromotionFailure(row) { System.currentTimeMillis() }
         )
       }
     }
 
-    val limitExceeded = tree.limitExceeded || candidateLimitExceeded || inspectionLimitExceeded
-    if (!limitExceeded) {
+    val finalization =
+      planRecoveryPersistence(
+        RecoveryPersistenceRequest(
+          kind = RecoveryPersistenceKind.FINISH,
+          limits = listOf(tree.limitExceeded, candidateLimitExceeded, inspectionLimitExceeded),
+        )
+      )
+    val limitExceeded = finalization.flags[0]
+    if (finalization.flags[1]) {
       EhDB.markDownloadRecoverySourcesMissing(tree.rootKey, runId, System.currentTimeMillis())
     }
+    val rows = EhDB.getDownloadRecoveryCandidates()
     val pending =
-      EhDB.getDownloadRecoveryCandidates().count {
-        it.rootKey == tree.rootKey && it.status != DownloadRecoveryStatus.SOURCE_MISSING
-      }
+      checkNotNull(
+        planRecoveryPersistence(
+            RecoveryPersistenceRequest(
+              kind = RecoveryPersistenceKind.PENDING,
+              sameRoot = rows.map { it.rootKey == tree.rootKey },
+              missing = rows.map { it.status == DownloadRecoveryStatus.SOURCE_MISSING },
+            )
+          )
+          .count
+      )
     progress = progress.copy(recovered = recovered, pending = pending)
     onProgress(progress)
     return RecoveryScanResult(progress, limitExceeded)
@@ -393,41 +419,6 @@ internal class DownloadRecoveryCoordinator(private val context: Context) {
     )
   }
 
-  private fun RecoveryCandidatePlan.toRoomStatus(): DownloadRecoveryStatus =
-    when (status) {
-      RecoveryStatus.READY -> {
-        DownloadRecoveryStatus.READY
-      }
-
-      RecoveryStatus.MISSING_IDENTITY -> {
-        DownloadRecoveryStatus.MISSING_IDENTITY
-      }
-
-      RecoveryStatus.INCOMPLETE -> {
-        DownloadRecoveryStatus.CONTENT_INCOMPLETE
-      }
-
-      RecoveryStatus.UNREADABLE -> {
-        DownloadRecoveryStatus.UNREADABLE
-      }
-
-      RecoveryStatus.LIMIT_EXCEEDED -> {
-        DownloadRecoveryStatus.LIMIT_EXCEEDED
-      }
-
-      RecoveryStatus.SOURCE_MISSING -> {
-        DownloadRecoveryStatus.SOURCE_MISSING
-      }
-
-      RecoveryStatus.CONFLICT -> {
-        when {
-          RecoveryIssue.DUPLICATE_SOURCE in issues -> DownloadRecoveryStatus.DUPLICATE_SOURCE
-          RecoveryIssue.EXISTING_MAPPING_CONFLICT in issues -> DownloadRecoveryStatus.PATH_CONFLICT
-          else -> DownloadRecoveryStatus.IDENTITY_CONFLICT
-        }
-      }
-    }
-
   private fun readBounded(node: RecoveryDocumentNode): ByteArray =
     openInput(node).use { input ->
       val output = ByteArrayOutputStream()
@@ -484,9 +475,4 @@ private fun RecoveryFileKind.toRoomKind(): DownloadRecoverySourceKind =
     RecoveryFileKind.TAR -> DownloadRecoverySourceKind.TAR
     RecoveryFileKind.TAR_GZ -> DownloadRecoverySourceKind.TAR_GZ
     RecoveryFileKind.TAR_XZ -> DownloadRecoverySourceKind.TAR_XZ
-  }
-
-private fun sha256(value: String): String =
-  MessageDigest.getInstance("SHA-256").digest(value.encodeToByteArray()).joinToString("") {
-    "%02x".format(it)
   }

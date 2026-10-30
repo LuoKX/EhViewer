@@ -89,8 +89,17 @@ pub struct QuickSearchMatchPlan {
 #[must_use]
 pub fn plan_quick_search_match(request: &QuickSearchMatchRequest) -> QuickSearchMatchPlan {
     QuickSearchMatchPlan {
-        matches: request.saved.as_ref() == Some(&request.current),
+        matches: quick_search_matches(&request.current, request.saved.as_ref()),
     }
+}
+
+/// Shared comparison for one legacy query or a batched creation preflight.
+#[must_use]
+pub fn quick_search_matches(
+    current: &QuickSearchSnapshot,
+    saved: Option<&QuickSearchSnapshot>,
+) -> bool {
+    saved == Some(current)
 }
 
 /// Versioned names and row count needed to plan one `QuickSearch` import.

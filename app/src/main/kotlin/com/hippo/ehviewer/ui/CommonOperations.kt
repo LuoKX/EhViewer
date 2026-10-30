@@ -43,7 +43,6 @@ import com.ehviewer.core.files.write
 import com.ehviewer.core.i18n.R
 import com.ehviewer.core.model.BaseGalleryInfo
 import com.ehviewer.core.model.GalleryInfo
-import com.ehviewer.core.model.GalleryInfo.Companion.LOCAL_FAVORITED
 import com.ehviewer.core.model.GalleryInfo.Companion.NOT_FAVORITED
 import com.ehviewer.core.ui.component.LabeledCheckbox
 import com.ehviewer.core.util.isAtLeastT
@@ -53,6 +52,11 @@ import com.ehviewer.core.util.toLocalDateTime
 import com.ehviewer.core.util.withIOContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.download.downloadEntryChoice
+import com.hippo.ehviewer.bridge.download.favoriteEntryChoice
+import com.hippo.ehviewer.bridge.download.partitionDownloadEntries
+import com.hippo.ehviewer.bridge.download.selectedDownloadLabel
+import com.hippo.ehviewer.bridge.download.selectedFavoriteSlot
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.download.DownloadManager
@@ -122,7 +126,12 @@ suspend fun startDownload(forceDefault: Boolean, vararg galleryInfos: BaseGaller
   if (isAtLeastT) {
     requestPermission(Manifest.permission.POST_NOTIFICATIONS)
   }
-  val (toStart, toAdd) = galleryInfos.partition { DownloadManager.containDownloadInfo(it.gid) }
+  val (existing, added) =
+    partitionDownloadEntries(
+      BooleanArray(galleryInfos.size) { DownloadManager.containDownloadInfo(galleryInfos[it].gid) }
+    )
+  val toStart = existing.map { galleryInfos[it] }
+  val toAdd = added.map { galleryInfos[it] }
   if (toStart.isNotEmpty()) {
     val list = toStart.mapToLongArray(GalleryInfo::gid)
     DownloadService.startRangeDownload(list)
@@ -130,19 +139,18 @@ suspend fun startDownload(forceDefault: Boolean, vararg galleryInfos: BaseGaller
   if (toAdd.isEmpty()) {
     return tip(R.string.added_to_download_list)
   }
-  var justStart = forceDefault
-  var label: String? = null
-  // Get default download label
-  if (!justStart && Settings.hasDefaultDownloadLabel) {
-    label = Settings.defaultDownloadLabel
-    justStart = label == null || DownloadManager.containLabel(label)
-  }
-  // If there is no other label, just use null label
-  if (!justStart && DownloadManager.labelList.isEmpty()) {
-    justStart = true
-    label = null
-  }
-  if (justStart) {
+  val hasDefault = !forceDefault && Settings.hasDefaultDownloadLabel
+  val defaultLabel = if (hasDefault) Settings.defaultDownloadLabel else null
+  val choice =
+    downloadEntryChoice(
+      forceDefault,
+      hasDefault,
+      defaultLabel == null,
+      defaultLabel != null && DownloadManager.containLabel(defaultLabel),
+      DownloadManager.labelList.isEmpty(),
+    )
+  val label = defaultLabel.takeIf { choice.useDefault }
+  if (choice.direct) {
     // Got default label
     for (gi in toAdd) {
       DownloadService.startDownload(gi, label)
@@ -164,8 +172,7 @@ suspend fun startDownload(forceDefault: Boolean, vararg galleryInfos: BaseGaller
         title = R.string.download,
         checkBoxText = R.string.remember_download_label,
       )
-    val label1 =
-      if (selected == 0) null else items[selected].takeIf { DownloadManager.containLabel(it) }
+    val label1 = selectedDownloadLabel(items, selected)?.takeIf { DownloadManager.containLabel(it) }
     // Start download
     for (gi in toAdd) {
       DownloadService.startDownload(gi, label1)
@@ -184,53 +191,49 @@ suspend fun startDownload(forceDefault: Boolean, vararg galleryInfos: BaseGaller
 context(_: DialogState)
 suspend fun modifyFavorites(galleryInfo: GalleryInfo): Boolean {
   val localFavorited = EhDB.containLocalFavorites(galleryInfo.gid)
-  if (Settings.hasSignedIn.value) {
-    val isFavorited = galleryInfo.favoriteSlot != NOT_FAVORITED
-    val defaultFavSlot = Settings.defaultFavSlot.value
-    if (defaultFavSlot == -2) {
-      val localFav = getFavoriteIcon(localFavorited) to appCtx.getString(R.string.local_favorites)
-      val cloudFav =
-        Settings.favCat.mapIndexed { index, name ->
-          getFavoriteIcon(galleryInfo.favoriteSlot == index) to name
-        }
-      val items = buildList {
-        if (isFavorited) {
-          val remove =
-            Icons.Default.HeartBroken to appCtx.getString(R.string.remove_from_favourites)
-          add(remove)
-        }
-        add(localFav)
-        addAll(cloudFav)
+  val signedIn = Settings.hasSignedIn.value
+  val choice =
+    favoriteEntryChoice(
+      signedIn,
+      galleryInfo.favoriteSlot,
+      if (signedIn) Settings.defaultFavSlot.value else -2,
+      galleryInfo.favoriteNote == null,
+    )
+  if (choice.chooser) {
+    val localFav = getFavoriteIcon(localFavorited) to appCtx.getString(R.string.local_favorites)
+    val cloudFav =
+      Settings.favCat.mapIndexed { index, name ->
+        getFavoriteIcon(galleryInfo.favoriteSlot == index) to name
       }
-      if (galleryInfo.favoriteSlot >= 0 && galleryInfo.favoriteNote == null) {
-        galleryInfo.favoriteNote = bgWork {
-          EhEngine.getFavoriteNote(galleryInfo.gid, galleryInfo.token)
-        }
+    val items = buildList {
+      if (choice.removeRow) {
+        val remove = Icons.Default.HeartBroken to appCtx.getString(R.string.remove_from_favourites)
+        add(remove)
       }
-      val (slot, note) =
-        awaitSelectItemWithIconAndTextField(
-          items,
-          title = R.string.add_favorites_dialog_title,
-          hint = R.string.favorite_note,
-          initialNote = galleryInfo.favoriteNote.orEmpty(),
-          maxChar = MAX_FAVNOTE_CHAR,
-        )
-      return doModifyFavorites(
-        galleryInfo,
-        if (isFavorited) slot - 2 else slot - 1,
-        localFavorited,
-        note,
-      )
-    } else {
-      return doModifyFavorites(
-        galleryInfo,
-        if (isFavorited) NOT_FAVORITED else defaultFavSlot,
-        localFavorited,
-      )
+      add(localFav)
+      addAll(cloudFav)
     }
-  } else {
-    return doModifyFavorites(galleryInfo, LOCAL_FAVORITED, localFavorited)
+    if (choice.fetchNote) {
+      galleryInfo.favoriteNote = bgWork {
+        EhEngine.getFavoriteNote(galleryInfo.gid, galleryInfo.token)
+      }
+    }
+    val (slot, note) =
+      awaitSelectItemWithIconAndTextField(
+        items,
+        title = R.string.add_favorites_dialog_title,
+        hint = R.string.favorite_note,
+        initialNote = galleryInfo.favoriteNote.orEmpty(),
+        maxChar = MAX_FAVNOTE_CHAR,
+      )
+    return doModifyFavorites(
+      galleryInfo,
+      selectedFavoriteSlot(choice.removeRow, slot),
+      localFavorited,
+      note,
+    )
   }
+  return doModifyFavorites(galleryInfo, choice.slot, localFavorited)
 }
 
 private suspend fun doModifyFavorites(
@@ -413,7 +416,7 @@ suspend fun showMoveDownloadLabel(info: GalleryInfo) {
   }
   val selected = awaitSelectItem(labels, R.string.download_move_dialog_title)
   val downloadInfo = DownloadManager.getDownloadInfo(info.gid) ?: return
-  val label = if (selected == 0) null else labels[selected]
+  val label = selectedDownloadLabel(labels, selected)
   DownloadManager.changeLabel(listOf(downloadInfo), label)
 }
 
@@ -427,7 +430,7 @@ suspend fun showMoveDownloadLabelList(list: Collection<DownloadInfo>): String? {
     }
   }
   val selected = awaitSelectItem(labels, R.string.download_move_dialog_title)
-  val label = if (selected == 0) null else labels[selected]
+  val label = selectedDownloadLabel(labels, selected)
   DownloadManager.changeLabel(list, label)
   return label
 }

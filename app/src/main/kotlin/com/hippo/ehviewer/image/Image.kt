@@ -208,6 +208,9 @@ inline fun byteBufferSource(buffer: ByteBuffer, crossinline release: () -> Unit)
 /** Returns the content bounds detected by the host-tested Rust border algorithm. */
 external fun detectBorder(bitmap: Bitmap): IntArray
 
+/** Returns an accepted Rust crop, or null when the original image must be kept. */
+external fun detectCropV1(bitmap: Bitmap, hasQrCode: Boolean): IntArray?
+
 /** Returns whether the host-tested Rust finder-pattern algorithm detects a QR code. */
 external fun hasQrCode(bitmap: Bitmap): Boolean
 

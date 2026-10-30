@@ -117,11 +117,7 @@ pub fn build_envelope(request: &BackupImportRequest) -> ApiEnvelope<BackupImport
             gids.insert(row.gid).then_some(ImportDownloadAddition {
                 source_index,
                 gid: row.gid,
-                state: if row.state == 1 || row.state == 2 {
-                    0
-                } else {
-                    row.state
-                },
+                state: crate::download_startup::normalize_state(row.state),
             })
         })
         .collect();

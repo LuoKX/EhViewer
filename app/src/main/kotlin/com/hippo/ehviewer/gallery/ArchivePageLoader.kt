@@ -21,6 +21,7 @@ import com.ehviewer.core.model.GalleryInfo
 import com.ehviewer.core.util.logcat
 import com.hippo.ehviewer.Settings.archivePasswds
 import com.hippo.ehviewer.bridge.archive.RustArchiveReaderV2
+import com.hippo.ehviewer.bridge.reader.readerArchiveSorting
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.image.ImageSource
 import com.hippo.ehviewer.image.byteBufferSource
@@ -44,7 +45,7 @@ suspend fun <T> useArchivePageLoader(
 ) = autoCloseScope {
   coroutineScope {
     val pfd = install(file.openFileDescriptor("r"))
-    val sortEntries = info == null || file.name.endsWith(".zip")
+    val sortEntries = readerArchiveSorting(info != null, file.name)
     val archiveReader =
       install(
         openArchiveReader(

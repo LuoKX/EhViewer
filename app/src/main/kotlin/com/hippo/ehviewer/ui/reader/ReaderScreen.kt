@@ -65,6 +65,8 @@ import com.ehviewer.core.util.launchIO
 import com.ehviewer.core.util.unreachable
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.reader.readerGallerySource
+import com.hippo.ehviewer.bridge.reader.readerMode
 import com.hippo.ehviewer.collectAsState
 import com.hippo.ehviewer.download.DownloadManager
 import com.hippo.ehviewer.download.archiveFile
@@ -204,20 +206,10 @@ fun ReaderScreen(pageLoader: PageLoader, info: BaseGalleryInfo?) {
       }
     }
   }
-  val webtoon =
-    remember(info) {
-      // Tags in database may or may not have the prefix "other:"
-      info?.simpleTags?.any { it.endsWith("webtoon") } == true
-    }
+  val modeTags = remember(info) { info?.simpleTags?.toList() }
   val showSeekbar by Settings.showReaderSeekbar.collectAsState()
-  val readingMode by
-    Settings.readingMode.collectAsState {
-      when (val mode = ReadingModeType.fromPreference(it)) {
-        ReadingModeType.DEFAULT ->
-          if (webtoon) ReadingModeType.WEBTOON else ReadingModeType.RIGHT_TO_LEFT
-        else -> mode
-      }
-    }
+  val modePlan by Settings.readingMode.collectAsState { readerMode(it, modeTags) }
+  val readingMode = ReadingModeType.entries[modePlan[0]]
   val volumeKeysEnabled by Settings.readWithVolumeKeys.collectAsState()
   val volumeKeysInverted by Settings.readWithVolumeKeysInverted.collectAsState()
   val fullscreen by Settings.fullscreen.collectAsState()
@@ -239,7 +231,7 @@ fun ReaderScreen(pageLoader: PageLoader, info: BaseGalleryInfo?) {
   val pagerState = rememberPagerState(pageLoader.startPage) { pageLoader.size }
   val syncState = rememberSliderPagerDoubleSyncState(lazyListState, pagerState, pageLoader)
   var appbarVisible by remember { mutableStateOf(false) }
-  val isWebtoon by rememberUpdatedState(ReadingModeType.isWebtoon(readingMode))
+  val isWebtoon by rememberUpdatedState(modePlan[2] == 1)
   val focusRequester = remember { FocusRequester() }
   Box(
     Modifier.keyEventHandler(
@@ -423,8 +415,12 @@ suspend fun <T> usePageLoader(args: ReaderScreenArgs, block: suspend (PageLoader
   when (args) {
     is ReaderScreenArgs.Gallery -> {
       val info = args.info
-      val page = args.page.takeUnless { it == -1 } ?: EhDB.getReadProgress(info.gid)
-      val archive = DownloadManager.getDownloadInfo(info.gid)?.archiveFile
+      val (page, archive) =
+        readerGallerySource(
+          args.page,
+          readProgress = { EhDB.getReadProgress(info.gid) },
+          findArchive = { DownloadManager.getDownloadInfo(info.gid)?.archiveFile },
+        )
       if (archive != null) {
         useArchivePageLoader(
           archive,

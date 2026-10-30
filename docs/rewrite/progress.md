@@ -1,7 +1,68 @@
 # Full Rust application progress
 
-Operator requirement: entire project-owned application in Rust, original UI and
-interactions preserved, one completed feature per commit, parallel isolated work
+## Current direction (2026-10-29)
+
+Full Rust application development is **paused at the operator's request**, at
+`253852b49`. Retain the accepted `native/` foundation and isolated pending work;
+do not continue F0–F8 implementation or the queued favorite-policy integration.
+
+The operator subsequently approved implementing the five bounded follow-up
+migrations in the existing Android application, reusing `app/src/main/rust/`:
+recovery mapping, download file rules, update packages, crop policy and comment
+preprocessing. The original Android UI, platform services and storage remain in
+place. This approval does not resume `native/` or its queued favorite-policy work.
+Those five slices are implemented and host/ABI validated. After the follow-on
+audit, the operator approved the next three groups: startup state projection,
+search/pagination state, and label/entry-action planning. Implementation now uses
+four additional domain owners (`download_startup`, `catalog_state`, `label_rules`,
+`entry_actions`) and five JNI V1 endpoints in the original app. Validation passed:
+607 Rust tests, 442 JVM tests per Android flavor, 100%
+line/function coverage for each new owner, and four verified ARM64/x86_64 APKs.
+Device test sources compile; no device was connected. Full evidence is recorded
+in the migration audit. Recovery merge, reader interaction and thumbnail flow
+remain later candidates.
+
+After that review, the operator approved its first three groups. The third
+batch now connects favorite date/last-page navigation, quick-search creation and
+batched duplicate checks, shared list positions, label editor/settings menus,
+and bulk favorites/local-favorite overlays. It adds `quick_search`, `list_order`
+and `favorite_batch` owners while reusing the existing catalog/library/label
+contracts. Validation passed: 620 Rust tests, 458 JVM tests per flavor,
+100% production
+line/function coverage for each new owner, and four verified ARM64/x86_64 APKs
+with exact 130/129 exports. Device tests compile; no device was connected.
+Recovery transaction merges, reader interactions and thumbnail flow remain later
+work; `native/` development stays paused.
+
+The operator then approved the fourth audit's first three groups. The fourth
+batch now implements recovery formal merges/staging/finalization, reader
+source/mode/discrete navigation, and thumbnail phases through three new domain
+owners and three JNI V1 endpoints. Room retains the transaction and rechecks;
+Android retains loader/animation/cache/filesystem effects. Reader navigation
+objects retain their effective-mode identity, including equivalent default and
+explicit preferences. Five old region definitions and their unused inversion
+helper are replaced by the Rust region policy.
+
+Validation passed: 634 Rust tests, 474 JVM tests per flavor, 100% independent
+line/function coverage for all three new owners, 14 host JNI fixtures and four
+verified ARM64/x86_64 APKs with exact 133/132 exports. Strict Clippy/rustdoc,
+scoped Spotless and CI script checks passed; Android lint reported zero errors
+and the same two existing warnings. Both device-test variants
+compile; no device was connected, so actual Room rollback and UI/SAF runtime
+cases remain unexecuted. A stale core/data DEX cache referenced the old workspace;
+cleaning that module's generated output and rebuilding without the build cache
+resolved it. All 1,781 frozen source/config hashes were unchanged during APK verification;
+the 414 native files and prior three batches are preserved.
+
+Next audit candidates are detail-preview integer paging, comment/tag/rating UI
+policies, and settings/display rules. These are not part of the fourth batch;
+full Rust application development stays paused.
+See the 2026-10-29 audit and implementation record in the
+[migration boundary audit](../audits/rust-migration-2026-10-06.md).
+
+Original full-application target, currently paused: entire project-owned
+application in Rust, original UI and interactions preserved, one completed
+feature per commit, parallel isolated work
 approved. Existing app/data/user edits remain protected. This is not permission
 for production cutover, network credentials, data migration on live files or
 publishing/installing APKs.
@@ -112,8 +173,8 @@ preserved. Targeted reviewer89e0e69d-e59c-495c-877a-463e5cdfd387 closes this P2;
 new evidence is not retroactive pass. No install/device/runtime/power-loss,
 arbitrary bare-fork, MSRV1.95, global-cache isolation, product/UI/full F1 acceptance.
 
-Next integration: original favorite snapshot policy. Real pinned compiler/JVM
-Number.intValue discovery supersedes parent's early nonInteger rejection
+Queued integration (paused): original favorite snapshot policy. Real pinned
+compiler/JVM Number.intValue discovery supersedes parent's early nonInteger rejection
 assumption; stored numeric kind/bits/wire remain unchanged. Fresh isolated review
 fee6a7e2-764d-4821-9029-bb016f41d79f accepts bounded policy with notes; parent
 adds exact original declarations73-74 while retaining historical omission,

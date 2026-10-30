@@ -16,10 +16,14 @@
 package com.hippo.ehviewer.client.data
 
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.gallery.CatalogNavigation
+import com.hippo.ehviewer.bridge.gallery.CatalogTransition
 import com.hippo.ehviewer.bridge.gallery.FAVORITES_URL_API_VERSION
 import com.hippo.ehviewer.bridge.gallery.FavoritesUrlRequest
 import com.hippo.ehviewer.bridge.gallery.GalleryUrlSite
 import com.hippo.ehviewer.bridge.gallery.buildFavoritesUrl
+import com.hippo.ehviewer.bridge.gallery.catalogText
+import com.hippo.ehviewer.bridge.gallery.transitionCatalog
 import com.hippo.ehviewer.client.EhUrl
 import kotlinx.serialization.Serializable
 
@@ -35,12 +39,33 @@ data class FavListUrlBuilder(
     get() = favCat == FAV_CAT_LOCAL
 
   fun setIndex(index: String?, isNext: Boolean) {
-    next = index.takeIf { isNext }
-    prev = index.takeUnless { isNext }
-    jumpTo = null
+    val plan =
+      transitionCatalog(
+        CatalogNavigation.from(prev, next, jumpTo),
+        CatalogTransition.INDEX,
+        index,
+        forward = isNext,
+      )
+    prev = plan.previous?.catalogText()
+    next = plan.next?.catalogText()
+    jumpTo = plan.seek?.catalogText()
   }
 
   fun build(): String = buildFavoritesUrl(rustUrlRequest())
+
+  /** Return a new builder so the existing refresh/SavedState flow observes the navigation. */
+  fun seek(date: String): FavListUrlBuilder = copyNavigation(CatalogTransition.SEEK, date)
+
+  fun lastPage(): FavListUrlBuilder = copyNavigation(CatalogTransition.INDEX, "1-0")
+
+  private fun copyNavigation(action: CatalogTransition, text: String): FavListUrlBuilder {
+    val plan = transitionCatalog(CatalogNavigation.from(prev, next, jumpTo), action, text)
+    return copy(
+      prev = plan.previous?.catalogText(),
+      next = plan.next?.catalogText(),
+      jumpTo = plan.seek?.catalogText(),
+    )
+  }
 
   private fun rustUrlRequest() =
     FavoritesUrlRequest(

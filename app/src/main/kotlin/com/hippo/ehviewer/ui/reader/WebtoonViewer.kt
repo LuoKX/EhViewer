@@ -21,8 +21,7 @@ import com.hippo.ehviewer.collectAsState
 import com.hippo.ehviewer.gallery.Page
 import com.hippo.ehviewer.gallery.PageLoader
 import eu.kanade.tachiyomi.ui.reader.viewer.NavigationRegions
-import eu.kanade.tachiyomi.ui.reader.viewer.ViewerNavigation.NavigationRegion
-import eu.kanade.tachiyomi.ui.reader.viewer.getAction
+import eu.kanade.tachiyomi.ui.reader.viewer.tapIntent
 import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.OverzoomEffect
 import me.saket.telephoto.zoomable.ZoomLimit
@@ -32,67 +31,72 @@ import me.saket.telephoto.zoomable.zoomable
 
 @Composable
 fun WebtoonViewer(
-    lazyListState: LazyListState,
-    withGaps: Boolean,
-    pageLoader: PageLoader,
-    navigator: () -> NavigationRegions,
-    onSelectPage: (Page) -> Unit,
-    onMenuRegionClick: () -> Unit,
-    modifier: Modifier = Modifier,
+  lazyListState: LazyListState,
+  withGaps: Boolean,
+  pageLoader: PageLoader,
+  navigator: () -> NavigationRegions,
+  onSelectPage: (Page) -> Unit,
+  onMenuRegionClick: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
-    val items = pageLoader.pages
-    val zoomableState = rememberZoomableState(zoomSpec = WebtoonZoomSpec)
-    val density = LocalDensity.current
-    val paddingPercent by Settings.webtoonSidePadding.collectAsState()
-    val sidePadding by remember(density) {
+  val scope = rememberCoroutineScope()
+  val items = pageLoader.pages
+  val zoomableState = rememberZoomableState(zoomSpec = WebtoonZoomSpec)
+  val density = LocalDensity.current
+  val paddingPercent by Settings.webtoonSidePadding.collectAsState()
+  val sidePadding by
+    remember(density) {
         snapshotFlow {
-            with(density) {
-                (lazyListState.layoutInfo.viewportSize.width * paddingPercent / 100f).toDp()
+          with(density) {
+            (lazyListState.layoutInfo.viewportSize.width * paddingPercent / 100f).toDp()
+          }
+        }
+      }
+      .collectAsState(0.dp)
+  LazyColumn(
+    modifier =
+      modifier.zoomable(
+        state = zoomableState,
+        onClick = { offset ->
+          scope.launch {
+            with(lazyListState) {
+              val (w, h) = layoutInfo.viewportSize
+              val (x, y) = offset
+              when (navigator().tapIntent(Offset(x / w, y / h), false, true)[0]) {
+                0 -> onMenuRegionClick()
+                2 -> scrollDown()
+                1 -> scrollUp()
+              }
             }
-        }
-    }.collectAsState(0.dp)
-    LazyColumn(
-        modifier = modifier.zoomable(
-            state = zoomableState,
-            onClick = { offset ->
-                scope.launch {
-                    with(lazyListState) {
-                        val (w, h) = layoutInfo.viewportSize
-                        val (x, y) = offset
-                        when (navigator().getAction(Offset(x / w, y / h))) {
-                            NavigationRegion.MENU -> onMenuRegionClick()
-                            NavigationRegion.NEXT, NavigationRegion.RIGHT -> scrollDown()
-                            NavigationRegion.PREV, NavigationRegion.LEFT -> scrollUp()
-                        }
-                    }
-                }
-            },
-            onLongClick = { ofs ->
-                val info = lazyListState.layoutInfo.visibleItemsInfo.find { info ->
-                    info.offset <= ofs.y && info.offset + info.size > ofs.y
-                }
-                if (info != null) {
-                    onSelectPage(items[info.index])
-                }
-            },
-            onDoubleClick = DoubleTapZoom,
-        ),
-        state = lazyListState,
-        contentPadding = PaddingValues(horizontal = sidePadding),
-        verticalArrangement = Arrangement.spacedBy(if (withGaps) 15.dp else 0.dp),
-    ) {
-        items(items, key = { it.index }) { page ->
-            PagerItem(
-                page = page,
-                pageLoader = pageLoader,
-                contentScale = ContentScale.FillWidth,
-            )
-        }
+          }
+        },
+        onLongClick = { ofs ->
+          val info =
+            lazyListState.layoutInfo.visibleItemsInfo.find { info ->
+              info.offset <= ofs.y && info.offset + info.size > ofs.y
+            }
+          if (info != null) {
+            onSelectPage(items[info.index])
+          }
+        },
+        onDoubleClick = DoubleTapZoom,
+      ),
+    state = lazyListState,
+    contentPadding = PaddingValues(horizontal = sidePadding),
+    verticalArrangement = Arrangement.spacedBy(if (withGaps) 15.dp else 0.dp),
+  ) {
+    items(items, key = { it.index }) { page ->
+      PagerItem(
+        page = page,
+        pageLoader = pageLoader,
+        contentScale = ContentScale.FillWidth,
+      )
     }
+  }
 }
 
-private val WebtoonZoomSpec = ZoomSpec(
+private val WebtoonZoomSpec =
+  ZoomSpec(
     maximum = ZoomLimit(factor = 3f),
     minimum = ZoomLimit(factor = 1f, overzoomEffect = OverzoomEffect.Disabled),
-)
+  )

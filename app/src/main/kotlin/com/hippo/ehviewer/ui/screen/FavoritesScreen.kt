@@ -70,6 +70,9 @@ import com.ehviewer.core.util.onEachLatest
 import com.ehviewer.core.util.withUIContext
 import com.hippo.ehviewer.EhDB
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.gallery.executeFavoriteBatch
+import com.hippo.ehviewer.bridge.gallery.planFavoriteBatch
+import com.hippo.ehviewer.bridge.gallery.selectedBulkFavoriteDestination
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.data.FavListUrlBuilder
 import com.hippo.ehviewer.collectAsState
@@ -93,7 +96,11 @@ import moe.tarsin.navigate
 
 @Destination<RootGraph>
 @Composable
-fun AnimatedVisibilityScope.FavouritesScreen(navigator: DestinationsNavigator, viewModel: FavoritesViewModel = viewModel()) = Screen(navigator) {
+fun AnimatedVisibilityScope.FavouritesScreen(
+  navigator: DestinationsNavigator,
+  viewModel: FavoritesViewModel = viewModel(),
+) =
+  Screen(navigator) {
     // Immutables
     val localFavName = stringResource(R.string.local_favorites)
     val cloudFavName = stringResource(R.string.cloud_favorites)
@@ -109,69 +116,79 @@ fun AnimatedVisibilityScope.FavouritesScreen(navigator: DestinationsNavigator, v
 
     // Derived State
     val keyword = urlBuilder.keyword
-    val favCatName = remember(urlBuilder) {
+    val favCatName =
+      remember(urlBuilder) {
         when (val favCat = urlBuilder.favCat) {
-            in 0..9 -> Settings.favCat[favCat]
-            FavListUrlBuilder.FAV_CAT_LOCAL -> localFavName.also { searchBarOffsetY = 0 }
-            else -> cloudFavName
+          in 0..9 -> Settings.favCat[favCat]
+          FavListUrlBuilder.FAV_CAT_LOCAL -> localFavName.also { searchBarOffsetY = 0 }
+          else -> cloudFavName
         }
-    }
-    val title = if (keyword.isNullOrBlank()) {
+      }
+    val title =
+      if (keyword.isNullOrBlank()) {
         stringResource(R.string.favorites_title, favCatName)
-    } else {
+      } else {
         stringResource(R.string.favorites_title_2, favCatName, keyword)
-    }
+      }
     val density = LocalDensity.current
     val searchBarHint = stringResource(R.string.search_bar_hint, favCatName)
     val data = viewModel.data.collectAsLazyPagingItems()
 
-    fun refresh(newUrlBuilder: FavListUrlBuilder = urlBuilder.copy(jumpTo = null, prev = null, next = null)) {
-        urlBuilder = newUrlBuilder
-        data.refresh()
+    fun refresh(
+      newUrlBuilder: FavListUrlBuilder = urlBuilder.copy(jumpTo = null, prev = null, next = null)
+    ) {
+      urlBuilder = newUrlBuilder
+      data.refresh()
     }
 
     ProvideSideSheetContent { sheetState ->
-        val localFavCount by viewModel.localFavCount.collectAsState(0)
-        TopAppBar(
-            title = { Text(text = stringResource(id = R.string.collections)) },
-            windowInsets = WindowInsets(),
-            colors = topBarOnDrawerColor(),
-        )
-        val scope = currentRecomposeScope
-        LaunchedEffect(Unit) {
-            Settings.favChangesFlow.collect {
-                scope.invalidate()
-            }
+      val localFavCount by viewModel.localFavCount.collectAsState(0)
+      TopAppBar(
+        title = { Text(text = stringResource(id = R.string.collections)) },
+        windowInsets = WindowInsets(),
+        colors = topBarOnDrawerColor(),
+      )
+      val scope = currentRecomposeScope
+      LaunchedEffect(Unit) {
+        Settings.favChangesFlow.collect {
+          scope.invalidate()
         }
-        val localFav = stringResource(id = R.string.local_favorites) to localFavCount
-        val faves = if (hasSignedIn) {
-            arrayOf(
-                localFav,
-                stringResource(id = R.string.cloud_favorites) to Settings.favCloudCount,
-                *Settings.favCat.zip(Settings.favCount.toTypedArray()).toTypedArray(),
-            )
+      }
+      val localFav = stringResource(id = R.string.local_favorites) to localFavCount
+      val faves =
+        if (hasSignedIn) {
+          arrayOf(
+            localFav,
+            stringResource(id = R.string.cloud_favorites) to Settings.favCloudCount,
+            *Settings.favCat.zip(Settings.favCount.toTypedArray()).toTypedArray(),
+          )
         } else {
-            arrayOf(localFav)
+          arrayOf(localFav)
         }
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 4.dp)
-                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom)),
-        ) {
-            faves.forEachIndexed { index, (name, count) ->
-                ListItem(
-                    headlineContent = { Text(text = name) },
-                    trailingContent = { Text(text = count.toString(), style = MaterialTheme.typography.bodyLarge) },
-                    modifier = Modifier.clip(CardDefaults.shape).clickable {
-                        val newCat = index - 2
-                        refresh(FavListUrlBuilder(newCat))
-                        Settings.recentFavCat = newCat
-                        fabHidden = false
-                        launch { sheetState.close() }
-                    },
-                    colors = listItemOnDrawerColor(urlBuilder.favCat == index - 2),
-                )
-            }
+      Column(
+        modifier =
+          Modifier.verticalScroll(rememberScrollState())
+            .padding(horizontal = 4.dp)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+      ) {
+        faves.forEachIndexed { index, (name, count) ->
+          ListItem(
+            headlineContent = { Text(text = name) },
+            trailingContent = {
+              Text(text = count.toString(), style = MaterialTheme.typography.bodyLarge)
+            },
+            modifier =
+              Modifier.clip(CardDefaults.shape).clickable {
+                val newCat = index - 2
+                refresh(FavListUrlBuilder(newCat))
+                Settings.recentFavCat = newCat
+                fabHidden = false
+                launch { sheetState.close() }
+              },
+            colors = listItemOnDrawerColor(urlBuilder.favCat == index - 2),
+          )
         }
+      }
     }
 
     val checkedInfoMap = remember { mutableStateMapOf<Long, BaseGalleryInfo>() }
@@ -179,212 +196,226 @@ fun AnimatedVisibilityScope.FavouritesScreen(navigator: DestinationsNavigator, v
     DrawerHandle(!selectMode && !searchBarExpanded)
 
     SearchBarScreen(
-        onApplySearch = { refresh(FavListUrlBuilder(urlBuilder.favCat, it)) },
-        expanded = searchBarExpanded,
-        onExpandedChange = {
-            searchBarExpanded = it
-            fabHidden = it
-            if (it) checkedInfoMap.clear()
-        },
-        title = title,
-        searchFieldHint = searchBarHint,
-        localSearch = urlBuilder.isLocal,
-        searchBarOffsetY = { searchBarOffsetY },
-        trailingIcon = {
-            val sheetState = LocalSideSheetState.current
-            IconButton(onClick = { launch { sheetState.open() } }, shapes = IconButtonDefaults.shapes()) {
-                Icon(imageVector = Icons.Outlined.FolderSpecial, contentDescription = null)
-            }
-            AvatarIcon()
-        },
-    ) { contentPadding ->
-        val listMode by Settings.listMode.collectAsState()
-        val height by collectListThumbSizeAsState()
-        val showPages by Settings.showGalleryPages.collectAsState()
-        val showProgress by Settings.showReadingProgress.collectAsState()
-        val searchBarConnection = remember {
-            val slop = ViewConfiguration.get(contextOf<Context>()).scaledTouchSlop
-            val topPaddingPx = with(density) { contentPadding.calculateTopPadding().roundToPx() }
-            object : NestedScrollConnection {
-                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                    val dy = -consumed.y
-                    if (dy >= slop) {
-                        fabHidden = true
-                    } else if (dy <= -slop / 2) {
-                        fabHidden = false
-                    }
-                    searchBarOffsetY = (searchBarOffsetY - dy).roundToInt().coerceIn(-topPaddingPx, 0)
-                    return Offset.Zero // We never consume it
-                }
-            }
+      onApplySearch = { refresh(FavListUrlBuilder(urlBuilder.favCat, it)) },
+      expanded = searchBarExpanded,
+      onExpandedChange = {
+        searchBarExpanded = it
+        fabHidden = it
+        if (it) checkedInfoMap.clear()
+      },
+      title = title,
+      searchFieldHint = searchBarHint,
+      localSearch = urlBuilder.isLocal,
+      searchBarOffsetY = { searchBarOffsetY },
+      trailingIcon = {
+        val sheetState = LocalSideSheetState.current
+        IconButton(
+          onClick = { launch { sheetState.open() } },
+          shapes = IconButtonDefaults.shapes(),
+        ) {
+          Icon(imageVector = Icons.Outlined.FolderSpecial, contentDescription = null)
         }
-        GalleryList(
-            data = data,
-            contentModifier = Modifier.nestedScroll(searchBarConnection),
-            contentPadding = contentPadding,
-            listMode = listMode,
-            detailItemContent = { info ->
-                val checked = info.gid in checkedInfoMap
-                CheckableItem(
-                    checked = checked,
-                    modifier = Modifier.thenIf(animateItems) { animateItem() },
-                ) { interactionSource ->
-                    GalleryInfoListItem(
-                        onClick = {
-                            if (selectMode) {
-                                if (checked) {
-                                    checkedInfoMap.remove(info.gid)
-                                } else {
-                                    checkedInfoMap[info.gid] = info
-                                }
-                            } else {
-                                navigate(info.asDst())
-                            }
-                        },
-                        onLongClick = {
-                            checkedInfoMap[info.gid] = info
-                        },
-                        info = info,
-                        showPages = showPages,
-                        showProgress = showProgress,
-                        modifier = Modifier.height(height),
-                        isInFavScene = true,
-                        interactionSource = interactionSource,
-                    )
+        AvatarIcon()
+      },
+    ) { contentPadding ->
+      val listMode by Settings.listMode.collectAsState()
+      val height by collectListThumbSizeAsState()
+      val showPages by Settings.showGalleryPages.collectAsState()
+      val showProgress by Settings.showReadingProgress.collectAsState()
+      val searchBarConnection = remember {
+        val slop = ViewConfiguration.get(contextOf<Context>()).scaledTouchSlop
+        val topPaddingPx = with(density) { contentPadding.calculateTopPadding().roundToPx() }
+        object : NestedScrollConnection {
+          override fun onPostScroll(
+            consumed: Offset,
+            available: Offset,
+            source: NestedScrollSource,
+          ): Offset {
+            val dy = -consumed.y
+            if (dy >= slop) {
+              fabHidden = true
+            } else if (dy <= -slop / 2) {
+              fabHidden = false
+            }
+            searchBarOffsetY = (searchBarOffsetY - dy).roundToInt().coerceIn(-topPaddingPx, 0)
+            return Offset.Zero // We never consume it
+          }
+        }
+      }
+      GalleryList(
+        data = data,
+        contentModifier = Modifier.nestedScroll(searchBarConnection),
+        contentPadding = contentPadding,
+        listMode = listMode,
+        detailItemContent = { info ->
+          val checked = info.gid in checkedInfoMap
+          CheckableItem(
+            checked = checked,
+            modifier = Modifier.thenIf(animateItems) { animateItem() },
+          ) { interactionSource ->
+            GalleryInfoListItem(
+              onClick = {
+                if (selectMode) {
+                  if (checked) {
+                    checkedInfoMap.remove(info.gid)
+                  } else {
+                    checkedInfoMap[info.gid] = info
+                  }
+                } else {
+                  navigate(info.asDst())
                 }
-            },
-            thumbItemContent = { info ->
-                val checked = info.gid in checkedInfoMap
-                CheckableItem(
-                    checked = checked,
-                    modifier = Modifier.thenIf(animateItems) { animateItem() },
-                ) { interactionSource ->
-                    GalleryInfoGridItem(
-                        onClick = {
-                            if (selectMode) {
-                                if (checked) {
-                                    checkedInfoMap.remove(info.gid)
-                                } else {
-                                    checkedInfoMap[info.gid] = info
-                                }
-                            } else {
-                                navigate(info.asDst())
-                            }
-                        },
-                        onLongClick = {
-                            checkedInfoMap[info.gid] = info
-                        },
-                        info = info,
-                        showPages = showPages,
-                        showProgress = showProgress,
-                        showFavoriteStatus = false,
-                        interactionSource = interactionSource,
-                    )
+              },
+              onLongClick = {
+                checkedInfoMap[info.gid] = info
+              },
+              info = info,
+              showPages = showPages,
+              showProgress = showProgress,
+              modifier = Modifier.height(height),
+              isInFavScene = true,
+              interactionSource = interactionSource,
+            )
+          }
+        },
+        thumbItemContent = { info ->
+          val checked = info.gid in checkedInfoMap
+          CheckableItem(
+            checked = checked,
+            modifier = Modifier.thenIf(animateItems) { animateItem() },
+          ) { interactionSource ->
+            GalleryInfoGridItem(
+              onClick = {
+                if (selectMode) {
+                  if (checked) {
+                    checkedInfoMap.remove(info.gid)
+                  } else {
+                    checkedInfoMap[info.gid] = info
+                  }
+                } else {
+                  navigate(info.asDst())
                 }
-            },
-            searchBarOffsetY = { searchBarOffsetY },
-            scrollToTopOnRefresh = urlBuilder.favCat != FavListUrlBuilder.FAV_CAT_LOCAL,
-            onRefresh = { refresh() },
-            onLoading = { searchBarOffsetY = 0 },
-        )
+              },
+              onLongClick = {
+                checkedInfoMap[info.gid] = info
+              },
+              info = info,
+              showPages = showPages,
+              showProgress = showProgress,
+              showFavoriteStatus = false,
+              interactionSource = interactionSource,
+            )
+          }
+        },
+        searchBarOffsetY = { searchBarOffsetY },
+        scrollToTopOnRefresh = urlBuilder.favCat != FavListUrlBuilder.FAV_CAT_LOCAL,
+        onRefresh = { refresh() },
+        onLoading = { searchBarOffsetY = 0 },
+      )
     }
 
-    val hideFab by asyncState(
+    val hideFab by
+      asyncState(
         produce = { fabHidden },
         transform = {
-            onEachLatest { hide ->
-                if (!hide) delay(FAB_ANIMATE_TIME.toLong())
-            }
+          onEachLatest { hide ->
+            if (!hide) delay(FAB_ANIMATE_TIME.toLong())
+          }
         },
-    )
+      )
 
     FabLayout(
-        hidden = hideFab && !selectMode,
-        expanded = fabExpanded || selectMode,
-        onExpandChanged = {
-            fabExpanded = it
-            checkedInfoMap.clear()
-        },
-        autoCancel = !selectMode,
+      hidden = hideFab && !selectMode,
+      expanded = fabExpanded || selectMode,
+      onExpandChanged = {
+        fabExpanded = it
+        checkedInfoMap.clear()
+      },
+      autoCancel = !selectMode,
     ) {
-        if (!selectMode) {
-            if (urlBuilder.isLocal) {
-                onClick(Icons.Default.Shuffle) {
-                    EhDB.randomLocalFav()?.let { info ->
-                        withUIContext { navigate(info.asDst()) }
-                    }
-                }
+      if (!selectMode) {
+        if (urlBuilder.isLocal) {
+          onClick(Icons.Default.Shuffle) {
+            EhDB.randomLocalFav()?.let { info ->
+              withUIContext { navigate(info.asDst()) }
             }
-            onClick(EhIcons.Default.GoTo) {
-                val date = awaitSelectDate()
-                refresh(urlBuilder.copy(jumpTo = date, prev = null, next = "2"))
-            }
-            onClick(Icons.Default.Refresh) {
-                refresh()
-            }
-            onClick(Icons.AutoMirrored.Default.LastPage) {
-                refresh(urlBuilder.copy(jumpTo = null, prev = "1-0", next = null))
-            }
-        } else {
-            onClick(Icons.Default.DoneAll, autoClose = false) {
-                val info = data.itemSnapshotList.items.associateBy { it.gid }
-                checkedInfoMap.putAll(info)
-            }
-            onClick(Icons.Default.Download) {
-                val info = checkedInfoMap.takeAndClear()
-                runSwallowingWithUI {
-                    startDownload(false, *info.toTypedArray())
-                }
-            }
-            onClick(Icons.Default.Delete) {
-                val info = checkedInfoMap.takeAndClear()
-                awaitConfirmationOrCancel(title = R.string.delete_favorites_dialog_title) {
-                    Text(text = stringResource(R.string.delete_favorites_dialog_message, info.size))
-                }
-                val srcCat = urlBuilder.favCat
-                runSwallowingWithUI {
-                    if (srcCat == FavListUrlBuilder.FAV_CAT_LOCAL) { // Delete local fav
-                        EhDB.removeLocalFavorites(info)
-                    } else {
-                        val delList = info.mapToLongArray(BaseGalleryInfo::gid)
-                        EhEngine.modifyFavorites(delList, srcCat, -1)
-                    }
-                }
-                // We refresh anyway as cloud data maybe partially modified
-                data.refresh()
-            }
-            onClick(Icons.AutoMirrored.Default.DriveFileMove) {
-                // First is local favorite, the other 10 is cloud favorite
-                val items = buildList {
-                    add(localFavName)
-                    if (hasSignedIn) {
-                        addAll(Settings.favCat)
-                    }
-                }
-                val index = awaitSelectItem(items, R.string.move_favorites_dialog_title)
-                val srcCat = urlBuilder.favCat
-                val dstCat = if (index == 0) FavListUrlBuilder.FAV_CAT_LOCAL else index - 1
-                val info = checkedInfoMap.takeAndClear()
-                if (srcCat != dstCat) {
-                    runSwallowingWithUI {
-                        if (srcCat == FavListUrlBuilder.FAV_CAT_LOCAL) {
-                            // Move from local to cloud
-                            val galleryList = info.map { it.gid to it.token }
-                            EhEngine.addFavorites(galleryList, dstCat)
-                            EhDB.removeLocalFavorites(info)
-                        } else if (dstCat == FavListUrlBuilder.FAV_CAT_LOCAL) {
-                            // Move from cloud to local
-                            EhDB.putLocalFavorites(info)
-                        } else {
-                            // Move from cloud to cloud
-                            val gidArray = info.mapToLongArray(BaseGalleryInfo::gid)
-                            EhEngine.modifyFavorites(gidArray, srcCat, dstCat)
-                        }
-                    }
-                    // We refresh anyway as cloud data maybe partially modified
-                    data.refresh()
-                }
-            }
+          }
         }
+        onClick(EhIcons.Default.GoTo) {
+          val date = awaitSelectDate()
+          refresh(urlBuilder.seek(date))
+        }
+        onClick(Icons.Default.Refresh) {
+          refresh()
+        }
+        onClick(Icons.AutoMirrored.Default.LastPage) {
+          refresh(urlBuilder.lastPage())
+        }
+      } else {
+        onClick(Icons.Default.DoneAll, autoClose = false) {
+          val info = data.itemSnapshotList.items.associateBy { it.gid }
+          checkedInfoMap.putAll(info)
+        }
+        onClick(Icons.Default.Download) {
+          val info = checkedInfoMap.takeAndClear()
+          runSwallowingWithUI {
+            startDownload(false, *info.toTypedArray())
+          }
+        }
+        onClick(Icons.Default.Delete) {
+          val info = checkedInfoMap.takeAndClear()
+          awaitConfirmationOrCancel(title = R.string.delete_favorites_dialog_title) {
+            Text(text = stringResource(R.string.delete_favorites_dialog_message, info.size))
+          }
+          val srcCat = urlBuilder.favCat
+          val plan = planFavoriteBatch(srcCat)
+          runSwallowingWithUI {
+            executeFavoriteBatch(
+              plan,
+              removeLocal = { EhDB.removeLocalFavorites(info) },
+              removeCloud = {
+                EhEngine.modifyFavorites(info.mapToLongArray(BaseGalleryInfo::gid), srcCat, -1)
+              },
+              upload = { error("Unexpected upload intent") },
+              saveLocal = { error("Unexpected save intent") },
+              moveCloud = { error("Unexpected move intent") },
+            )
+          }
+          if (plan.refresh) data.refresh()
+        }
+        onClick(Icons.AutoMirrored.Default.DriveFileMove) {
+          // First is local favorite, the other 10 is cloud favorite
+          val items = buildList {
+            add(localFavName)
+            if (hasSignedIn) {
+              addAll(Settings.favCat)
+            }
+          }
+          val index = awaitSelectItem(items, R.string.move_favorites_dialog_title)
+          val srcCat = urlBuilder.favCat
+          val dstCat = selectedBulkFavoriteDestination(index, items.size)
+          val info = checkedInfoMap.takeAndClear()
+          val plan = planFavoriteBatch(srcCat, dstCat)
+          if (plan.refresh) {
+            runSwallowingWithUI {
+              executeFavoriteBatch(
+                plan,
+                removeLocal = { EhDB.removeLocalFavorites(info) },
+                removeCloud = { error("Unexpected cloud deletion intent") },
+                upload = { EhEngine.addFavorites(info.map { it.gid to it.token }, dstCat) },
+                saveLocal = { EhDB.putLocalFavorites(info) },
+                moveCloud = {
+                  EhEngine.modifyFavorites(
+                    info.mapToLongArray(BaseGalleryInfo::gid),
+                    srcCat,
+                    dstCat,
+                  )
+                },
+              )
+            }
+            // Refresh after ordinary failures too: cloud requests may have partially succeeded.
+            data.refresh()
+          }
+        }
+      }
     }
-}
+  }

@@ -234,6 +234,9 @@ jobs:
             com.hippo.ehviewer.bridge.gallery.GalleryRequestBridgeKt \
             target/jni-probe/libehviewer-host.so crates/net/test_data
 
+      - name: Follow-up Host JNI Oracles
+        run: bash scripts/test_followup_jni.sh
+
       - name: Install cargo-llvm-cov
         # taiki-e/install-action v2
         uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad
@@ -251,7 +254,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -259,7 +264,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/health\.rs$|' \
@@ -277,7 +282,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -285,7 +292,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec\.rs$|/' \
@@ -317,6 +324,9 @@ jobs:
                'crates/archive/src/recovery_batch.rs'),
           ), 'p5')
           PY
+
+      - name: Follow-up Owner Coverage
+        run: python3 -B scripts/check_followup_coverage.py
 
       - name: Recovery Directory Coverage
         run: |
@@ -364,7 +374,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -372,7 +384,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/download/tests\.rs$|/downloa' \
@@ -390,7 +402,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -398,7 +412,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -423,7 +437,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -431,7 +447,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -456,7 +472,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -464,7 +482,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -486,7 +504,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -494,7 +514,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -516,7 +536,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -524,7 +546,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -546,7 +568,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -554,7 +578,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -576,7 +600,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -584,7 +610,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -605,7 +631,9 @@ jobs:
           cargo llvm-cov --package eh_domain \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -613,7 +641,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -646,7 +674,9 @@ jobs:
           cargo llvm-cov --package eh_archive \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -654,7 +684,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$|/write' \
@@ -672,7 +702,9 @@ jobs:
           cargo llvm-cov --package eh_archive \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -680,7 +712,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/lib\.rs$|/writer\.rs$)')" \
@@ -697,7 +729,9 @@ jobs:
           cargo llvm-cov --package eh_archive \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -705,7 +739,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/lib\.rs$|/reader\.rs$)')" \
@@ -734,7 +768,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -742,7 +778,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/border\.rs$|/pixel\.rs$|/qr' \
@@ -761,7 +797,9 @@ jobs:
           cargo llvm-cov --package eh_image \
             --lib \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -769,7 +807,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/border\.rs$|/gif\.rs$|/pixel' \
@@ -787,7 +825,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -795,7 +835,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -817,7 +857,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -825,7 +867,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -857,7 +899,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -865,7 +909,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -897,7 +941,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -905,7 +951,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -937,7 +983,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -945,7 +993,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -977,7 +1025,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -985,7 +1035,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1017,7 +1067,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1025,7 +1077,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1059,7 +1111,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1067,7 +1121,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1100,7 +1154,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1108,7 +1164,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1142,7 +1198,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1150,7 +1208,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1177,7 +1235,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1185,7 +1245,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1217,7 +1277,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1225,7 +1287,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1257,7 +1319,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1265,7 +1329,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1297,7 +1361,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1305,7 +1371,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1337,7 +1403,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1345,7 +1413,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1377,7 +1445,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1385,7 +1455,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1417,7 +1487,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1425,7 +1497,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1457,7 +1529,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1465,7 +1539,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1497,7 +1571,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1505,7 +1581,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1537,7 +1613,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1545,7 +1623,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1568,7 +1646,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1576,7 +1656,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1599,7 +1679,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1607,7 +1689,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1629,7 +1711,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1637,7 +1721,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1659,7 +1743,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1667,7 +1753,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1689,7 +1775,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1697,7 +1785,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/gallery_enrichment(/|\.rs$)|' \
@@ -1720,7 +1808,9 @@ jobs:
             --lib \
             --all-features \
             --ignore-filename-regex "$(printf '%s' \
-              '(/recovery_directory(/|\.rs$)|/backup_import(/|' \
+              '(/recovery_mapping(/|\.rs$)|/download_files(/|\.rs$)|' \
+              '/comment_display(/|\.rs$)|/crop_policy(/|\.rs$)|' \
+              '/update_package(/|\.rs$)|/recovery_directory(/|\.rs$)|/backup_import(/|' \
               '\.rs$)|/download_metadata(/|\.rs$)|/update_polic' \
               'y(/|\.rs$)|/updater(/|\.rs$)|/recovery_scan(/|\.' \
               'rs$)|/storage_rules(/|\.rs$)|/comic_info_policy(' \
@@ -1728,7 +1818,7 @@ jobs:
               '/vendor/|/webp(/|\.rs$)|/production_tar(/|\.rs$)' \
               '|/archive_filters(/|\.rs$)|/production_zip(/|\.r' \
               's$)|/file_rules(/|\.rs$)|/text_spans(/|\.rs$)|/r' \
-              'ecovery_batch(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
+              'ecovery_batch(/|\.rs$)|/download_startup(/|\.rs$)|/catalog_state(/|\.rs$)|/label_rules(/|\.rs$)|/entry_actions(/|\.rs$)|/quick_search(/|\.rs$)|/list_order(/|\.rs$)|/favorite_batch(/|\.rs$)|/recovery_persistence(/|\.rs$)|/reader_navigation(/|\.rs$)|/thumbnail_flow(/|\.rs$)|/reader_policy(/|\.rs$)|/' \
               'transfer_speed(/|\.rs$)|/recovery_search(/|\.rs$' \
               ')|/spider_info(/|\.rs$)|/local_pages(/|\.rs$)|/c' \
               'ache_keys(/|\.rs$)|/jvm/|/jvm\.rs$|/codec\.rs$|/' \
@@ -1880,8 +1970,10 @@ jobs:
             > app/build/android-java-symbols.txt
           grep 'V1$' app/build/android-java-symbols.txt > \
             app/build/android-v1-symbols.txt
-          diff -u \
-            app/src/main/rust/crates/ffi/jvm-v1-symbols.txt \
+          { cat app/src/main/rust/crates/ffi/jvm-v1-symbols.txt
+            grep 'V1$' app/src/main/rust/crates/ffi/android-image-symbols.txt
+          } | sort -u > app/build/android-v1-symbols.expected.txt
+          diff -u app/build/android-v1-symbols.expected.txt \
             app/build/android-v1-symbols.txt
           grep \
             "$(printf '%s' \

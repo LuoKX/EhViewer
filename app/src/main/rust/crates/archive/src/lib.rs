@@ -30,6 +30,8 @@ pub mod reader;
 pub mod recovery;
 /// Versioned bounded recovery batch planning and cumulative completion.
 pub mod recovery_batch;
+/// Update ZIP selection and bounded extraction, separate from comic archives.
+pub mod update_package;
 /// Deterministic, sequential application-generated CBZ writing.
 pub mod writer;
 

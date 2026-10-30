@@ -39,6 +39,8 @@ import com.ehviewer.core.files.delete
 import com.ehviewer.core.files.sendTo
 import com.ehviewer.core.model.GalleryInfo
 import com.hippo.ehviewer.bridge.DatabaseSearchQueryRequest
+import com.hippo.ehviewer.bridge.download.RustRecoveryMergePolicy
+import com.hippo.ehviewer.bridge.download.projectDownloadStartupStates
 import com.hippo.ehviewer.bridge.resolveDatabaseSearchQuery
 import com.hippo.ehviewer.bridge.resolveQuickSearchImport
 import com.hippo.ehviewer.download.DownloadManager
@@ -73,12 +75,7 @@ object EhDB {
 
   suspend fun clearProgressInfo() = db.progressDao().deleteAll()
 
-  suspend fun getAllDownloadInfo() =
-    db.downloadsDao().joinList().onEach {
-      if (it.state == DownloadInfo.STATE_WAIT || it.state == DownloadInfo.STATE_DOWNLOAD) {
-        it.state = DownloadInfo.STATE_NONE
-      }
-    }
+  suspend fun getAllDownloadInfo() = projectDownloadStartupStates(db.downloadsDao().joinList())
 
   suspend fun updateDownloadInfo(downloadInfo: Collection<DownloadInfo>) {
     val dao = db.downloadsDao()
@@ -131,6 +128,7 @@ object EhDB {
         relativePath,
         artists,
         promotedAt,
+        RustRecoveryMergePolicy,
       )
 
   suspend fun removeDownloadInfo(downloadInfo: DownloadInfo) {

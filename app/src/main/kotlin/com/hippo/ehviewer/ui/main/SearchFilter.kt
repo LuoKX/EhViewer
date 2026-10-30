@@ -40,6 +40,7 @@ import com.ehviewer.core.ui.util.thenIf
 import com.ehviewer.core.util.launch
 import com.ehviewer.core.util.toIntOrDefault
 import com.hippo.ehviewer.Settings
+import com.hippo.ehviewer.bridge.gallery.CatalogNumbers
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.EhUtils
 import com.hippo.ehviewer.collectAsState
@@ -47,7 +48,8 @@ import com.hippo.ehviewer.ui.tools.DialogState
 import com.hippo.ehviewer.ui.tools.awaitResult
 import kotlinx.coroutines.CoroutineScope
 
-private val categoryTable = arrayOf(
+private val categoryTable =
+  arrayOf(
     EhUtils.DOUJINSHI to R.string.doujinshi,
     EhUtils.MANGA to R.string.manga,
     EhUtils.ARTIST_CG to R.string.artist_cg,
@@ -58,188 +60,203 @@ private val categoryTable = arrayOf(
     EhUtils.COSPLAY to R.string.cosplay,
     EhUtils.ASIAN_PORN to R.string.asian_porn,
     EhUtils.MISC to R.string.misc,
-)
+  )
 
 @Composable
 context(_: DialogState, _: CoroutineScope, _: Context)
 fun SearchFilter(
-    modifier: Modifier = Modifier,
-    category: Int,
-    onCategoryChange: (Int) -> Unit,
-    language: Int,
-    onLanguageChange: (Int) -> Unit,
-    advancedOption: AdvancedSearchOption,
-    onAdvancedOptionChange: (AdvancedSearchOption) -> Unit,
-) = Column(modifier) {
+  modifier: Modifier = Modifier,
+  category: Int,
+  onCategoryChange: (Int) -> Unit,
+  language: Int,
+  onLanguageChange: (Int) -> Unit,
+  advancedOption: AdvancedSearchOption,
+  onAdvancedOptionChange: (AdvancedSearchOption) -> Unit,
+) =
+  Column(modifier) {
     val animateItems by Settings.animateItems.collectAsState()
     fun isCategoryChecked(bit: Int) = category and bit != 0
     val categories = remember(category) { categoryTable.sortedBy { !isCategoryChecked(it.first) } }
     LazyRow(
-        contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 16.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Workaround for the first item's animation
-        // https://github.com/Calvin-LL/Reorderable/issues/4#issuecomment-1853131769
-        item {}
-        items(categories, { it.first }) {
-            FilterChip(
-                selected = isCategoryChecked(it.first),
-                onClick = { onCategoryChange(category xor it.first) },
-                label = { Text(text = stringResource(id = it.second)) },
-                modifier = Modifier.thenIf(animateItems) { animateItem() },
-            )
-        }
+      // Workaround for the first item's animation
+      // https://github.com/Calvin-LL/Reorderable/issues/4#issuecomment-1853131769
+      item {}
+      items(categories, { it.first }) {
+        FilterChip(
+          selected = isCategoryChecked(it.first),
+          onClick = { onCategoryChange(CatalogNumbers.toggle(category, it.first)) },
+          label = { Text(text = stringResource(id = it.second)) },
+          modifier = Modifier.thenIf(animateItems) { animateItem() },
+        )
+      }
     }
     Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      modifier =
+        Modifier.horizontalScroll(rememberScrollState())
+          .padding(horizontal = 16.dp, vertical = 8.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val any = stringResource(id = R.string.any)
-        val languageStr = stringResource(id = R.string.key_language)
-        val languages = remember {
-            val translatable = EhTagDatabase.initialized && EhTagDatabase.translatable
-            List(S_LANG_TAGS.size + 1) { i ->
-                if (i == 0) {
-                    any
-                } else {
-                    val tag = S_LANG_TAGS[i - 1].substringAfter(':')
-                    if (translatable) {
-                        EhTagDatabase.getTranslation("l", tag) ?: tag
-                    } else {
-                        tag
-                    }
-                }
+      val any = stringResource(id = R.string.any)
+      val languageStr = stringResource(id = R.string.key_language)
+      val languages = remember {
+        val translatable = EhTagDatabase.initialized && EhTagDatabase.translatable
+        List(S_LANG_TAGS.size + 1) { i ->
+          if (i == 0) {
+            any
+          } else {
+            val tag = S_LANG_TAGS[i - 1].substringAfter(':')
+            if (translatable) {
+              EhTagDatabase.getTranslation("l", tag) ?: tag
+            } else {
+              tag
             }
+          }
         }
-        DropdownFilterChip(
-            label = languageStr,
-            menuItems = languages,
-            selectedItemIndex = language + 1,
-            onSelectedItemIndexChange = { onLanguageChange(it - 1) },
-        )
-        val minRatingItems = stringArrayResource(id = com.hippo.ehviewer.R.array.search_min_rating)
-        val minRatingStr = stringResource(id = R.string.search_sr)
-        DropdownFilterChip(
-            label = minRatingStr,
-            menuItems = minRatingItems.asList(),
-            selectedItemIndex = (advancedOption.minRating - 1).coerceAtLeast(0),
-            onSelectedItemIndexChange = {
-                onAdvancedOptionChange(advancedOption.copy(minRating = if (it == 0) 0 else it + 1))
-            },
-        )
-        val pageErr1 = stringResource(R.string.search_sp_err1)
-        val pageErr2 = stringResource(R.string.search_sp_err2)
-        val pages = stringResource(id = R.string.key_pages)
-        val pagesText = remember(advancedOption.fromPage, advancedOption.toPage) {
-            with(advancedOption) {
-                val hasFrom = fromPage > 0
-                val hasTo = toPage > 0
-                if (hasFrom && hasTo) {
-                    "$fromPage - $toPage P"
-                } else if (hasFrom) {
-                    "$fromPage+ P"
-                } else if (hasTo) {
-                    "$toPage- P"
-                } else {
-                    pages
-                }
+      }
+      DropdownFilterChip(
+        label = languageStr,
+        menuItems = languages,
+        selectedItemIndex = language + 1,
+        onSelectedItemIndexChange = { onLanguageChange(it - 1) },
+      )
+      val minRatingItems = stringArrayResource(id = com.hippo.ehviewer.R.array.search_min_rating)
+      val minRatingStr = stringResource(id = R.string.search_sr)
+      DropdownFilterChip(
+        label = minRatingStr,
+        menuItems = minRatingItems.asList(),
+        selectedItemIndex =
+          remember(advancedOption.minRating) {
+            CatalogNumbers.ratingIndex(advancedOption.minRating)
+          },
+        onSelectedItemIndexChange = {
+          onAdvancedOptionChange(advancedOption.copy(minRating = CatalogNumbers.ratingValue(it)))
+        },
+      )
+      val pageErr1 = stringResource(R.string.search_sp_err1)
+      val pageErr2 = stringResource(R.string.search_sp_err2)
+      val pages = stringResource(id = R.string.key_pages)
+      val pagesText =
+        remember(advancedOption.fromPage, advancedOption.toPage) {
+          with(advancedOption) {
+            val hasFrom = fromPage > 0
+            val hasTo = toPage > 0
+            if (hasFrom && hasTo) {
+              "$fromPage - $toPage P"
+            } else if (hasFrom) {
+              "$fromPage+ P"
+            } else if (hasTo) {
+              "$toPage- P"
+            } else {
+              pages
             }
+          }
         }
-        FilterChip(
-            selected = advancedOption.fromPage != 0 || advancedOption.toPage != 0,
-            onClick = {
-                launch {
-                    val (from, to) = awaitResult(
-                        initial = advancedOption.fromPage to advancedOption.toPage,
-                        title = R.string.key_pages,
-                        invalidator = { (min, max) ->
-                            if (max != 0) {
-                                if (min != 0) {
-                                    ensure(min <= (max / 2).coerceAtMost(max - 20)) { pageErr2 }
-                                } else {
-                                    ensure(max >= 10) { pageErr1 }
-                                }
-                            }
-                        },
-                    ) { error ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                            ) {
-                                OutlinedTextField(
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    value = expectedValue.first.takeIf { it > 0 }?.toString().orEmpty(),
-                                    onValueChange = {
-                                        expectedValue = expectedValue.copy(first = it.toIntOrDefault(0).coerceIn(0, 1000))
-                                    },
-                                    modifier = Modifier.width(112.dp).padding(16.dp),
-                                    singleLine = true,
-                                    isError = error != null,
-                                )
-                                Text(text = stringResource(id = R.string.search_sp_to))
-                                OutlinedTextField(
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    value = expectedValue.second.takeIf { it > 0 }?.toString().orEmpty(),
-                                    onValueChange = {
-                                        expectedValue = expectedValue.copy(second = it.toIntOrDefault(0).coerceIn(0, 2000))
-                                    },
-                                    modifier = Modifier.width(112.dp).padding(16.dp),
-                                    singleLine = true,
-                                    isError = error != null,
-                                )
-                                Text(text = stringResource(id = R.string.search_sp_suffix))
-                            }
-                            if (error != null) {
-                                ListItem(
-                                    headlineContent = {
-                                        Text(text = error, style = MaterialTheme.typography.bodySmall)
-                                    },
-                                    leadingContent = {
-                                        Icon(imageVector = Icons.Default.Info, contentDescription = null)
-                                    },
-                                    colors = ListItemDefaults.colors(
-                                        containerColor = Color.Transparent,
-                                        headlineColor = MaterialTheme.colorScheme.error,
-                                        leadingIconColor = MaterialTheme.colorScheme.error,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                    onAdvancedOptionChange(advancedOption.copy(fromPage = from, toPage = to))
+      FilterChip(
+        selected = advancedOption.fromPage != 0 || advancedOption.toPage != 0,
+        onClick = {
+          launch {
+            val (from, to) =
+              awaitResult(
+                initial = advancedOption.fromPage to advancedOption.toPage,
+                title = R.string.key_pages,
+                invalidator = { (min, max) ->
+                  when (CatalogNumbers.pageRangeError(min, max)) {
+                    0 -> Unit
+                    1 -> ensure(false) { pageErr1 }
+                    2 -> ensure(false) { pageErr2 }
+                    else -> error("Invalid page range validation")
+                  }
+                },
+              ) { error ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                  ) {
+                    OutlinedTextField(
+                      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                      value = expectedValue.first.takeIf { it > 0 }?.toString().orEmpty(),
+                      onValueChange = {
+                        expectedValue =
+                          expectedValue.copy(
+                            first = CatalogNumbers.minimumPages(it.toIntOrDefault(0))
+                          )
+                      },
+                      modifier = Modifier.width(112.dp).padding(16.dp),
+                      singleLine = true,
+                      isError = error != null,
+                    )
+                    Text(text = stringResource(id = R.string.search_sp_to))
+                    OutlinedTextField(
+                      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                      value = expectedValue.second.takeIf { it > 0 }?.toString().orEmpty(),
+                      onValueChange = {
+                        expectedValue =
+                          expectedValue.copy(
+                            second = CatalogNumbers.maximumPages(it.toIntOrDefault(0))
+                          )
+                      },
+                      modifier = Modifier.width(112.dp).padding(16.dp),
+                      singleLine = true,
+                      isError = error != null,
+                    )
+                    Text(text = stringResource(id = R.string.search_sp_suffix))
+                  }
+                  if (error != null) {
+                    ListItem(
+                      headlineContent = {
+                        Text(text = error, style = MaterialTheme.typography.bodySmall)
+                      },
+                      leadingContent = {
+                        Icon(imageVector = Icons.Default.Info, contentDescription = null)
+                      },
+                      colors =
+                        ListItemDefaults.colors(
+                          containerColor = Color.Transparent,
+                          headlineColor = MaterialTheme.colorScheme.error,
+                          leadingIconColor = MaterialTheme.colorScheme.error,
+                        ),
+                    )
+                  }
                 }
-            },
-            label = { Text(text = pagesText) },
-        )
-        fun checked(bit: Int) = advancedOption.advanceSearch and bit != 0
-        fun AdvancedSearchOption.inv(bit: Int) = onAdvancedOptionChange(copy(advanceSearch = advanceSearch xor bit))
-        FilterChip(
-            selected = checked(AdvanceTable.SH),
-            onClick = { advancedOption.inv(AdvanceTable.SH) },
-            label = { Text(text = stringResource(id = R.string.search_sh)) },
-        )
-        FilterChip(
-            selected = checked(AdvanceTable.STO),
-            onClick = { advancedOption.inv(AdvanceTable.STO) },
-            label = { Text(text = stringResource(id = R.string.search_sto)) },
-        )
-        val disableFilter = stringResource(id = R.string.search_sf)
-        FilterChip(
-            selected = checked(AdvanceTable.SFL),
-            onClick = { advancedOption.inv(AdvanceTable.SFL) },
-            label = { Text(text = disableFilter + stringResource(id = R.string.search_sfl)) },
-        )
-        FilterChip(
-            selected = checked(AdvanceTable.SFU),
-            onClick = { advancedOption.inv(AdvanceTable.SFU) },
-            label = { Text(text = disableFilter + stringResource(id = R.string.search_sfu)) },
-        )
-        FilterChip(
-            selected = checked(AdvanceTable.SFT),
-            onClick = { advancedOption.inv(AdvanceTable.SFT) },
-            label = { Text(text = disableFilter + stringResource(id = R.string.search_sft)) },
-        )
+              }
+            onAdvancedOptionChange(advancedOption.copy(fromPage = from, toPage = to))
+          }
+        },
+        label = { Text(text = pagesText) },
+      )
+      fun checked(bit: Int) = advancedOption.advanceSearch and bit != 0
+      fun AdvancedSearchOption.inv(bit: Int) =
+        onAdvancedOptionChange(copy(advanceSearch = CatalogNumbers.toggle(advanceSearch, bit)))
+      FilterChip(
+        selected = checked(AdvanceTable.SH),
+        onClick = { advancedOption.inv(AdvanceTable.SH) },
+        label = { Text(text = stringResource(id = R.string.search_sh)) },
+      )
+      FilterChip(
+        selected = checked(AdvanceTable.STO),
+        onClick = { advancedOption.inv(AdvanceTable.STO) },
+        label = { Text(text = stringResource(id = R.string.search_sto)) },
+      )
+      val disableFilter = stringResource(id = R.string.search_sf)
+      FilterChip(
+        selected = checked(AdvanceTable.SFL),
+        onClick = { advancedOption.inv(AdvanceTable.SFL) },
+        label = { Text(text = disableFilter + stringResource(id = R.string.search_sfl)) },
+      )
+      FilterChip(
+        selected = checked(AdvanceTable.SFU),
+        onClick = { advancedOption.inv(AdvanceTable.SFU) },
+        label = { Text(text = disableFilter + stringResource(id = R.string.search_sfu)) },
+      )
+      FilterChip(
+        selected = checked(AdvanceTable.SFT),
+        onClick = { advancedOption.inv(AdvanceTable.SFT) },
+        label = { Text(text = disableFilter + stringResource(id = R.string.search_sft)) },
+      )
     }
-}
+  }
